@@ -51,9 +51,11 @@ requirements table, each reporting `pass`, `fail`, or `n/a`:
   not exist; `pass` otherwise.
 - **Tracker auth (Linear or a connected tracker CLI)** — conditional on
   `tracker.type`. Report `n/a` for `tracker.type: none`. For the other two
-  modes, run that tracker file's own authentication check (see
-  `core/trackers/linear.md` and `core/trackers/github.md`) and report `pass`
-  or `fail` accordingly, naming what failed.
+  modes, perform the connection check that mode's own tracker file requires
+  before any of its operations run — the Linear MCP server connection
+  described in `core/trackers/linear.md`'s opening paragraphs, or the `gh
+  auth status` check described in `core/trackers/github.md`'s — and report
+  `pass` or `fail` accordingly, naming what failed.
 
 ### The conventions check, specifically
 
