@@ -66,6 +66,10 @@ assert_exit 0 "structure checker passes the real manifest against the repository
   checks/structure.sh
 assert_exit 0 "every core phase and flow has a Claude Code adapter" \
   checks/adapters-cover-core.sh claude-code
+assert_exit 1 "adapter-coverage checker rejects an adapter directory missing a core file" \
+  checks/adapters-cover-core.sh fixture tests/fixtures/adapters-missing-coverage
+assert_exit 1 "adapter-coverage checker rejects a harness with no adapter directory at all" \
+  checks/adapters-cover-core.sh nonexistent-harness
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
