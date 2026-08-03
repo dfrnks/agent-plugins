@@ -54,6 +54,8 @@ assert_exit 1 "reference checker rejects a dangling core reference" \
   checks/references-resolve.sh tests/fixtures/dangling.md
 assert_exit 0 "reference checker accepts a reference that resolves" \
   checks/references-resolve.sh tests/fixtures/reference-ok.md
+assert_exit 0 "reference checker passes a whole-repo scan" \
+  checks/references-resolve.sh
 assert_exit 0 "structure checker passes when the file exists with its required heading" \
   checks/structure.sh tests/fixtures/manifest-good.txt
 assert_exit 1 "structure checker rejects a missing file" \

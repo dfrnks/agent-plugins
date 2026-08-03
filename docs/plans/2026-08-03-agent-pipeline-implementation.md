@@ -164,7 +164,7 @@ printf 'Contact person@example-company.com about this.\n'   > tests/fixtures/lea
 printf 'Run the configured test command against `tests/`.\n' > tests/fixtures/clean.md
 printf 'Dispatch a subagent with the Agent tool.\n'          > tests/fixtures/core-dirty/phase.md
 printf 'Dispatch a subagent for this phase.\n'               > tests/fixtures/core-clean/phase.md
-printf 'Follow core/phases/does-not-exist.md for details.\n' > tests/fixtures/dangling.md
+printf 'Follow core/phases/%s for details.\n' "does-not-exist.md" > tests/fixtures/dangling.md
 ```
 
 - [ ] **Step 8: Write the leakage checker**
