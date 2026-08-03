@@ -1,3 +1,4 @@
 # <path>|<required heading>;<required heading>;…
 # Add the line for a file BEFORE writing the file, so the check fails first.
 core/contracts/pipeline-config.md|## Schema;## Required keys by mode;## Fail-fast protocol
+core/contracts/project-requirements.md|## Requirements;## Why a populated conventions file is mandatory
