@@ -289,7 +289,7 @@ git commit -m "Add repository invariant checkers and test runner"
 - Modify: `checks/manifest.txt`
 
 **Interfaces:**
-- Produces: the normative `pipeline.yaml` schema. Every phase and flow cites this file rather than restating keys.
+- Produces: the normative `.agent-pipeline/config.yaml` schema. Every phase and flow cites this file rather than restating keys.
 
 - [ ] **Step 1: Add the manifest line (the failing test)**
 
@@ -1255,7 +1255,7 @@ The acceptance criteria from the design document. This task is not complete unti
 
 - [ ] **Step 1: Write the README**
 
-Cover, in this order: what the package does in two sentences; the six commands in a table; installation for both harnesses; the `pipeline.yaml` example with `tracker: none` and a plain test runner; a "first task in five minutes" walkthrough; and how to update (`git pull` in the clone, which propagates through the symlinks).
+Cover, in this order: what the package does in two sentences; the six commands in a table; installation for both harnesses; the `.agent-pipeline/config.yaml` example with `tracker: none` and a plain test runner; a "first task in five minutes" walkthrough; and how to update (`git pull` in the clone, which propagates through the symlinks).
 
 - [ ] **Step 2: Create the validation repository**
 
