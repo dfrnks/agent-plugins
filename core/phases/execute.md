@@ -13,9 +13,9 @@ given, derive it from the current branch name.
 Read `.agent-pipeline/config.yaml`. Follow the fail-fast protocol in
 `core/contracts/pipeline-config.md`: stop and name the exact missing key
 if the file or a key this phase needs is absent. This phase needs
-`commands.test`, `commands.test_all`, `commands.lint`, `commands.typecheck`
-(when set), `paths.tests`, `paths.specs`, `paths.conventions`, and
-`git.commit_trailer`.
+`commands.test`, `commands.test_all`, `commands.lint`, `paths.specs`,
+`paths.conventions`, and `git.commit_trailer`. If `commands.typecheck` is
+set in the project's configuration, this phase also needs it.
 
 ## Step 1 — Read the handoff log
 
@@ -129,6 +129,15 @@ the moment the phase making tests pass is also allowed to rewrite what
   import, a wrong fixture path, a typo in a test helper. These are defects
   in the scaffolding around the contract, not changes to the contract
   itself.
+- **Tie-breaker, applied without judgment: if a scaffolding fix would
+  change any assertion's effective expected value, it is not a scaffolding
+  fix.** A fixture can be wrong in a way that also supplies the value an
+  assertion checks against, so "correcting the fixture" and "changing what
+  the test expects" can be the same edit under two different names. Do not
+  weigh how reasonable the fix looks in the moment — check only whether an
+  assertion's effective expected value changes. If it does, treat the whole
+  edit as a test-appears-wrong case below, not as an infrastructure fix,
+  regardless of how the rest of the change looks.
 - **If a test appears wrong** — its expectation seems to contradict the
   spec, or an edge case looks mis-specified — do not change it silently.
   Implement toward the spec, document the conflict in the handoff log
