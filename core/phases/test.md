@@ -33,7 +33,9 @@ settled.
 ## Step 2 — Study existing test patterns
 
 Before writing anything, read a representative sample of the tests already
-in `paths.tests`. Match the project's existing style: file naming, how a
+in `paths.tests` — a list, so check every directory it names (a project
+that separates unit and integration tests, for example, names both).
+Match the project's existing style: file naming, how a
 test is structured, how setup and teardown are handled, how dependencies
 outside the code under test are isolated. A test suite where every file
 looks hand-written by a different author, because each phase run invented
@@ -87,8 +89,10 @@ phase inherits silently.
 
 ## Step 4 — Write the tests
 
-Write the suite into `paths.tests`, following the patterns identified in
-Step 2. Hold every test to these standards:
+Write the suite into whichever directory named in `paths.tests` matches
+this task — the entry that pairs with the code under test, if more than
+one is listed — following the patterns identified in Step 2. Hold every
+test to these standards:
 
 - **Descriptive names.** A test's name states the behavior and the
   condition, so a failure is legible from the test runner's output alone,
@@ -156,7 +160,7 @@ handoff log, then commit:
 
 ```bash
 git add <test files> <spec file>
-git commit -m "TASK-1: add failing tests"
+git commit -m "<task-id>: add failing tests"
 ```
 
 If `git.commit_trailer` is non-empty, append it as a trailer on the commit
