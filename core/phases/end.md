@@ -21,8 +21,9 @@ given, derive it from the current branch name.
 Read `.agent-pipeline/config.yaml`. Follow the fail-fast protocol in
 `core/contracts/pipeline-config.md`: stop and name the exact missing key
 if the file or a key this phase needs is absent. This phase needs
-`commands.lint`, `paths.conventions`, `paths.specs`, `paths.worktrees`,
-`git.base_branch`, `git.commit_trailer`, `pr.enabled`, and `tracker.type`.
+`commands.lint`, `commands.test_all`, `paths.conventions`, `paths.specs`,
+`paths.worktrees`, `git.base_branch`, `git.commit_trailer`, `pr.enabled`,
+and `tracker.type`.
 `tracker.type` selects which file among `core/trackers/none.md`,
 `core/trackers/linear.md`, and `core/trackers/github.md` governs Step 6;
 that file may require further keys of its own (`tracker.team`,
@@ -55,15 +56,27 @@ Otherwise, run `commands.lint`. Fix every violation it reports that its
 own autofix left behind, and re-run until it exits clean — the same
 discipline the execute phase's own lint gate holds itself to.
 
-Many lint invocations run over the whole repository rather than a
-specific target (`ruff check . --fix && ruff format .` is one example),
-which means a single run can format-touch a file this task never
+A lint command may run over the whole repository rather than a specific
+target, which means a single run can format-touch a file this task never
 modified. Before staging anything in Step 4, diff the lint run's output
 against the file list from Step 1 and revert any change to a file outside
 that list. A linter is entitled to clean up what this task touched; it is
 not entitled to fold an unrelated file's reformatting into this task's
 pull request, where nobody asked for it and nobody will review it as part
 of this change.
+
+Do not assume an autofix is behavior-neutral just because it came from a
+linter rather than a hand edit. A removed "unused" import can drop a
+needed side effect; a reordered import or declaration can change
+initialization order; a rewritten expression can change what it evaluates
+to at the margins. If any fix Step 2 applied or accepted could plausibly
+have changed behavior rather than only style, re-run `commands.test_all`
+before Step 4's commit, and say so in Step 7's report either way — that a
+re-run happened and passed, or that nothing Step 2 did could have changed
+behavior and so none was needed. Code-review already approved the
+pre-lint state; this is the last gate standing between an autofix and a
+merge, and treating every autofix as automatically safe is exactly the
+assumption that lets a behavior change ship silently.
 
 ## Step 3 — Persist durable discoveries
 
@@ -198,6 +211,9 @@ Report, in order:
 
 - Whether Step 2's lint ran, and its result — clean, or skipped because
   nothing in its scope changed.
+- Whether Step 2's autofixes required a `commands.test_all` re-run, and
+  the result if so — or an explicit statement that no fix could have
+  changed behavior and none was needed.
 - What Step 3 persisted to `paths.conventions` or phase memory, naming
   each item, or an explicit statement that nothing durable was found this
   task. Never leave this silent.
