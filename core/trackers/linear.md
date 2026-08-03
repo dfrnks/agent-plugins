@@ -30,7 +30,20 @@ or a free-text description.
      current user.
    - Use the identifier Linear returns as the task ID.
 
-Output: the task ID, used as-is for the branch name and the spec filename.
+Output: the task ID, used as-is for the branch name and the spec filename —
+Linear is authoritative for the shape of its own identifiers, so unlike
+`none` and `github`, this mode never reconstructs the ID from
+`tracker.prefix`.
+
+That leaves nothing enforcing that `tracker.prefix` actually matches the
+prefix Linear issues under (its team key, for example `ENG`), so the two
+could silently diverge: branch names and spec filenames would carry a
+prefix the tracker itself never uses. Guard against this on the first
+identifier this mode ever resolves or creates in a given run: compare its
+prefix against `tracker.prefix`. On a mismatch, stop with a message naming
+both values — the configured `tracker.prefix` and the prefix the resolved
+identifier actually carries — rather than proceeding with a spec filename
+and branch name that quietly disagree with the tracker's own naming.
 
 ## set_status
 

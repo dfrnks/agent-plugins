@@ -1,9 +1,13 @@
 # Tracker: github
 
 Selected by `tracker.type: github`. Per `pipeline-config.md`, this mode adds
-no mandatory keys beyond the always-mandatory ones — no team, no named
-states — because it authenticates through `gh` and labels through the
-prefix every mode already requires.
+no mandatory keys beyond the always-mandatory ones — no team, no required
+states — because it can authenticate through `gh` and label through the
+prefix every mode already requires. `tracker.states` is accepted but
+optional here: set it to use named labels instead of the prefix-derived
+defaults (see `set_status` below). A `tracker.states` block with only
+`start` or only `review` set is a configuration error, not a
+partial default — stop and name the missing half.
 
 Every operation in this file runs through the `gh` CLI. Before the first
 call, check `gh auth status`; if it fails, stop with a message telling the
@@ -34,16 +38,20 @@ downstream of this operation ever needs to know which tracker produced it.
 
 Input: a task ID and a phase (`start` or `review`).
 
-This mode has no named workflow states, so a label stands in for one. Use
-`tracker.states.start` / `tracker.states.review` as the label names if
-`tracker.states` is configured; otherwise use the defaults
-`<prefix>:in-progress` and `<prefix>:in-review`. Exactly one of the two
-labels is present on the issue at a time — the pair represents mutually
-exclusive states, not independent tags.
+This mode has no named workflow states, so a label stands in for one.
 
-1. Recover the issue number from the task ID (`<prefix>-<number>`).
-2. If the target label does not exist in the repository yet, create it
+1. Determine the label name, per `pipeline-config.md`'s "Required keys by
+   mode": if `tracker.states` is configured, both `start` and `review` must
+   be present — a block with only one of the two is a configuration error;
+   stop and name the missing half rather than defaulting it while honoring
+   the one that was set. If `tracker.states` is absent entirely, use the
+   defaults `<prefix>:in-progress` and `<prefix>:in-review`, built from
+   `tracker.prefix`. Exactly one of the two labels is present on the issue
+   at a time — the pair represents mutually exclusive states, not
+   independent tags.
+2. Recover the issue number from the task ID (`<prefix>-<number>`).
+3. If the target label does not exist in the repository yet, create it
    first: `gh label create "<label>"`.
-3. Apply it and remove the other: `gh issue edit <n> --add-label "<label>"
+4. Apply it and remove the other: `gh issue edit <n> --add-label "<label>"
    --remove-label "<other-label>"`. The remove is a no-op, without error,
    the first time a given issue is labeled at all.
