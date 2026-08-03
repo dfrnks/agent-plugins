@@ -22,7 +22,7 @@ originating project.
 | Harnesses | Claude Code and Cursor, first-class both |
 | Packaging | Harness-neutral `core/`, thin per-harness adapters |
 | Distribution | Git repo `dfrnks/agent-pipeline`; native plugin install for Claude Code, install script for Cursor |
-| Project configuration | `.claude/pipeline.yaml` (deterministic) + the project's conventions file (prose) |
+| Project configuration | `.agent-pipeline/config.yaml` (deterministic) + the project's conventions file (prose) |
 | Issue tracker | Pluggable: `none` (default) \| `linear` \| `github` |
 | Stack rules | Never in the package; always in the project's conventions file, derived by `/conventions` |
 | Worktree creation | Plain `git worktree add`, never a harness-specific isolation primitive |
@@ -195,10 +195,24 @@ thin wrappers that each launched exactly one agent. The package exposes six.
 
 ## Configuration contract
 
-`.claude/pipeline.yaml`, in the consuming project. It is the only required file.
-The path stays `.claude/` on every harness: it is the pipeline's own directory,
-not a harness directory, and a single location keeps a project working when the
-developer switches tools.
+`.agent-pipeline/config.yaml`, in the consuming project. It is the only required file.
+The directory is named for the pipeline, not for any harness, and holds
+everything the pipeline owns in a consuming project:
+
+```
+.agent-pipeline/
+  config.yaml
+  tasks/TASK-1.md
+  memory/<phase>/
+  worktrees/TASK-1/
+  review-checklist.md      # optional
+```
+
+The location is identical on every harness, so a project keeps working when the
+developer switches tools — and, unlike a harness-named directory, the neutrality
+is real rather than asserted. Harness directories still exist alongside it and
+hold only adapters: the installer writes agents and commands there, and nothing
+else.
 
 ```yaml
 version: 1
@@ -218,10 +232,10 @@ commands:
 
 paths:
   tests: [tests]
-  specs: .claude/tasks
-  worktrees: .claude/worktrees
+  specs: .agent-pipeline/tasks
+  worktrees: .agent-pipeline/worktrees
   conventions: CLAUDE.md      # or AGENTS.md
-  # review_checklist: .claude/review-checklist.md   # optional
+  # review_checklist: .agent-pipeline/review-checklist.md   # optional
 
 git:
   base_branch: main
@@ -349,12 +363,12 @@ Everything else points at it instead of restating it.
 
 | Requirement | Required | Created by | Validated by |
 |---|---|---|---|
-| `.claude/pipeline.yaml` with every key the configured mode uses | yes | `/init` | every phase, step 0 |
+| `.agent-pipeline/config.yaml` with every key the configured mode uses | yes | `/init` | every phase, step 0 |
 | Git repository with `git.base_branch` present | yes | — | `/doctor`, `/task` |
 | `paths.specs` directory | yes | `/init` | `/doctor` |
 | `paths.worktrees` directory, git-ignored | yes | `/init` | `/doctor` |
 | `paths.conventions` file, non-empty, with derived stack rules | yes | `/conventions` | `/doctor`, execute phase |
-| `.claude/agent-memory/` directory | no | `/init` | `/doctor` |
+| `.agent-pipeline/memory/` directory | no | `/init` | `/doctor` |
 | `paths.review_checklist` | no | `/conventions` | `/doctor` |
 | `git.worktree_setup` script, if dependencies are git-ignored | conditional | `/init` proposes | `/task` |
 | Tracker auth (Linear MCP or `gh auth`) | conditional on `tracker.type` | — | `/doctor`, `/task` |
@@ -366,8 +380,8 @@ One-shot bootstrap. Detects the stack (package manager, test runner, linter) and
 Auto-detection is acceptable here, and only here, because a human reviews the
 result before anything lands.
 
-1. Propose `.claude/pipeline.yaml`.
-2. Create `paths.specs`, `paths.worktrees`, `.claude/agent-memory/`, and add the
+1. Propose `.agent-pipeline/config.yaml`.
+2. Create `paths.specs`, `paths.worktrees`, `.agent-pipeline/memory/`, and add the
    worktree path to `.gitignore` if missing.
 3. If dependencies are git-ignored, propose a `worktree_setup` script that
    symlinks or reinstalls them.
@@ -417,7 +431,7 @@ pass — that is the specific failure mode this section exists to prevent.
 
 ## Agent memory
 
-Phases record durable workflow learnings in `.claude/agent-memory/<phase>/`,
+Phases record durable workflow learnings in `.agent-pipeline/memory/<phase>/`,
 plain Markdown files read at phase start. This is deliberately file-based rather
 than using a harness memory feature, for the same reason as everything else: it
 survives a harness switch. Claude Code adapters may additionally set

@@ -310,14 +310,14 @@ Content requirements — the file must contain, under those three headings:
 
 1. `## Schema` — the complete annotated YAML from the design doc's "Configuration contract" section, copied verbatim, including the `my-app` / `TASK-1` example values and the comment markers for optional keys.
 2. `## Required keys by mode` — a table: which keys are mandatory always, which only when `tracker.type` is `linear` (`team`, `states`), which only when it is `github`, and which are optional in every mode (`commands.typecheck`, `paths.review_checklist`, `git.worktree_setup`).
-3. `## Fail-fast protocol` — the exact behaviour: read `.claude/pipeline.yaml` at step 0; if the file is absent, stop and instruct the user to run the init flow; if a key this phase will use is absent, stop and name that key; never infer a command from a package manifest, build file, or directory listing. Include the exact stop message template:
+3. `## Fail-fast protocol` — the exact behaviour: read `.agent-pipeline/config.yaml` at step 0; if the file is absent, stop and instruct the user to run the init flow; if a key this phase will use is absent, stop and name that key; never infer a command from a package manifest, build file, or directory listing. Include the exact stop message template:
 
 ```
-Cannot start: `.claude/pipeline.yaml` is missing key `commands.test`.
+Cannot start: `.agent-pipeline/config.yaml` is missing key `commands.test`.
 Add it, or run the init flow to regenerate the configuration.
 ```
 
-State that the config path stays `.claude/pipeline.yaml` regardless of harness, because it is the pipeline's own directory.
+State that the config path stays `.agent-pipeline/config.yaml` regardless of harness, because it is the pipeline's own directory.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -438,7 +438,7 @@ Expected: two `missing file:` lines.
 | What was learned | Where it goes |
 |---|---|
 | Project convention: pattern, naming, command, path, contract | the file at `paths.conventions` |
-| Phase-workflow learning | `.claude/agent-memory/<phase>/` |
+| Phase-workflow learning | `.agent-pipeline/memory/<phase>/` |
 | Detail specific to this task only | this handoff log |
 | Personal communication preference | the operator's own memory, outside the repository |
 
@@ -961,7 +961,7 @@ Expected: three `missing file:` lines.
 
 - [ ] **Step 3: Write `init.md`**
 
-Detection inspects the repository for a package manifest, test runner, and linter, and **proposes** values — it never writes without confirmation. This is the only place auto-detection is permitted, precisely because a human reviews the result. Step 3 creates `paths.specs`, `paths.worktrees`, and `.claude/agent-memory/`, and adds the worktree path to `.gitignore` when missing. Step 4 proposes a setup script only when dependency directories are git-ignored, since otherwise a fresh worktree already works. Step 5 hands off to the conventions flow. Step 6 runs the doctor flow and prints its report, so init never claims success without verification.
+Detection inspects the repository for a package manifest, test runner, and linter, and **proposes** values — it never writes without confirmation. This is the only place auto-detection is permitted, precisely because a human reviews the result. Step 3 creates `paths.specs`, `paths.worktrees`, and `.agent-pipeline/memory/`, and adds the worktree path to `.gitignore` when missing. Step 4 proposes a setup script only when dependency directories are git-ignored, since otherwise a fresh worktree already works. Step 5 hands off to the conventions flow. Step 6 runs the doctor flow and prints its report, so init never claims success without verification.
 
 - [ ] **Step 4: Write `conventions.md`**
 
@@ -1083,7 +1083,7 @@ memory: project
 Follow `${CLAUDE_PLUGIN_ROOT}/core/phases/test.md` exactly.
 
 Dispatch subagents with the `Agent` tool. Read the pipeline configuration from
-`.claude/pipeline.yaml` in the project root.
+`.agent-pipeline/config.yaml` in the project root.
 ```
 
 Repeat for `task-execute` (`core/phases/execute.md`, model opus), `task-code-review` (`core/phases/code-review.md`, model opus), `task-end` (`core/phases/end.md`, model sonnet), and `task-pipeline` (`core/phases/pipeline.md`, model sonnet). Write a specific `description` for each — it is what the harness uses to route work, so "handles tasks" is a defect.
@@ -1179,7 +1179,7 @@ description: Writes the failing test suite that defines a task's expected behavi
 Follow `.cursor/agent-pipeline/core/phases/test.md` exactly.
 
 Dispatch subagents with the `Task` tool. Read the pipeline configuration from
-`.claude/pipeline.yaml` in the project root.
+`.agent-pipeline/config.yaml` in the project root.
 ```
 
 The path is project-relative because this harness exposes no plugin-root variable; the installer guarantees that path exists. Keep the `description` text identical to the Claude Code adapter's, so routing behaves the same on both.
@@ -1271,7 +1271,7 @@ Install the Claude Code adapter into it.
 - [ ] **Step 3: Run init and verify criteria 1 and 2**
 
 Run the init command. Then confirm:
-- the generated `.claude/pipeline.yaml` names a test command that actually runs;
+- the generated `.agent-pipeline/config.yaml` names a test command that actually runs;
 - the conventions file contains rules derived from the code with `file:line` citations, not a placeholder;
 - the doctor flow reports all-pass;
 - emptying the managed conventions section makes the doctor flow report `fail` on that row specifically.
