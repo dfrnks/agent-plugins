@@ -1,12 +1,13 @@
 # Flow: review
 
 Critique a task spec against the actual codebase, then fix it. This flow
-runs two ways, identically: standalone, invoked directly by a person against
-an existing spec, or inline, dispatched by `task`'s own Step 3 against a spec
-that flow just finished drafting. Nothing in this flow branches on which one
-is happening — the tracker layer already accounts for whatever difference
-exists between a tracker-linked item and a spec with no tracker behind it,
-so this flow reads and fixes the spec file itself either way.
+runs the same way whether it is invoked standalone, directly by a person
+against an existing spec, or inline, dispatched by `task`'s own Step 3
+against a spec that flow just finished drafting. Nothing in this flow
+branches on which one is happening — the tracker layer already accounts for
+whatever difference exists between a tracker-linked item and a spec with no
+tracker behind it, so this flow reads and fixes the spec file itself either
+way.
 
 ## Input
 
@@ -32,14 +33,10 @@ would let a phase call this task finished while real gaps remain?
 Read the spec file in full — every section in
 `core/contracts/spec-template.md`'s skeleton, not only `## Definition of
 Done`. Read the file at `paths.conventions` to know what the project already
-holds itself to. Read the `## Agent Handoff Log` section, per
-`core/contracts/handoff-log.md`: if a `test` or `execute` entry is already
-present, this is a post-implementation review, and the manifest those
-phases left behind is the primary source of truth — spot-check two or three
-of its claims against the actual code rather than re-deriving everything
-from scratch, and reserve a full exploration for whatever the manifest
-doesn't cover. If no such entry exists, this is a pre-implementation review,
-and Step 2's exploration runs in full.
+holds itself to. Read the `## Agent Handoff Log` section in full, per
+`core/contracts/handoff-log.md` — every phase's spec is unimplemented at
+this point, so this section carries only what an earlier run of this flow,
+or a planning conversation, already left there.
 
 ## Step 2 — Explore
 

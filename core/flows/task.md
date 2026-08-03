@@ -40,9 +40,11 @@ and the spec filename in Step 2; do not reconstruct or reformat it.
 
 Then call that same tracker file's `set_status` operation with the task ID
 and the phase `start`, so the tracker reflects that work has begun before
-any spec exists yet. Report the result exactly as that file specifies. A
-failed call is a stop, per the tracker file's own rules — never proceed with
-tracker state left stale.
+any spec exists yet. Report the result exactly as that file specifies. In
+`linear` mode an unmatched state name stops the flow; in `github` mode a
+missing `gh` authentication or a malformed `tracker.states` block stops it;
+in `none` mode the operation cannot fail. Whichever applies, never proceed
+past a stop with tracker state left stale.
 
 ## Step 2 — Write the spec
 
