@@ -47,7 +47,10 @@ it belongs in the derived rules the conventions flow writes on top.
 
 ## Data and migrations
 
-- [ ] Every schema change ships together with its migration, in the same
+Applies only when the project versions a schema. If it does not, mark this
+section not applicable and move on.
+
+- [ ] A schema change ships together with its migration, in the same
       change set.
 - [ ] A new non-nullable column carries either a default value or a
       backfill step — never a bare `NOT NULL` against existing rows.
