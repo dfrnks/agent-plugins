@@ -17,3 +17,6 @@ core/phases/pipeline.md|## Step 0 — Load configuration;## Step 1 — Verify th
 core/flows/task.md|## Step 0 — Load configuration;## Step 1 — Resolve the item;## Step 2 — Write the spec;## Step 3 — Review the spec;## Step 4 — Gate;## Step 5 — Create the worktree;## Step 6 — Run the pipeline;## Step 7 — Report
 core/flows/review.md|## Input;## Mindset;## Step 1 — Load context;## Step 2 — Explore;## Step 3 — Critique;## Step 4 — Fix the spec;## Step 5 — Handoff log
 core/flows/resume.md|## Input;## Phase selection;## Preconditions;## Execution
+core/flows/init.md|## Step 1 — Detect the stack;## Step 2 — Propose the configuration;## Step 3 — Create directories;## Step 4 — Worktree setup script;## Step 5 — Derive conventions;## Step 6 — Verify
+core/flows/conventions.md|## Step 1 — Explore;## Step 2 — Rule versus occurrence;## Step 3 — Confirm with the user;## Step 4 — Write;## Step 5 — Derive the checklist;## Drift reporting
+core/flows/doctor.md|## Checks;## Output;## Repair mode
