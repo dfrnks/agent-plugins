@@ -57,10 +57,12 @@ the adapter into a project's `.claude/` directory would produce files that look
 installed but whose every `core/` pointer dangles, which is why the installer
 refuses rather than producing that layout.
 
-> **Known limitation.** On the Claude Code version this was validated against,
-> the plugin's six commands load correctly but its five agents do not — see
-> [`docs/validation-2026-08-03.md`](docs/validation-2026-08-03.md), "Defects
-> exposed", for the evidence and the remedy. The Cursor adapter is unaffected.
+Verified by a clean install: `claude plugin details tdd-pipeline@agent-pipeline`
+reports `Skills (6)` and `Agents (5)` — every command and every subagent
+loads. The five agent files live at this repository's own `agents/`
+directory (the plugin root, not under `adapters/claude-code/`) — see
+[`docs/specs/2026-08-03-tdd-pipeline-plugin-design.md`](docs/specs/2026-08-03-tdd-pipeline-plugin-design.md)
+for why that placement, specifically, is the one that works.
 
 ## Configuration
 
@@ -191,10 +193,14 @@ core/          the pipeline itself — harness-neutral, the only normative conte
   flows/       init, conventions, doctor, task, review, resume
   phases/      pipeline, test, execute, code-review, end
   trackers/    none, github, linear
-adapters/      thin per-harness pointers into core/ — claude-code/, cursor/
+agents/        Claude Code subagents — at the plugin (repository) root because
+               that is the one location its plugin manifest loads agents from
+adapters/      thin per-harness pointers into core/
+  claude-code/ commands/ only — its agents/ live at the repository root, above
+  cursor/      agents/ and commands/
 checks/        the five gates that keep core/ neutral and the tree leak-free
 tests/         the test suite covering the checkers
-install.sh     links core/ and one harness's adapter into a project
+install.sh     links core/ and the Cursor adapter into a project
 ```
 
 `core/` never names a tool, a language, or a harness. That neutrality is

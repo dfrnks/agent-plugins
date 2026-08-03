@@ -102,14 +102,21 @@ decision — ask one question: is this a durable fact about the project
 itself, true regardless of whether this pipeline ever ran against it, and
 not already present in `paths.conventions`?
 
-If yes, append it to the section of `paths.conventions` it belongs under,
-matching that file's existing heading structure, tone, and level of
-detail — a rule that reads like it was airlifted in from a different
-document is harder for the next reader to trust than one that reads like
-it always belonged there. If the fact fits no existing heading, add the
-smallest new heading that describes it, following
-`core/contracts/conventions-template.md`'s area-heading convention rather
-than inventing a new structure.
+If yes, append it under the matching area heading inside
+`paths.conventions`'s **discoveries span**
+(`core/contracts/conventions-template.md`'s discoveries section markers,
+`<!-- pipeline:discoveries:start -->` / `<!-- pipeline:discoveries:end -->`)
+— never inside the managed section those same headings also appear under.
+The conventions flow owns the managed section and rewrites it wholesale on
+every run of its own; anything this phase wrote there would be silently
+discarded the next time that flow runs. The discoveries span exists
+precisely so this phase's appends survive that rewrite. Match the
+surrounding entries' heading structure, tone, and level of detail — a rule
+that reads like it was airlifted in from a different document is harder for
+the next reader to trust than one that reads like it always belonged there.
+If the fact fits no existing heading, add the smallest new heading that
+describes it, following the same area-heading convention rather than
+inventing a new structure.
 
 Route every other finding through the same table the handoff-log contract
 defines, since not everything durable belongs in the same place:
@@ -161,11 +168,30 @@ diff; a broad add would pull that noise back in. If `git.commit_trailer`
 is non-empty, append it as a trailer on the commit message. If it is
 empty, omit it entirely — do not add an empty trailer line.
 
-Push the current branch to its remote:
+A project with no configured remote is a fully supported configuration —
+local-only use, with `pr.enabled: false` and no external tracker, is a
+first-class case this pipeline exists to serve, not a degraded one. Check
+for a remote before pushing:
+
+```bash
+git remote
+```
+
+If that lists at least one remote, push the current branch to it:
 
 ```bash
 git push -u origin HEAD
 ```
+
+A push failure for any other reason (authentication, a rejected
+non-fast-forward push, a network error) is a stop: report it in Step 7 and
+do not proceed to Step 5, since there is no pull request to open against a
+branch that never reached the remote.
+
+If no remote is configured, skip the push entirely and record the skip in
+Step 7's report — this is not a failure, and this phase's success path
+must be reachable without a remote. Proceed to Step 5, which skips opening
+a pull request for the same reason.
 
 ## Step 5 — Open the pull request
 
@@ -174,6 +200,7 @@ following holds:
 
 - the current branch is `git.base_branch`,
 - `pr.enabled` is `false`,
+- Step 4 found no remote configured and so had nothing to push against,
 - a pull request for this branch already exists (check before creating
   one — for example, a query against the current branch's open pull
   requests that returns a result means one already exists).
@@ -217,7 +244,8 @@ Report, in order:
 - What Step 3 persisted to `paths.conventions` or phase memory, naming
   each item, or an explicit statement that nothing durable was found this
   task. Never leave this silent.
-- Confirmation that the branch was pushed, and what it carries.
+- Confirmation that the branch was pushed and what it carries, or that no
+  remote was configured and the push was skipped.
 - The pull request's URL, or which of Step 5's skip conditions applied.
 - The tracker status result from Step 6.
 

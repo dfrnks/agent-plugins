@@ -173,7 +173,12 @@ project conventions or phase memory, branch push confirmation, the pull
 request URL or which skip condition applied, and the tracker status result.
 This phase does not branch on any single field in that report — it carries
 the whole report into Step 5 to compose the pull request URL and the final
-result.
+result — except for the one signal that decides `SHIPPED` versus `STOPPED`:
+whether the end phase reached its own Step 8 or stopped partway through one
+of its steps per that phase's own stop rules (a push failure, per Step 4, or
+a failed tracker update, per Step 6). Reaching Step 8 means `SHIPPED`;
+stopping short of it means `STOPPED`, carrying the end phase's own account
+of where it stopped into Step 5's reason.
 
 ## Step 5 — Report
 
@@ -181,8 +186,10 @@ Return, in this order:
 
 - **Result** — one of:
   - `SHIPPED` — the end phase ran and completed.
-  - `STOPPED` — code-review returned `CHANGES_REQUESTED`, or Step 1's guard
-    or Step 3's dependency setup failed.
+  - `STOPPED` — code-review returned `CHANGES_REQUESTED`, Step 1's guard or
+    Step 3's dependency setup failed, or the end phase itself stopped
+    partway through one of its own steps (a push failure other than "no
+    remote configured", or a failed tracker update per `end.md` Step 6).
   - `BLOCKED` — the test phase reported no failing tests, or Step 2 found no
     review entry in the spec's handoff log.
 - **Branch** — the task ID confirmed in Step 1.
@@ -192,6 +199,7 @@ Return, in this order:
 - On any result other than `SHIPPED`, a one-line reason so the operator
   knows where to resume: the blocker list on `STOPPED` from code-review, the
   guard or setup failure message on `STOPPED` from Step 1 or Step 3, the
+  step and error the end phase reported on `STOPPED` from 4.4, the
   missing-review instruction from Step 2 on `BLOCKED`, or the confirmation
   that the test suite came back green on the other `BLOCKED` case.
 

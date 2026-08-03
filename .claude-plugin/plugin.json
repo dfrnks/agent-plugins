@@ -2,12 +2,5 @@
   "name": "tdd-pipeline",
   "version": "0.1.0",
   "description": "Agent-driven TDD pipeline: spec, red, green, review, ship.",
-  "commands": ["./adapters/claude-code/commands/"],
-  "agents": [
-    "./adapters/claude-code/agents/task-test.md",
-    "./adapters/claude-code/agents/task-execute.md",
-    "./adapters/claude-code/agents/task-code-review.md",
-    "./adapters/claude-code/agents/task-end.md",
-    "./adapters/claude-code/agents/task-pipeline.md"
-  ]
+  "commands": ["./adapters/claude-code/commands/"]
 }
