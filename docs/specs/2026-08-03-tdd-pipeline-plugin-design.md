@@ -103,7 +103,7 @@ dfrnks/agent-pipeline/
 │   │   └── doctor.md                verify project requirements
 │   ├── contracts/
 │   │   ├── project-requirements.md  normative list of what a project provides
-│   │   ├── pipeline-config.md       pipeline.yaml schema and semantics
+│   │   ├── pipeline-config.md       config.yaml schema and semantics
 │   │   ├── spec-template.md         task spec structure + Definition of Done
 │   │   ├── handoff-log.md           handoff protocol and escalation rules
 │   │   ├── conventions-template.md  section skeleton for the conventions file
@@ -234,7 +234,7 @@ paths:
   tests: [tests]
   specs: .agent-pipeline/tasks
   worktrees: .agent-pipeline/worktrees
-  conventions: CLAUDE.md      # or AGENTS.md
+  conventions: CLAUDE.md      # or AGENTS.md — no default; see note below
   # review_checklist: .agent-pipeline/review-checklist.md   # optional
 
 git:
@@ -256,6 +256,16 @@ wrong here costs an entire branch of invalid work.
 `node_modules`, `.env`) that do not exist in a freshly created worktree. When
 declared, the orchestrator runs the script before any phase; when absent, it
 proceeds directly.
+
+`paths.conventions` has no default. A project must set it explicitly, to
+whatever document already holds its rules — the file its agent tooling
+already reads. This document names `CLAUDE.md` and `AGENTS.md` above only as
+concrete examples, because it speaks to a developer configuring a specific
+harness. `core/contracts/pipeline-config.md`, the neutral file the pipeline
+itself reads at runtime, names neither: it deliberately names no default
+conventions file, because doing so would embed a harness assumption into a
+layer that must stay harness-neutral. The two documents are for different
+audiences, and disagreeing here is by design, not an oversight.
 
 ## Tracker layer
 
@@ -344,8 +354,9 @@ handoff log format, and the rule against improvising workflow steps.
 None of that is a project fact — it is pipeline protocol. All of it moves into
 `core/contracts/`.
 
-Practical consequence: a new project adopts the pipeline with a `pipeline.yaml`
-and **no** mandatory sections in its conventions file. The conventions file goes
+Practical consequence: a new project adopts the pipeline with a
+`.agent-pipeline/config.yaml` and **no** mandatory sections in its conventions
+file. The conventions file goes
 back to holding only what belongs to the project — architecture, patterns,
 pitfalls.
 

@@ -42,7 +42,7 @@ paths:
   tests: [tests]
   specs: .agent-pipeline/tasks
   worktrees: .agent-pipeline/worktrees
-  conventions: CONVENTIONS.md
+  conventions: CONVENTIONS.md  # example only — no default; see note below
   # review_checklist: .agent-pipeline/review-checklist.md   # optional
 
 git:
@@ -54,11 +54,18 @@ pr:
   enabled: true
 ```
 
-`paths.conventions` names the project's conventions document — the file
-holding its architecture, patterns, and pitfalls. This contract does not
-mandate a default file name for it: projects commonly point this at whatever
-rules file their agent tooling already reads, and `CONVENTIONS.md` above is
-only an example value.
+`paths.conventions` has no default. Every project must set it explicitly, to
+whatever document already holds its rules — commonly the same file its agent
+tooling already reads. `CONVENTIONS.md` above is only an illustrative example
+value, not a fallback the pipeline assumes when the key is absent; an absent
+`paths.conventions` key is handled like any other missing required key, under
+Fail-fast protocol below, not silently defaulted.
+
+This contract names no specific filename on purpose: naming one would embed
+an assumption about which harness a project uses into a file that must stay
+harness-neutral. A design document aimed at developers configuring a specific
+harness may name concrete files for that harness as examples; this contract,
+which the pipeline itself reads at runtime across every harness, does not.
 
 `worktree_setup` covers dependencies excluded from version control (virtual
 environments, installed packages, local `.env` files) that do not exist in a
