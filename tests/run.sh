@@ -70,6 +70,10 @@ assert_exit 1 "adapter-coverage checker rejects an adapter directory missing a c
   checks/adapters-cover-core.sh fixture tests/fixtures/adapters-missing-coverage
 assert_exit 1 "adapter-coverage checker rejects a harness with no adapter directory at all" \
   checks/adapters-cover-core.sh nonexistent-harness
+assert_exit 0 "every core phase and flow has a Cursor adapter" \
+  checks/adapters-cover-core.sh cursor
+assert_exit 0 "installer creates cursor links in a fixture project" \
+  tests/cases/install-cursor.sh
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
