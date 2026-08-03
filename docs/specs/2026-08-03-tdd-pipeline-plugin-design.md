@@ -1,4 +1,4 @@
-# Design — `tdd-pipeline`: a portable agent-driven development pipeline
+# Design — `tdd-pipeline`: a portable, harness-agnostic development pipeline
 
 **Date:** 2026-08-03
 **Status:** approved, ready for implementation planning
@@ -8,20 +8,24 @@
 A mature agent-driven development pipeline already exists and works end to end:
 from task creation to an open pull request, with mandatory TDD, spec review
 before implementation, and code review after it. It lives inside a single
-project and is wired to that project: stack, test and lint commands, absolute
-paths, issue tracker, ID prefix.
+project and is wired to that project — stack, test and lint commands, absolute
+paths, issue tracker, ID prefix — and to a single agent harness.
 
-The goal is to extract the pipeline's mechanics into a reusable plugin,
-installable in any project, leaving no trace of the originating project.
+The goal is to extract the pipeline's mechanics into a reusable package,
+installable in any project on any supported harness, leaving no trace of the
+originating project.
 
 ## Decisions
 
 | Decision | Choice |
 |---|---|
-| Distribution | Claude Code plugin, in the `dfrnks/claude-plugins` marketplace repo |
+| Harnesses | Claude Code and Cursor, first-class both |
+| Packaging | Harness-neutral `core/`, thin per-harness adapters |
+| Distribution | Git repo `dfrnks/agent-pipeline`; native plugin install for Claude Code, install script for Cursor |
 | Project configuration | `.claude/pipeline.yaml` (deterministic) + the project's conventions file (prose) |
 | Issue tracker | Pluggable: `none` (default) \| `linear` \| `github` |
-| Stack rules | Never in the plugin; always in the project's conventions file, derived by `/conventions` |
+| Stack rules | Never in the package; always in the project's conventions file, derived by `/conventions` |
+| Worktree creation | Plain `git worktree add`, never a harness-specific isolation primitive |
 | Command surface | Six commands, two families: setup and work |
 | Entry point | A single `/task`, end to end, with a confirmation gate after the spec |
 | Originating project | Left untouched; no migration in v1 |
@@ -32,18 +36,132 @@ installable in any project, leaving no trace of the originating project.
 **Language.** Every document, prompt, README, comment, and error message in this
 repository is written in English.
 
-**No leakage.** No file in the plugin — prompt, README, example, frontmatter, or
-error message — may contain a real project name, absolute path, person's name,
-or organization identifier. Examples use `my-app` and `TASK-1` style IDs. A
-final `grep` gate validates this before any push.
+**No leakage.** No file in the package — prompt, README, example, frontmatter,
+or error message — may contain a real project name, absolute path, person's
+name, or organization identifier. Examples use `my-app` and `TASK-1` style IDs.
+A final `grep` gate validates this before any push.
+
+**No harness names in `core/`.** Core files never mention a specific harness,
+tool name, or frontmatter key. They say "dispatch a subagent", not "call the
+`Agent` tool". Anything harness-specific belongs in an adapter.
+
+## Harness portability
+
+The two supported harnesses have near-parity on everything the pipeline needs.
+Verified against Claude Code and Cursor Agent v2026.07:
+
+| Capability | Claude Code | Cursor | Where the difference is handled |
+|---|---|---|---|
+| Custom subagents | `agents/*.md` | `.cursor/agents/*.md` | adapter — same file shape, different location |
+| Subagent frontmatter | `name`, `description`, `model`, `permissionMode`, `memory` | `name`, `description` | adapter |
+| Subagent dispatch | `Agent` tool | `Task` tool | adapter names the tool; core says "dispatch a subagent" |
+| Slash commands | `commands/*.md` | `.cursor/commands/*.md` | adapter |
+| Persistent project rules | `CLAUDE.md` | `AGENTS.md`, `.cursor/rules/*.mdc` | `paths.conventions` in config |
+| Skills | `SKILL.md` | `SKILL.md` | identical |
+| MCP | yes | yes | identical |
+| Worktree isolation | `isolation: "worktree"` | `best-of-n-runner` subagent | **neither** — see below |
+
+Everything else — the phase prompts, the config contract, the spec template, the
+handoff-log protocol, git, and the tracker layer — is identical prose and lives
+in `core/` exactly once.
+
+### Worktrees use plain git
+
+The inherited design asked the harness to create the worktree. That primitive
+differs between harnesses, and it forced two workarounds: the harness names the
+branch `worktree-<random>`, so the orchestrator had to rename it to the task ID;
+and the harness bases the worktree on the base branch's HEAD, so the spec had to
+be committed and pushed before dispatch or it would be invisible.
+
+The package uses `git worktree add <path> -b <task-id> <base>` directly. The
+branch is correct from birth, the working tree is whatever git says it is, and
+the mechanism is identical on every harness — including any future one. The only
+thing lost is automatic worktree cleanup, which the inherited design already
+never benefited from: the pipeline always writes files, so the worktree was
+always preserved anyway.
+
+## Repository layout
+
+```
+dfrnks/agent-pipeline/
+├── README.md
+├── install.sh                       symlinks an adapter into a project
+├── docs/specs/
+├── core/                            harness-neutral; the actual content
+│   ├── phases/
+│   │   ├── test.md                  red phase
+│   │   ├── execute.md               green phase
+│   │   ├── code-review.md           adjudicates implementation against spec
+│   │   ├── end.md                   lint, commit, push, PR, tracker status
+│   │   └── pipeline.md              orchestration of the four phases
+│   ├── flows/
+│   │   ├── task.md                  end-to-end entry flow
+│   │   ├── review.md                spec critique
+│   │   ├── resume.md                re-enter an interrupted pipeline
+│   │   ├── init.md                  project bootstrap
+│   │   ├── conventions.md           derive stack rules from the codebase
+│   │   └── doctor.md                verify project requirements
+│   ├── contracts/
+│   │   ├── project-requirements.md  normative list of what a project provides
+│   │   ├── pipeline-config.md       pipeline.yaml schema and semantics
+│   │   ├── spec-template.md         task spec structure + Definition of Done
+│   │   ├── handoff-log.md           handoff protocol and escalation rules
+│   │   ├── conventions-template.md  section skeleton for the conventions file
+│   │   └── review-checklist-base.md stack-agnostic review checklist seed
+│   └── trackers/{none,linear,github}.md
+└── adapters/
+    ├── claude-code/
+    │   ├── .claude-plugin/{marketplace.json,plugin.json}
+    │   ├── agents/*.md              frontmatter + pointer into core/phases/
+    │   └── commands/*.md            frontmatter + pointer into core/flows/
+    └── cursor/
+        ├── agents/*.md
+        └── commands/*.md
+```
+
+An adapter file carries only what its harness requires, plus a pointer:
+
+```markdown
+---
+name: task-test
+description: Writes the failing test suite for a task, before implementation.
+model: opus
+---
+Follow ${CLAUDE_PLUGIN_ROOT}/core/phases/test.md.
+Dispatch subagents with the `Agent` tool.
+```
+
+Fixing a rule means editing one file in `core/`, and both harnesses get it.
+
+### Installation
+
+**Claude Code** — native plugin, `${CLAUDE_PLUGIN_ROOT}` resolves `core/` paths:
+
+```
+/plugin marketplace add dfrnks/agent-pipeline
+/plugin install tdd-pipeline
+```
+
+**Cursor** — clone once, then per project:
+
+```
+./install.sh --harness cursor --project /path/to/project
+```
+
+The script symlinks `adapters/cursor/{agents,commands}/*` into the project's
+`.cursor/`, and symlinks `core/` to a stable path the adapters reference. Because
+they are symlinks, `git pull` in the clone updates every project at once.
+
+Commands are namespaced on both harnesses (`/tdd-pipeline:task`), which avoids
+collisions with any existing setup and lets the package be installed alongside
+one.
 
 ## Command surface
 
 The inherited pipeline had eleven commands with substantial overlap: a
 tracker-aware spec review wrapping a tracker-independent one, a planning command
 duplicating the first half of the start command, a deprecated alias, and four
-thin wrappers that each launched exactly one agent. The generic plugin exposes
-six.
+thin wrappers that each launched exactly one agent. The package exposes six.
 
 ### Setup — run once per project, safe to re-run
 
@@ -70,67 +188,17 @@ six.
 - `/review` merges the old `task-review` and `review-plan`. The only difference
   between them was whether a tracker item was fetched first, which the tracker
   layer now handles as a detail.
-- `/resume` replaces four single-purpose wrappers (`task-test`, `task-execute`,
-  `task-code-review`, `task-end`). Phases remain individually addressable —
-  `/tdd-pipeline:resume TASK-1 execute` — but as an argument, not as four
-  commands to remember.
+- `/resume` replaces four single-purpose wrappers. Phases remain individually
+  addressable — `/tdd-pipeline:resume TASK-1 execute` — but as an argument, not
+  as four commands to remember.
 - The deprecated `task-run` / `task-isolate-run` aliases are not carried over.
 
-## Architecture
-
-### Repository layout
-
-```
-dfrnks/claude-plugins/
-├── .claude-plugin/marketplace.json
-├── docs/specs/
-└── plugins/tdd-pipeline/
-    ├── .claude-plugin/plugin.json
-    ├── agents/
-    │   ├── task-pipeline.md         orchestrator (runs inside the worktree)
-    │   ├── task-test.md             red phase
-    │   ├── task-execute.md          green phase
-    │   ├── task-code-review.md      adjudicates implementation against spec
-    │   └── task-end.md              lint, commit, push, PR, tracker status
-    ├── commands/
-    │   ├── init.md
-    │   ├── conventions.md
-    │   ├── doctor.md
-    │   ├── task.md
-    │   ├── review.md
-    │   └── resume.md
-    ├── references/
-    │   ├── project-requirements.md  normative list of what a project must provide
-    │   ├── pipeline-config.md       pipeline.yaml schema and semantics
-    │   ├── spec-template.md         task spec structure + Definition of Done
-    │   ├── handoff-log.md           Agent Handoff Log protocol and escalation rules
-    │   ├── conventions-template.md  section skeleton for the conventions file
-    │   ├── review-checklist-base.md stack-agnostic review checklist seed
-    │   ├── tracker-none.md
-    │   ├── tracker-linear.md
-    │   └── tracker-github.md
-    └── README.md
-```
-
-Installation in a consuming project:
-
-```
-/plugin marketplace add dfrnks/claude-plugins
-/plugin install tdd-pipeline
-```
-
-Commands and agents are namespaced (`/tdd-pipeline:task`,
-`subagent_type: "tdd-pipeline:task-test"`). This avoids collisions with any
-`.claude/` directory the project already has, so the plugin can be installed
-side by side with an existing setup.
-
-Files under `references/` are loaded by path via `${CLAUDE_PLUGIN_ROOT}`. Each
-contract — config schema, spec template, handoff protocol — exists in exactly
-one place instead of being duplicated across the five agent prompts.
-
-### Configuration contract
+## Configuration contract
 
 `.claude/pipeline.yaml`, in the consuming project. It is the only required file.
+The path stays `.claude/` on every harness: it is the pipeline's own directory,
+not a harness directory, and a single location keeps a project working when the
+developer switches tools.
 
 ```yaml
 version: 1
@@ -152,7 +220,7 @@ paths:
   tests: [tests]
   specs: .claude/tasks
   worktrees: .claude/worktrees
-  conventions: CLAUDE.md
+  conventions: CLAUDE.md      # or AGENTS.md
   # review_checklist: .claude/review-checklist.md   # optional
 
 git:
@@ -164,22 +232,22 @@ pr:
   enabled: true
 ```
 
-**Fail-fast is mandatory.** Every agent reads this file at step 0. If it is
-missing, or if a key the agent needs is absent, the agent stops immediately and
-names the missing key. No agent infers test or lint commands from
-`package.json`, `pyproject.toml`, or `Makefile`: the pipeline runs unattended,
-and guessing wrong here costs an entire branch of invalid work.
+**Fail-fast is mandatory.** Every phase reads this file at step 0. If it is
+missing, or if a key that phase needs is absent, it stops immediately and names
+the missing key. Nothing infers test or lint commands from `package.json`,
+`pyproject.toml`, or `Makefile`: the pipeline runs unattended, and guessing
+wrong here costs an entire branch of invalid work.
 
 `worktree_setup` covers dependencies excluded from version control (`.venv`,
 `node_modules`, `.env`) that do not exist in a freshly created worktree. When
 declared, the orchestrator runs the script before any phase; when absent, it
 proceeds directly.
 
-### Tracker layer
+## Tracker layer
 
-`tracker.type` selects which `references/tracker-*.md` the agent loads. The
-tracker is involved at exactly two points: resolving or creating the item at the
-start of `/task`, and updating status in `task-end`. Everything else — branch,
+`tracker.type` selects which `core/trackers/*.md` file is loaded. The tracker is
+involved at exactly two points: resolving or creating the item at the start of
+`/task`, and updating status in the end phase. Everything else — branch,
 worktree, spec, handoff log, PR — is identical across all three modes.
 
 - **`none`** (default): the ID comes from the command argument. Local spec, no
@@ -195,56 +263,52 @@ worktree, spec, handoff log, PR — is identical across all three modes.
 
   1. resolve or create the tracker item          → TASK-1
   2. write the spec                              → paths.specs/TASK-1.md
-  3. review the spec against the codebase        → /review, inline
+  3. review the spec against the codebase        → core/flows/review.md, inline
   4. ── GATE ── present the spec, ask to proceed
-  5. dispatch the orchestrator in a worktree     → branch TASK-1
-       task-test → task-execute → task-code-review → task-end
+  5. git worktree add paths.worktrees/TASK-1 -b TASK-1 <base>
+     run git.worktree_setup, if configured
+     dispatch the orchestrator with that worktree as its working directory
+       test → execute → code-review → end
   6. report: verdict, PR URL, worktree path
 ```
 
-### One worktree, not two
-
-The inherited design created a named worktree for planning, then asked the
-harness for a second worktree when the pipeline started — which is why it needed
-a pre-dispatch rule requiring the spec to be committed to the base branch first,
-so the second worktree could see it.
-
-Merging the commands removes the problem instead of documenting it. Steps 1–4
-touch no source code: they explore read-only and write one spec file, which is
-committed to the base branch, where specs belong. Step 5 requests exactly one
-worktree from the harness, renames its branch to the task ID, and all code
-changes happen there. The local repository never leaves `git.base_branch`.
+Steps 1–4 touch no source code: they explore read-only and write one spec file,
+committed to the base branch, where specs belong. The local repository never
+leaves `git.base_branch`; all code changes happen in the worktree.
 
 ### The gate is the plan-only path
 
-Step 4 is a hard stop that requires user confirmation. Answering "stop" leaves a
-reviewed spec committed and nothing else — which is precisely what a separate
-planning command used to provide. The gate is also where the inherited design's
-`review-plan` precondition lived; it stays load-bearing, because the agent that
+Step 4 is a hard stop requiring user confirmation. Answering "stop" leaves a
+reviewed spec committed and nothing else — precisely what a separate planning
+command used to provide. The gate is also where the inherited design's
+review-plan precondition lived; it stays load-bearing, because the agent that
 wrote the spec is the wrong one to find its gaps.
 
-## Making the agents generic
+## Making the phases generic
 
 Each inherited prompt is split in two: mechanics, which stay and become
-parameterized by config; and stack rules, which leave the plugin and become a
+parameterized by config; and stack rules, which leave the package and become a
 read of `paths.conventions`.
 
-| Agent | Stays | Leaves |
+| Phase | Stays | Leaves |
 |---|---|---|
-| `task-pipeline` | isolation guard, branch rename to the task ID, sync with base branch, orchestration of the four phases | absolute repository path, hardcoded setup script |
-| `task-test` | mandatory study of existing test patterns, test plan by dimension, red-phase verification, handoff log, commit | test framework, mocking patterns, paths, endpoint conventions |
-| `task-execute` | handoff log read, test protection contract, critic-style self-review, per-DoD verification loop, mandatory lint gate, commit, ≤300-character report | architecture rule block, lint and test commands, migration procedure |
-| `task-code-review` | spec compliance, test integrity, test quality, security and isolation, manifest verification against the checklist, three-level verdict | layer-specific rules, commands, paths |
-| `task-end` | changed-area detection, lint, persistence of discoveries into the conventions file, commit and push, PR, tracker status, worktree cleanup hint | hardcoded lint tools, package structure, hardcoded worktree path |
+| `pipeline` | working-directory guard, sequencing of the four phases, verdict aggregation | absolute repository path, hardcoded setup script, harness isolation primitive |
+| `test` | mandatory study of existing test patterns, test plan by dimension, red-phase verification, handoff log, commit | test framework, mocking patterns, paths, endpoint conventions |
+| `execute` | handoff log read, test protection contract, critic-style self-review, per-DoD verification loop, mandatory lint gate, commit, ≤300-character report | architecture rule block, lint and test commands, migration procedure |
+| `code-review` | spec compliance, test integrity, test quality, security and isolation, manifest verification against the checklist, three-level verdict | layer-specific rules, commands, paths |
+| `end` | changed-area detection, lint, persistence of discoveries into the conventions file, commit and push, PR, tracker status, worktree cleanup hint | hardcoded lint tools, package structure, hardcoded worktree path |
 
-### Portable isolation guard
+The ≤300-character phase reports are what make the pipeline portable across
+harnesses and resumable: all real state lives in files — the config, the spec
+with its handoff log, and git — never in a conversation. Any phase can run in a
+fresh context, on either harness, at any time.
 
-The guard preventing the orchestrator from running in the main repository
-currently compares against an absolute path. The portable version compares
-`git rev-parse --show-toplevel` with the parent directory of
-`git rev-parse --git-common-dir`: if they are equal, the process is in the main
-repository rather than a worktree. This works in any repository, with no
-configuration.
+### Portable working-directory guard
+
+The guard preventing the orchestrator from operating on the main repository
+compares `git rev-parse --show-toplevel` with the parent directory of
+`git rev-parse --git-common-dir`: if they are equal, it is the main repository
+rather than a worktree. Pure git, no configuration, no harness dependency.
 
 ### Primary risk and mitigation
 
@@ -252,47 +316,47 @@ Replacing inline rules with a pointer to the conventions file reduces
 determinism: an inline rule is always read, while a pointer depends on the agent
 finding and applying the right section.
 
-Mitigation on two ends: `task-execute` cites in the handoff log the exact
-convention lines it applied, and `task-code-review` checks those citations
-against the file. If an agent found no rule covering an area it touched, that
+Mitigation on two ends: the execute phase cites in the handoff log the exact
+convention lines it applied, and the code-review phase checks those citations
+against the file. If a phase found no rule covering an area it touched, that
 surfaces as an explicit warning in the verdict instead of passing silently.
 
 ## Inversion: pipeline mechanics leave the conventions file
 
 In the originating project, the conventions file accumulated pipeline protocol
 mixed with project facts: the mandatory task spec structure, subtask structure,
-Agent Handoff Log format, and the rule against improvising workflow steps.
+handoff log format, and the rule against improvising workflow steps.
 
 None of that is a project fact — it is pipeline protocol. All of it moves into
-`references/spec-template.md` and `references/handoff-log.md` inside the plugin.
+`core/contracts/`.
 
-Practical consequence: a new project adopts the pipeline with a
-`pipeline.yaml` and **no** mandatory sections in its conventions file. The
-conventions file goes back to holding only what belongs to the project —
-architecture, patterns, pitfalls.
+Practical consequence: a new project adopts the pipeline with a `pipeline.yaml`
+and **no** mandatory sections in its conventions file. The conventions file goes
+back to holding only what belongs to the project — architecture, patterns,
+pitfalls.
 
 ## Project requirements and their bootstrap
 
-The plugin does not work against an empty project. It requires a small set of
+The pipeline does not work against an empty project. It requires a small set of
 artifacts to exist, and — critically — it requires the conventions file to have
 **real content**. An empty conventions file silently defeats the central design
-choice of this plugin: `task-execute` and `task-code-review` stop enforcing
-inline rules and instead read the project's rules, so with nothing to read they
-enforce nothing while still reporting success.
+choice: the execute and code-review phases stop enforcing inline rules and
+instead read the project's rules, so with nothing to read they enforce nothing
+while still reporting success.
 
-`references/project-requirements.md` is the single normative list. Everything
-else in the plugin points at it instead of restating it.
+`core/contracts/project-requirements.md` is the single normative list.
+Everything else points at it instead of restating it.
 
 | Requirement | Required | Created by | Validated by |
 |---|---|---|---|
-| `.claude/pipeline.yaml` with every key the configured mode uses | yes | `/init` | every agent, step 0 |
+| `.claude/pipeline.yaml` with every key the configured mode uses | yes | `/init` | every phase, step 0 |
 | Git repository with `git.base_branch` present | yes | — | `/doctor`, `/task` |
 | `paths.specs` directory | yes | `/init` | `/doctor` |
 | `paths.worktrees` directory, git-ignored | yes | `/init` | `/doctor` |
-| `paths.conventions` file, non-empty, with derived stack rules | yes | `/conventions` | `/doctor`, `task-execute` |
+| `paths.conventions` file, non-empty, with derived stack rules | yes | `/conventions` | `/doctor`, execute phase |
 | `.claude/agent-memory/` directory | no | `/init` | `/doctor` |
 | `paths.review_checklist` | no | `/conventions` | `/doctor` |
-| `git.worktree_setup` script, if dependencies are git-ignored | conditional | `/init` proposes | `task-pipeline` |
+| `git.worktree_setup` script, if dependencies are git-ignored | conditional | `/init` proposes | `/task` |
 | Tracker auth (Linear MCP or `gh auth`) | conditional on `tracker.type` | — | `/doctor`, `/task` |
 
 ### `/tdd-pipeline:init`
@@ -316,23 +380,23 @@ Derives the project's stack rules from the codebase and writes them into
 `paths.conventions`. Re-runnable — `/init` is one-shot, but projects drift, and
 a stale conventions file degrades every downstream review.
 
-1. Dispatch Explore agents in parallel over the codebase to derive what is
-   actually practiced: layering and module boundaries, error-handling
-   convention, naming, auth and authorization pattern, data access pattern,
-   test structure and mocking approach, formatting and lint rules.
-2. Distinguish **rule** from **occurrence**: a pattern is only proposed as a
-   rule when it holds across multiple independent call sites. A single example
+1. Dispatch exploration subagents in parallel to derive what is actually
+   practiced: layering and module boundaries, error-handling convention, naming,
+   auth and authorization pattern, data access pattern, test structure and
+   mocking approach, formatting and lint rules.
+2. Distinguish **rule** from **occurrence**: a pattern is proposed as a rule
+   only when it holds across multiple independent call sites. A single example
    is reported as an observation, not a rule.
 3. Present the derived rules for confirmation, grouped by area, each with the
-   `file:line` evidence it was derived from. The user accepts, edits, or drops
-   each group.
+   `file:line` evidence it came from. The user accepts, edits, or drops each
+   group.
 4. Write accepted rules into `paths.conventions` under managed section markers,
    so a later re-run updates that section without touching hand-written prose
    around it.
 5. Derive `paths.review_checklist` from the accepted rules, seeded by
-   `references/review-checklist-base.md` (the stack-agnostic items: auth on new
-   endpoints, input validation, error paths tested, no secrets in code,
-   migration reversibility).
+   `core/contracts/review-checklist-base.md` — the stack-agnostic items: auth on
+   new endpoints, input validation, error paths tested, no secrets in code,
+   migration reversibility.
 
 On re-run against a populated file, it reports drift — rules in the file no
 longer practiced in code, and practices in code with no rule — rather than
@@ -340,28 +404,29 @@ overwriting blindly.
 
 ### `/tdd-pipeline:doctor`
 
-Re-runnable validation of the requirements table above. Reports each item as
-pass, fail, or not-applicable, and with `--fix` offers to create what is
-missing, delegating to `/init` or `/conventions` as appropriate.
+Re-runnable validation of the requirements table. Reports each item as pass,
+fail, or not-applicable, and with `--fix` offers to create what is missing,
+delegating to `/init` or `/conventions` as appropriate.
 
 Two jobs beyond first-time setup: diagnosing a project where the pipeline
-started failing, and serving as the upgrade path when a new plugin version adds
-a requirement. It is cheap to run and safe to run repeatedly.
+started failing, and serving as the upgrade path when a new version adds a
+requirement. It is cheap and safe to run repeatedly.
 
 A conventions file that exists but is effectively empty is a **fail**, not a
-pass — that is the specific failure mode this whole section exists to prevent.
+pass — that is the specific failure mode this section exists to prevent.
 
 ## Agent memory
 
-Agents keep `memory: project` and write to `.claude/agent-memory/<agent>/`. That
-mechanism is already generic and stays. The long block of memory instructions
-pasted inline into one of the inherited prompts is removed: the harness already
-injects that content, and the manual copy only duplicates and rots.
+Phases record durable workflow learnings in `.claude/agent-memory/<phase>/`,
+plain Markdown files read at phase start. This is deliberately file-based rather
+than using a harness memory feature, for the same reason as everything else: it
+survives a harness switch. Claude Code adapters may additionally set
+`memory: project` in frontmatter, which is a convenience, not a dependency.
 
 ## Validation
 
 A throwaway repository, plain Python, `tracker: none`, one small real task end
-to end:
+to end — **run twice, once per harness**:
 
 ```
 /tdd-pipeline:init
@@ -372,22 +437,27 @@ Acceptance criteria:
 
 1. `/init` produces a working config and a conventions file with rules actually
    derived from the code, not a placeholder.
-2. `/doctor` passes on the bootstrapped project, and fails on a project where
-   the conventions file has been emptied.
+2. `/doctor` passes on the bootstrapped project, and fails on a project whose
+   conventions file has been emptied.
 3. `/task` reaches `SHIPPED` with an open PR, without manual intervention beyond
    the spec gate.
-4. Every phase left its entry in the Agent Handoff Log.
-5. `task-code-review` actually blocks when a test is weakened — verified by
+4. Every phase left its entry in the handoff log.
+5. The code-review phase actually blocks when a test is weakened — verified by
    deliberately injecting a weakened assertion.
 6. `/resume TASK-1 execute` re-enters a pipeline interrupted after the red phase.
-7. `grep -riE` over the plugin repository returns no real project name, absolute
-   path, person's name, or organization identifier.
+7. **Cross-harness resume**: a pipeline started on one harness is resumed on the
+   other and completes. This is the real test that state lives in files.
+8. `grep -riE` over the repository returns no real project name, absolute path,
+   person's name, or organization identifier; and `grep` over `core/` returns no
+   harness name or harness-specific tool name.
 
 No existing project is touched during validation.
 
 ## Out of scope
 
 - `/adr`, `/fix-bug`, `/review-pr` — independent of the pipeline; they become a
-  second plugin in the same marketplace later.
+  second package in the same repo later.
+- Harnesses beyond Claude Code and Cursor. The core/adapter split is what makes
+  adding one later cheap; doing it now is speculative.
 - Prebuilt per-stack convention packs.
-- Migrating any existing project to consume the plugin.
+- Migrating any existing project to consume the package.
