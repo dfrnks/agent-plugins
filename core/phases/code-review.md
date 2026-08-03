@@ -29,22 +29,29 @@ against what the task actually asked for rather than against a guess at it.
 Then read the `## Agent Handoff Log` section in full, per
 `core/contracts/handoff-log.md`. The test phase and the execute phase each
 left a dated entry there. From the execute phase's entry, this phase relies
-on two things in particular:
+on two blocks in particular:
 
+- The `### Implementation Manifest`: one line per Definition of Done item,
+  mapping it to the `<file>:<line>` that satisfies it and a claim about
+  what that line does, plus one further line for each checklist-relevant
+  area the change touched (a new entry point, an authorization check,
+  input validation, a schema change, a secret or credential path). This is
+  what Step 3's fifth dimension spot-checks and builds its coverage scan
+  from.
 - The `### Conventions Applied` block: each rule the execute phase says it
   applied, with a citation to `paths.conventions` and where it applied it,
   plus a line for every area where it found no rule.
-- Everything else the entry records: deviations from the spec and the
-  reasoning for each, any test the execute phase flagged as appearing
-  wrong, and non-obvious implementation decisions. Nothing else hands this
-  phase a pre-digested account of what changed and why — it is the closest
-  thing to a manifest this pipeline produces, and it is read in full rather
-  than skimmed, since a claim skipped here is a claim this phase never
-  actually checked.
+
+Also note deviations from the spec and the reasoning for each, any test the
+execute phase flagged as appearing wrong, and non-obvious implementation
+decisions — the rest of what the entry records, needed throughout Step 3.
 
 If either phase's entry is missing or empty, treat that itself as a
 finding: this phase has no shortcut left and must reconstruct the missing
-context from the diff and the spec directly.
+context from the diff and the spec directly. A missing
+`### Implementation Manifest` block is a finding under its own name, not
+folded into this general case — see Step 3's fifth dimension for how it is
+handled specifically.
 
 ## Step 2 — Read the full diff
 
@@ -133,19 +140,41 @@ silent rewrite, and disagreeing with it is not an automatic blocker either
 
 ### 5. Checklist verification
 
-Read the execute-phase handoff log entry identified in Step 1 and spot-check
-two or three of its claims — a deviation, a non-obvious decision, an
-applied convention — directly against the code. This substitutes for
-reading every changed file line by line: a log entry whose claims hold up
-under spot-checking is good evidence the rest holds up too, and one whose
-claims don't is a reason to read further before trusting it.
+This dimension is what makes reviewing a large diff affordable: instead of
+re-reading every changed file, the manifest is trusted strategically —
+sampled and cross-checked, not re-derived from scratch.
 
-Then, when `paths.review_checklist` is configured, scan it for items
-relevant to this change that the log entry does not mention, and verify
-those directly — the log entry tells this phase what the execute phase
-thought was worth recording, not what a checklist built from the project's
-own history says is worth checking. An item the checklist flags that the
-log never touches is exactly the gap this step exists to close.
+1. **Read the `### Implementation Manifest`** identified in Step 1 in full.
+2. **Spot-check two or three of its lines** by following each cited
+   `<file>:<line>` and confirming the code at that location actually does
+   what the line claims. Choose which lines to check deliberately, not the
+   first two or three in the list: prefer a line touching security or a
+   data-boundary check, and a Definition of Done item whose mapping to code
+   is least obvious — the lines most likely to hide a problem if the claim
+   is wrong, not the ones most likely to be right.
+3. **Scan `paths.review_checklist`**, when configured, for items relevant
+   to this change that the manifest does not mention, and verify those
+   directly — the manifest tells this phase what the execute phase thought
+   was worth recording, not what a checklist built from the project's own
+   history says is worth checking. An item the checklist flags that the
+   manifest never touches is exactly the gap this step exists to close.
+
+Two rules govern how the results of this dimension are treated, because
+either one skipped turns the dimension from a real check into a formality:
+
+- **A missing `### Implementation Manifest` block is a warning in its own
+  right**, named as such, never a silent cue to fall back to reading every
+  file instead. Compensating quietly for a missing manifest means nobody
+  downstream ever learns the artifact stopped being produced — which is
+  exactly the kind of gap that survives a review precisely because the
+  reviewer worked around it instead of naming it.
+- **An inaccurate manifest line is worse than a missing one, and is treated
+  that way.** A claim that overstates or misdescribes what the cited code
+  does sends attention toward a spot that merely confirms a false claim,
+  away from wherever the actual gap is. When a spot-check fails, escalate
+  the severity of the finding beyond what the same defect would otherwise
+  earn — do not just note the correction and move on as if the manifest had
+  never made the claim.
 
 ## Step 4 — Classify findings
 
@@ -178,6 +207,10 @@ following `core/contracts/handoff-log.md`. Include:
 - The result of the test-integrity check from Step 3's fourth dimension —
   which commits touched test files, and confirmation that each was
   inspected, not merely listed.
+- The result of the manifest spot-check from Step 3's fifth dimension —
+  which lines were checked and why those were chosen, which held up and
+  which didn't, and which checklist items required direct verification
+  because the manifest never mentioned them.
 - Any adjudication made on a test the execute phase flagged as appearing
   wrong, with the reasoning.
 - The verdict from Step 7.
