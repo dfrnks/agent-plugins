@@ -41,6 +41,26 @@ passing, an endpoint returning a specific shape. An item with no
 attached check is a sign the item is not actually verifiable yet — resolve
 that before moving on, rather than discovering it at Step 7.
 
+An item that is ambiguous, or that contradicts a rule in
+`paths.conventions`, must be flagged now, before any code is written. The
+cost of surfacing a bad requirement rises steeply once implementation has
+started — cheap to raise here, expensive to unwind three files in.
+
+### Stop-and-escalate conditions
+
+Three further conditions call for the same treatment, wherever in this
+phase they surface, not only at intake:
+
+- A Definition of Done item that is technically impossible given existing
+  constraints must never be silently dropped. Explain why it cannot be
+  satisfied as written, and propose the closest valid alternative.
+- If implementing one Definition of Done item breaks another, resolve the
+  conflict explicitly and document the trade-off in the handoff log —
+  never pick one silently and let the other regress unremarked.
+- If the task turns out to require touching infrastructure or deployment
+  configuration beyond what the task's own scope implied, stop and ask
+  before proceeding, rather than expanding scope unilaterally.
+
 ## Step 2 — Plan before editing
 
 Before touching any file:
