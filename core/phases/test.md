@@ -120,15 +120,42 @@ merely restates the implementation the author already had in mind.
 ## Step 5 — Verify the tests fail
 
 Run `commands.test`, with `{target}` substituted for the module or file
-this task's tests live in. Confirm every new test fails, and that each one
-fails for the reason the test asserts — not from a typo, an import error,
-or a broken fixture, all of which produce a failure that looks red but
-proves nothing about the contract.
+this task's tests live in. Confirm every new test that describes behavior
+not yet implemented fails, and that each one fails for the reason the test
+asserts — not from a typo, an import error, or a broken fixture, all of
+which produce a failure that looks red but proves nothing about the
+contract. A regression guard is the deliberate exception to "every new test
+fails" — see below.
 
 If a new test unexpectedly passes against the current, pre-implementation
-code, treat that as a defect in the test, not a shortcut: figure out why it
-passed before implementation exists, and fix the test so it genuinely
-exercises the missing behavior.
+code, do not assume it is a defect — first find out *why* it passed, since
+two different situations produce the same green result and call for
+opposite responses:
+
+- **It passed because the behavior it checks already exists**, unrelated
+  to what this task adds — a regression guard, proving a preservation
+  criterion in the spec's `## Definition of Done` still holds ("`add`
+  still returns the correct sum for `int` and `float` operands" is
+  something the implementation before this task already does). A test
+  like this is *supposed* to be green before this task starts; that is the
+  entire point of writing it now, alongside the new tests, rather than
+  after. Keep it, and note in Step 6's handoff log that it is a regression
+  guard passing by design, not new-behavior coverage — so the execute
+  phase and code-review both know not to expect it to flip red.
+- **It passed because it does not actually exercise the new behavior** —
+  a typo, an import error, a broken fixture, an assertion too weak to
+  distinguish the old code path from the new one, or a case the
+  pre-implementation code already happened to handle by coincidence. This
+  is the defect Step 5 exists to catch: figure out why it passed, and
+  rewrite the test so it genuinely fails against the pre-implementation
+  code for the reason it claims to.
+
+The distinction is not the pass itself — it is whether the spec asked this
+test to guard something that must keep working (keep it) or to describe
+something new that does not exist yet (fix it). When it is unclear which
+case applies, re-read the spec's `## Definition of Done` before deciding;
+guessing risks deleting the one test standing between this task and a
+silent regression.
 
 Then run `commands.test_all` to confirm the new tests did not break any
 existing, previously-passing test in the suite.
@@ -140,7 +167,8 @@ following `core/contracts/handoff-log.md`. Include:
 
 - The path to the test file(s) written and a count of tests added.
 - Confirmation that the suite is red, and why (each failure traced to
-  missing behavior, not a broken test).
+  missing behavior, not a broken test) — and, separately, which tests (if
+  any) were kept green on purpose as regression guards, per Step 5.
 - Any mock or fixture pattern established here that the execute phase
   should reuse rather than reinvent.
 - Whether `paths.conventions` held a testing section (Step 2). If it held

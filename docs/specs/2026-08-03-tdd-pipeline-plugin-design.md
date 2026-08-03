@@ -52,7 +52,7 @@ Verified against Claude Code and Cursor Agent v2026.07:
 
 | Capability | Claude Code | Cursor | Where the difference is handled |
 |---|---|---|---|
-| Custom subagents | `agents/*.md` | `.cursor/agents/*.md` | adapter — same file shape, different location |
+| Custom subagents | `agents/*.md` at the plugin root | `.cursor/agents/*.md` | adapter file shape; Claude Code's must live at the plugin root, not under `adapters/` — see below |
 | Subagent frontmatter | `name`, `description`, `model`, `permissionMode`, `memory` | `name`, `description` | adapter |
 | Subagent dispatch | `Agent` tool | `Task` tool | adapter names the tool; core says "dispatch a subagent" |
 | Slash commands | `commands/*.md` | `.cursor/commands/*.md` | adapter |
@@ -112,9 +112,11 @@ dfrnks/agent-pipeline/
 │   │   ├── conventions-template.md  section skeleton for the conventions file
 │   │   └── review-checklist-base.md stack-agnostic review checklist seed
 │   └── trackers/{none,linear,github}.md
+├── agents/*.md                      Claude Code subagents (see below for why
+│                                     these sit at the repository root, not
+│                                     under adapters/claude-code/)
 └── adapters/
     ├── claude-code/
-    │   ├── agents/*.md              frontmatter + pointer into core/phases/
     │   └── commands/*.md            frontmatter + pointer into core/flows/
     └── cursor/
         ├── agents/*.md
@@ -146,44 +148,44 @@ This is verified, not assumed: installing the plugin from a `source` scoped to
 `agents/`, `commands/`, and `.claude-plugin/` — no `core/`.
 
 The fix keeps `source: "."` — the whole repository installs, so `core/` is
-always present at `${CLAUDE_PLUGIN_ROOT}/core/...` — and narrows which files
-load as commands and agents using `plugin.json`'s own component-path fields,
-which take arbitrary paths relative to the plugin root (here, the repository
-root) instead of the default `commands/` and `agents/` directories:
+always present at `${CLAUDE_PLUGIN_ROOT}/core/...`. `plugin.json` sits at the
+repository root next to `marketplace.json`, in the same `.claude-plugin/`
+directory, rather than the plugin nesting its own `.claude-plugin/` a level
+down.
 
-```json
-{
-  "name": "tdd-pipeline",
-  "version": "0.1.0",
-  "description": "Agent-driven TDD pipeline: spec, red, green, review, ship.",
-  "commands": ["./adapters/claude-code/commands/"],
-  "agents": [
-    "./adapters/claude-code/agents/task-test.md",
-    "./adapters/claude-code/agents/task-execute.md",
-    "./adapters/claude-code/agents/task-code-review.md",
-    "./adapters/claude-code/agents/task-end.md",
-    "./adapters/claude-code/agents/task-pipeline.md"
-  ]
-}
-```
+Where the five agent files live took a second, independently verified round.
+`plugin.json`'s `agents` key, given an array of individual file paths (the
+original layout, each path under `adapters/claude-code/agents/`), installs
+without error and reports success — but loads **zero** agents. This is a
+distinct failure from the one above: it is silent, and it was not caught by
+`claude plugin details` either, because that command reports an install-time
+snapshot rather than live disk — editing a plugin's cached files in place
+does not change what it reports next, which makes it look like a display
+quirk until an install is repeated from a clean marketplace-add each time. A
+controlled experiment across three variants, each a full clean install (not
+an in-place cache edit), settled it:
 
-(`commands` accepts a directory; `agents` requires individual file paths —
-confirmed against Claude Code's plugin manifest schema.) Because `plugin.json`
-sits at the repository root next to `marketplace.json`, and its `source` is
-the same root, both files coexist in one `.claude-plugin/` directory rather
-than the plugin nesting its own `.claude-plugin/` a level down. This was
-verified by installing the plugin from a local directory marketplace pointed
-at this repository: the installed tree contained `core/`, both adapter
-directories, and — confirmed by dispatching them — every one of the five
-agents (`tdd-pipeline:task-test` and the other four) resolved
-`${CLAUDE_PLUGIN_ROOT}/core/phases/...` to a real file. `claude plugin
-details` under-reports the agent count for this layout (a display gap in that
-command, not a loading failure); actually dispatching the agents is what
-confirms they load and resolve correctly.
+| Variant | `agents` key | Result |
+|---|---|---|
+| array of five explicit file paths (the original layout) | installs cleanly, **0 agents loaded** |
+| array containing one directory path | **install fails**: `Validation errors: agents: Invalid input` |
+| key removed entirely; agent files placed at `<plugin-root>/agents/` | **5 agents loaded** |
 
-The `adapters/claude-code/` directory itself is unchanged by this — it still
-holds only `agents/*.md` and `commands/*.md`, kept symmetric with
-`adapters/cursor/`. Only the manifest that points into it moved.
+Only the third variant works. The `commands` key, by contrast, already
+accepts a directory value (`["./adapters/claude-code/commands/"]`) and loads
+correctly — that asymmetry between the two keys is exactly what made the
+`agents` failure easy to miss. The fix: the five agent files sit at
+`agents/` under the repository (= plugin) root, and `plugin.json` carries no
+`agents` key at all — Claude Code's default agent-discovery path covers it.
+`adapters/claude-code/` keeps only `commands/*.md`, which the `commands` key
+still points at explicitly, since that form is confirmed to work.
+
+Verified by a real install-uninstall cycle: `claude plugin marketplace add
+<this repository>`, `claude plugin install tdd-pipeline`, then `claude plugin
+details tdd-pipeline` reporting `Agents (5)` — `task-end`, `task-test`,
+`task-pipeline`, `task-code-review`, `task-execute` — followed by `claude
+plugin uninstall` and `claude plugin marketplace remove` to leave the
+installing machine as found.
 
 ### Installation
 

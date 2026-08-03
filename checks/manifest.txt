@@ -4,7 +4,7 @@ core/contracts/pipeline-config.md|## Schema;## Required keys by mode;## Fail-fas
 core/contracts/project-requirements.md|## Requirements;## Why a populated conventions file is mandatory
 core/contracts/spec-template.md|## Skeleton;## Completeness rules;## Subtask structure
 core/contracts/handoff-log.md|## Format;## Reading;## Writing;## Escalation routing
-core/contracts/conventions-template.md|## Managed section markers;## Area headings
+core/contracts/conventions-template.md|## Managed section markers;## Area headings;## Discoveries section markers
 core/contracts/review-checklist-base.md|## Security;## Correctness;## Tests;## Data and migrations
 core/trackers/none.md|## resolve_or_create;## set_status
 core/trackers/linear.md|## resolve_or_create;## set_status

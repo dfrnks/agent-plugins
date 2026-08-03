@@ -51,7 +51,7 @@ and one was not attempted; each is recorded with its reason.
 | 8 | The five gates pass over the whole repository | **MET** |
 | 9 | A task reaches `SHIPPED` with an open pull request | **NOT MET** |
 | 10 | Cross-harness resume: interrupt on one harness, resume on the other | **NOT ATTEMPTED** |
-| 11 | The Claude Code plugin loads its five agents | **NOT MET** |
+| 11 | The Claude Code plugin loads its five agents | **MET** (fixed after D1 — see "Defects: fix status") |
 
 ### 1 — `init` produces a config naming a test command that actually runs — MET
 
@@ -228,30 +228,49 @@ git status --short                    clean; nothing under .import/
 
 **Reason: no remote and no hosted repository exist, by decision.** Validation
 runs entirely locally; nothing was created on any hosting service and no git
-remote was added. `SHIPPED` requires the end phase to complete, and the end
-phase's Step 4 pushes unconditionally.
+remote was added. This remains true after the fix pass below and is expected
+to remain true: this repository does not create anything on a hosting service
+or add a remote as part of a repair task, so criterion 9 stays unreachable
+here regardless of what else changed.
 
-This was executed rather than assumed. TASK-1 ran through all four phases to a
-`APPROVED_WITH_WARNINGS` verdict, and the end phase completed Steps 1, 2, 3, 5,
-and 6 — lint clean, one durable rule persisted into the conventions file's
-managed section, the pull request correctly skipped because `pr.enabled` is
-`false`, and `tracker: none, no status update` reported. Step 4's
-`git push -u origin HEAD` then exited 128. The end phase therefore did not
-complete, and TASK-1 is **not** recorded as shipped.
+At the time this was run, `SHIPPED` was *additionally* unreachable for a
+second, independent reason: end.md's Step 4 pushed unconditionally, with no
+defined outcome for a missing remote (D2). TASK-1 ran through all four phases
+to an `APPROVED_WITH_WARNINGS` verdict, and the end phase completed Steps 1,
+2, 3, 5, and 6 — lint clean, one durable rule persisted, the pull request
+correctly skipped because `pr.enabled` is `false`, and `tracker: none, no
+status update` reported. Step 4's `git push -u origin HEAD` then exited 128,
+and the end phase did not complete, so TASK-1 was not recorded as shipped.
 
-Everything up to the push was exercised and is reported above under criteria 1
-through 8. The push, the pull request creation against a real base branch, and
-a `SHIPPED` result remain unexercised. See "Defects exposed" — the run turned
-up a real gap in `end.md` here, not merely an environmental limitation.
+**D2 is now fixed** — see "Defects: fix status" below, including the exact
+mechanical check verified there (`git remote` against a remote-less
+repository exits 0 with empty output, which is what Step 4's new conditional
+branches on). The original throwaway project this validation used
+(`/tmp/ap-smoke`) does not exist on the machine this fix pass ran on, so this
+was not re-proven by re-dispatching the end phase as a live agent against
+TASK-1's actual worktree the way criterion 9's original failure was — that
+remains assumed from a reading of the corrected phase file, not re-executed
+end to end. What was verified by execution is narrower: the git-level
+condition the fix relies on behaves as the new Step 4 text assumes. Criterion
+9 specifically asks for `SHIPPED` *with an open pull request*, which still
+cannot happen without a remote to open one against — hence NOT MET stands,
+now for the single reason stated at the top of this section rather than for
+D2 as well.
 
 ### 10 — Cross-harness resume — NOT ATTEMPTED
 
 Interrupting a task on one harness and resuming it on the other is the
 criterion that would prove state lives in files rather than in a session. It
 was not attempted, because neither harness could be driven live: no Cursor
-session was available at any point in this project, and the Claude Code plugin
-does not load its agents (criterion 11), so there is no second harness to
-resume onto.
+session was available at any point in this project, and — at the time this
+document was first written — the Claude Code plugin did not load its agents
+(criterion 11), so there was no second harness to resume onto. Criterion 11 is
+now fixed (see "Defects: fix status"), which removes that specific blocker,
+but this criterion is still **not attempted**: fixing D1 makes a live Claude
+Code session capable of dispatching this plugin's agents, it does not by
+itself produce the live Cursor session and the live cross-harness resume
+this criterion actually asks for, and neither was exercised as part of this
+repair pass.
 
 What *is* evidenced, and is weaker than the criterion asks for: the resumed
 execute phase in criterion 7 ran in a fresh context that had never seen the
@@ -259,10 +278,16 @@ phases before it, and reconstructed everything it needed from the spec file and
 the handoff log alone. That shows the state is in the files. It does not show
 two different harnesses reading it.
 
-### 11 — The Claude Code plugin loads its five agents — NOT MET
+### 11 — The Claude Code plugin loads its five agents — MET
 
-Settled live, and the answer is not the one the previous task expected. See
-"Defects exposed" below.
+Settled live at the time of this validation, and the answer was not the one
+the previous task expected — see "Defects exposed" below for D1. It has since
+been fixed and re-verified by a real install: see "Defects: fix status".
+`claude plugin details tdd-pipeline@agent-pipeline` now reports `Agents (5)`
+— `task-end`, `task-test`, `task-pipeline`, `task-code-review`,
+`task-execute` — from a clean marketplace-add-plus-install cycle, the same
+method this document's original D1 experiment used to rule out the
+install-time-snapshot false positive.
 
 ## Defects exposed
 
@@ -351,6 +376,155 @@ dropped. Appending outside the markers instead would be worse: it would not
 count toward `doctor`'s threshold and would land in the human's hand-written
 prose.
 
+## Defects: fix status
+
+All five defects above are fixed as of this repair pass. This section records
+what changed and how each fix was checked, split explicitly between what was
+verified by actually running something and what is reasoned from a corrected
+phase file rather than re-executed end to end — the same standard this
+document held itself to originally.
+
+### D1 — fixed and verified by a real install
+
+`.claude-plugin/plugin.json` no longer carries an `agents` key. The five agent
+files moved from `adapters/claude-code/agents/` to `agents/` at the repository
+(= plugin) root — the one layout the original three-variant experiment found
+that loads. `adapters/claude-code/` now holds only `commands/`.
+`checks/adapters-cover-core.sh` was updated to look for the Claude Code
+harness's agent coverage in both `adapters/claude-code/` and `agents/`, so the
+coverage gate does not regress; its negative fixture
+(`tests/fixtures/adapters-missing-coverage`) still fails the check, unchanged.
+
+Verified by execution — a real install-uninstall cycle, not a reading of the
+manifest:
+
+```
+$ claude plugin marketplace add <this repository>
+✔ Successfully added marketplace: agent-pipeline
+
+$ claude plugin install tdd-pipeline@agent-pipeline
+✔ Successfully installed plugin: tdd-pipeline@agent-pipeline (scope: user)
+
+$ claude plugin details tdd-pipeline@agent-pipeline
+tdd-pipeline 0.1.0
+  Component inventory
+  Skills (6)  conventions, doctor, init, resume, review, task
+  Agents (5)  task-end, task-test, task-pipeline, task-code-review, task-execute
+  Hooks (0)
+  MCP servers (0)
+  LSP servers (0)
+
+$ claude plugin uninstall tdd-pipeline@agent-pipeline
+✔ Successfully uninstalled plugin: tdd-pipeline (scope: user)
+
+$ claude plugin marketplace remove agent-pipeline
+✔ Successfully removed marketplace: agent-pipeline
+
+$ claude plugin marketplace list
+  (back to the original four marketplaces present before this session)
+```
+
+**Observed agent count: 5** (not "expected 5" — this is what `claude plugin
+details` reported from the clean install above). The installing machine's
+marketplace list and `settings.json` were confirmed to carry no leftover
+reference to this plugin after the uninstall. Not verified: dispatching one of
+the five agents by name through a live `Agent` tool call — this confirms the
+plugin's own component inventory, which is what D1 was about, not a full
+command-routing session (see "Claude Code" under "Carried forward as
+known-unverified", unchanged in scope).
+
+### D2 — fixed; the git-level mechanism verified, the full phase re-run not repeated
+
+`end.md` Step 4 now checks `git remote` before pushing. A non-empty result
+pushes as before; an empty result (no remote configured) skips the push and
+records the skip in Step 7's report rather than failing — the phase's success
+path no longer requires a remote. A push that fails for any other reason
+(auth, rejected non-fast-forward, network) is now an explicit stop, reported
+in Step 7, that does not proceed to Step 5. Step 5's own skip-condition list
+gained "Step 4 found no remote configured", so a local-only project also skips
+the pull request cleanly instead of reaching Step 5 with nothing to check
+against.
+
+Verified by execution, narrowly: `git remote` in a repository with no remote
+configured exits `0` with empty output, which is exactly the condition the
+new Step 4 text branches on —
+
+```
+$ git init -q && git commit --allow-empty -q -m init
+$ git remote
+$ echo "exit=$?"
+exit=0
+```
+
+The throwaway project this validation originally used (`/tmp/ap-smoke`) does
+not exist on the machine this fix pass ran on, so the fix was not re-proven by
+re-dispatching the end phase as a live agent against TASK-1's actual worktree.
+What is asserted from reading the corrected file, not re-executed: that a
+fresh dispatch of the corrected `end.md` against that same TASK-1 state would
+now skip the push and reach Step 8, producing `SHIPPED` with no PR. That
+remains assumed, not proven by execution.
+
+### D3 — fixed; a documentation-level check, not an execution one
+
+`pipeline.md` Step 5's result vocabulary gained a defined case: `STOPPED` now
+also covers "the end phase itself stopped partway through one of its own
+steps" — a push failure other than the newly-defined "no remote" skip, or a
+failed tracker update per `end.md` Step 6 — and Step 5's reason line now names
+which of those applied. Step 4.4's description of what the end phase's report
+carries was extended to say explicitly which single signal (reaching Step 8
+versus stopping short of it) decides `SHIPPED` versus `STOPPED`, so an
+executing agent no longer has to invent a result for this path.
+
+This is a wording fix to a coordination contract between two phase files, not
+something with its own runtime behavior to execute — verified by re-reading
+the two files together and confirming the vocabulary and the reason-line
+composition now agree (`checks/references-resolve.sh`,
+`checks/structure.sh`, and `tests/run.sh` all still pass, confirming the
+manifest's required headings for both files are intact and nothing else in
+the tree broke). Not verified by dispatching a pipeline phase.
+
+### D4 — fixed; a documentation-level check, not an execution one
+
+`test.md` Step 5 no longer treats every pre-implementation pass as a defect.
+It now distinguishes two cases explicitly: a test that passes because it
+guards a preservation criterion already named in the spec's Definition of
+Done (kept, and noted in the handoff log as a regression guard passing by
+design) versus a test that passes because it does not actually exercise the
+new behavior — a typo, a broken fixture, too-weak an assertion, or
+pre-implementation code that already happens to handle the case (still
+rewritten, per the original rule). Step 6's handoff-log checklist was updated
+to require noting which tests were kept as regression guards, alongside the
+existing requirement to explain why the suite is red.
+
+Verified the same way as D3: re-reading the corrected step, confirming it
+would have kept TASK-1's three regression guards rather than instructing
+their deletion, and confirming the gates still pass. Not re-executed against
+a live test phase.
+
+### D5 — fixed; a documentation-level check, not an execution one
+
+`conventions-template.md` now defines a second marker pair,
+`<!-- pipeline:discoveries:start -->` / `<!-- pipeline:discoveries:end -->`,
+disjoint from the managed section's own markers, that the end phase owns
+exclusively and the conventions flow never touches — structurally, not by
+added discipline, because the conventions flow's Step 4 already promises to
+touch nothing outside its own markers, and the discoveries markers simply sit
+outside that boundary. `end.md` Step 3 now appends durable findings there
+instead of into the managed section, using the same seven area headings.
+Items in the discoveries span do not count toward `doctor`'s five-item
+threshold, which is unchanged and still counts only the managed section — a
+discovery is a candidate for a future `conventions` run to confirm, not yet a
+reviewed rule.
+
+This removes the loss scenario D5 describes: because the conventions flow's
+Step 4 was already scoped to its own markers before this fix (that promise
+predates this repair pass), and the discoveries span is defined to sit
+outside those markers, a re-run of the conventions flow cannot touch it —
+verified by re-reading `conventions.md` Step 4's existing "never touch a
+single character outside the markers" rule against the new section's
+placement, not by running the conventions flow against a file holding both
+spans.
+
 ## Carried forward as known-unverified
 
 Everything below is a genuine gap. None of it was tested, and none of it should
@@ -391,13 +565,18 @@ filesystem, which this validation did do, does not close any of them.
 
 ### Claude Code
 
-The agent-count question is **settled**, and is recorded above as D1 rather
-than here — it is a defect, not an open question. What remains unverified is
-narrower: no live Claude Code session dispatched a command through this plugin,
-so command routing, `$ARGUMENTS` delivery, and `${CLAUDE_PLUGIN_ROOT}`
-expansion at read time were not observed in a running session. What was
-observed is that the six commands are loaded and inventoried
-(`Skills (6)  conventions, doctor, init, resume, review, task`).
+The agent-count question is **settled**, and was recorded above as D1 — a
+defect, not an open question — and is now fixed and re-verified; see
+"Defects: fix status". What remains unverified is narrower: no live Claude
+Code session dispatched a command through this plugin, so command routing,
+`$ARGUMENTS` delivery, and `${CLAUDE_PLUGIN_ROOT}` expansion at read time were
+not observed in a running session, and dispatching one of the five agents by
+name through a real `Agent` tool call (as opposed to confirming the plugin's
+own inventory reports it as loaded) was not attempted either. What was
+observed, both originally and again after the fix, is that the six commands
+and now the five agents are loaded and inventoried
+(`Skills (6)  conventions, doctor, init, resume, review, task`, `Agents (5)
+task-end, task-test, task-pipeline, task-code-review, task-execute`).
 
 ### Environment note
 
