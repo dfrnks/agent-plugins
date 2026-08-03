@@ -14,7 +14,7 @@ given, derive it from the current branch name.
 Read `.agent-pipeline/config.yaml`. Follow the fail-fast protocol in
 `core/contracts/pipeline-config.md`: stop and name the exact missing key if
 the file or a key this phase needs is absent. This phase needs
-`paths.worktrees` and, when present, `git.worktree_setup`.
+`paths.worktrees`, `paths.specs`, and, when present, `git.worktree_setup`.
 
 ## Step 1 — Verify the working directory
 
@@ -49,20 +49,49 @@ A mismatch is the same failure by another name — the worktree exists but is
 not on the branch this task expects — and stops this phase the same way,
 without editing anything.
 
-## Step 2 — Prepare dependencies
+## Step 2 — Verify the spec was reviewed
+
+Read `paths.specs/<task-id>.md` before dispatching any phase. Confirm its
+`## Agent Handoff Log` (per `core/contracts/handoff-log.md`) contains an
+entry whose heading begins with `review` — matched tolerantly: case
+insensitive, and allowing a date suffix or a qualifier to follow the name,
+so `### review (YYYY-MM-DD)`, `### Review-plan`, and `### review
+(post-implementation)` all count as a match, and only an entry with no
+resemblance to the name at all fails it.
+
+If no such entry exists, stop here and return `BLOCKED`, naming what to run
+to fix it: run the review flow against this task's spec, then re-invoke this
+phase. Do not fall back to running the phase sequence anyway, and do not
+offer a way to skip this check — a guard a caller can bypass is a
+suggestion, not a guard.
+
+This check exists for exactly the paths that reach this phase without
+passing through the `task` flow's own review gate first: a direct dispatch
+of this phase, a resume after an interruption, or an invocation against a
+worktree and spec that already exist. The happy path through `task` already
+enforces review before this phase is ever reached, which is why this looks
+redundant there — but this phase can be reached other ways, and on every one
+of them nothing else checks that the spec was ever reviewed before now. The
+reasoning is worth stating plainly, since it is easy to mistake for
+unnecessary caution: the agent that wrote a spec is the wrong one to find
+its own gaps, so a pipeline that runs the phases below against an unreviewed
+spec spends its entire budget implementing a flawed plan correctly instead
+of catching the flaw before any work starts.
+
+## Step 3 — Prepare dependencies
 
 A freshly created worktree is missing whatever the project excludes from
 version control — installed packages, a virtual environment, local
 configuration files — none of which exist there yet.
 
 If `git.worktree_setup` is configured, run it now and stop on a non-zero
-exit; do not proceed into Step 3 with dependencies unresolved, since every
+exit; do not proceed into Step 4 with dependencies unresolved, since every
 phase this step precedes assumes a working project environment and has no
 way of diagnosing a setup failure it never expected to see. If
 `git.worktree_setup` is absent, proceed directly — the project has declared
 that nothing needs preparing.
 
-## Step 3 — Run the phases
+## Step 4 — Run the phases
 
 Dispatch each phase in order — test, execute, code-review, end — as a
 **fresh subagent** from this phase's own context, never inlined into it.
@@ -75,7 +104,7 @@ of its own; do not nest worktrees.
 
 Pass the task ID to each dispatched phase.
 
-### 3.1 — test
+### 4.1 — test
 
 Dispatch the test phase. It returns a report of at most 300 characters in
 the shape:
@@ -92,7 +121,7 @@ execute phase nothing to make pass, and the code-review phase would find an
 implementation nobody asked for, because it never had a failing contract to
 satisfy in the first place. Do not dispatch execute in this case.
 
-### 3.2 — execute
+### 4.2 — execute
 
 Otherwise, dispatch the execute phase. It returns a report of at most 300
 characters in the shape:
@@ -105,7 +134,7 @@ This report has no field this phase branches on — its role here is
 confirmation that the green phase completed and committed, so code-review
 has a diff to read. Proceed to code-review.
 
-### 3.3 — code-review
+### 4.3 — code-review
 
 Dispatch the code-review phase. It returns a verdict of at most 500
 characters in the shape:
@@ -115,12 +144,12 @@ Verdict: <APPROVED|APPROVED_WITH_WARNINGS|CHANGES_REQUESTED>. Blockers: <list|no
 ```
 
 Parse the `Verdict:` field — the one part of this line control flow depends
-on; `Blockers:` and `Warnings:` are for the report in Step 4, not for this
+on; `Blockers:` and `Warnings:` are for the report in Step 5, not for this
 branch:
 
 - `APPROVED` or `APPROVED_WITH_WARNINGS` — proceed to end.
 - `CHANGES_REQUESTED` — stop the pipeline here and return `STOPPED`, carrying
-  the blocker list from the verdict line into Step 4's report. Do **not**
+  the blocker list from the verdict line into Step 5's report. Do **not**
   loop back to execute automatically. An unattended fix loop against a
   rejected review is how a pipeline burns a branch: each unsupervised pass
   makes changes the review that rejected them has never seen, so nothing in
@@ -128,7 +157,7 @@ branch:
   is a deliberate, separate re-entry into this phase, not a retry this phase
   performs on its own.
 
-### 3.4 — end
+### 4.4 — end
 
 Dispatch the end phase only on the `APPROVED` / `APPROVED_WITH_WARNINGS`
 branch above. It returns a report, one line per item, with no fixed
@@ -137,29 +166,36 @@ character cap, covering (in order) the lint result, whether a
 project conventions or phase memory, branch push confirmation, the pull
 request URL or which skip condition applied, and the tracker status result.
 This phase does not branch on any single field in that report — it carries
-the whole report into Step 4 to compose the pull request URL and the final
+the whole report into Step 5 to compose the pull request URL and the final
 result.
 
-## Step 4 — Report
+## Step 5 — Report
 
 Return, in this order:
 
 - **Result** — one of:
   - `SHIPPED` — the end phase ran and completed.
   - `STOPPED` — code-review returned `CHANGES_REQUESTED`, or Step 1's guard
-    or Step 2's dependency setup failed.
-  - `BLOCKED` — the test phase reported no failing tests.
+    or Step 3's dependency setup failed.
+  - `BLOCKED` — the test phase reported no failing tests, or Step 2 found no
+    review entry in the spec's handoff log.
 - **Branch** — the task ID confirmed in Step 1.
 - **Pull request URL** — taken from the end phase's report when `SHIPPED`;
   otherwise absent.
 - **Worktree path** — `paths.worktrees/<task-id>`.
 - On any result other than `SHIPPED`, a one-line reason so the operator
   knows where to resume: the blocker list on `STOPPED` from code-review, the
-  guard or setup failure message on `STOPPED` from Step 1 or Step 2, or the
-  confirmation that the test suite came back green on `BLOCKED`.
+  guard or setup failure message on `STOPPED` from Step 1 or Step 3, the
+  missing-review instruction from Step 2 on `BLOCKED`, or the confirmation
+  that the test suite came back green on the other `BLOCKED` case.
 
-Keep this report itself short — it is read by the operator deciding what to
-do next, not by another phase resuming from a handoff log. Anything a human
-would need to dig deeper already lives in the spec file's handoff log, which
-each dispatched phase wrote to directly; this report only points to where
-things stand, it does not restate what those phases already recorded.
+Keep this report itself short, but note that "short" here is a choice, not
+an oversight matching the leaf phases' own character caps: those caps exist
+because a leaf phase's report is read by another phase running in a fresh
+context, so the handoff log has to carry the real content. This report is
+read by a human deciding what to do next, the same job `end.md`'s own
+uncapped report serves — the rule is that a cap applies when the reader is
+another phase, not when the reader is a person. Anything a human would need
+to dig deeper already lives in the spec file's handoff log, which each
+dispatched phase wrote to directly; this report only points to where things
+stand, it does not restate what those phases already recorded.
