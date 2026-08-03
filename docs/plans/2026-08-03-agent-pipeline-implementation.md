@@ -6,7 +6,7 @@
 
 **Architecture:** All real content lives once in `core/` as harness-neutral Markdown. Adapters are ~5-line files carrying harness-specific frontmatter and a pointer into `core/`. Repository invariants (no leakage, core neutrality, resolvable references, required structure) are enforced by shell checkers driven by a manifest, and those checkers are what this plan tests against.
 
-**Tech Stack:** Markdown, POSIX shell, git. No language runtime, no build step, no third-party dependencies.
+**Tech Stack:** Markdown, bash 4+, git. No language runtime, no build step, no third-party dependencies. The checkers are development tooling for this repository only — nothing `install.sh` places in a consuming project depends on them — so bash-specific constructs are acceptable and strict POSIX portability is not a goal.
 
 **Design source:** `docs/specs/2026-08-03-tdd-pipeline-plugin-design.md`. Read it before starting.
 
