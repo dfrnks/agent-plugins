@@ -179,7 +179,10 @@ following `core/contracts/handoff-log.md`. Include:
 
 Apply the escalation routing table in `core/contracts/handoff-log.md`: a
 finding that is a durable fact about this codebase (a project convention)
-belongs in `paths.conventions`, not buried here as a task-only detail.
+belongs in `paths.conventions` — appended inside its discoveries span
+(`core/contracts/conventions-template.md`), never inside the managed section,
+which the conventions flow regenerates wholesale on its next run — not
+buried here as a task-only detail.
 
 ## Step 7 — Commit
 
@@ -200,8 +203,21 @@ line.
 Return a report of at most 300 characters, in exactly this shape:
 
 ```
-Tests: <path>. <N> tests written. Status: fail (red). Committed: yes.
+Tests: <path>. <N> tests written. Status: <fail (red)|pass (green)>. Committed: <yes|no>.
 ```
+
+`Status:` is a real field with two possible values, not a fixed string.
+Report `fail (red)` when at least one new test describing behavior this task
+adds fails for the reason it asserts — the expected outcome of this phase.
+Report `pass (green)` when no such test failed: every new test passed
+against the pre-implementation code, and Step 5 established that none of
+them was a regression guard covering a preservation criterion. That is a
+real outcome this phase can reach, and the orchestrator branches on it (see
+`core/phases/pipeline.md` Step 4.1, which stops the pipeline rather than
+handing the execute phase nothing to make pass). Never write `fail (red)`
+into this line because the shape shows it — a hardcoded status makes the
+orchestrator's only stop unreachable and hands a green suite forward as
+though it were red.
 
 Everything else — the test plan's reasoning, the conventions gap, mock
 patterns, deviations — belongs in the handoff log written in Step 6, never

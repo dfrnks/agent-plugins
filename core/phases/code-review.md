@@ -99,9 +99,12 @@ and not as "nothing to check here."
 
 Check that every new entry point carries an authorization check before it
 acts, that input arriving from outside the system is validated before use,
-that data scoped to one tenant, user, or account cannot be reached by
-supplying another one's identifier, and that no secret, token, or
-credential was added to source or test fixtures in any form.
+that — when this codebase has any notion of separate owners of data —
+data scoped to one tenant, user, or account cannot be reached by supplying
+another one's identifier, and that no secret, token, or credential was
+added to source or test fixtures in any form. A project with no such notion
+reports that dimension not applicable rather than inventing a boundary to
+check against; a project with one is never exempt from it.
 
 ### 4. Test integrity
 
@@ -235,7 +238,10 @@ following `core/contracts/handoff-log.md`. Include:
 
 Apply the escalation routing table in `core/contracts/handoff-log.md`: a
 finding that is a durable fact about the codebase belongs in
-`paths.conventions`, not buried here as a task-only detail. Note any such
+`paths.conventions` — appended inside its discoveries span
+(`core/contracts/conventions-template.md`), never inside the managed section,
+which the conventions flow regenerates wholesale on its next run — not
+buried here as a task-only detail. Note any such
 escalation here as well, so a later reader of this log knows the finding
 was acted on rather than dropped.
 

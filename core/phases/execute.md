@@ -182,8 +182,10 @@ moving to the next one:
   targets?
 - **Convention compliance** — does it match the rules extracted in Step 3?
 - **Security and isolation** — is authorization checked where the
-  conventions require it; can one account's action reach another
-  account's data?
+  conventions require it; and, when this codebase has any notion of
+  separate owners of data, can one account's action reach another
+  account's data? Where it has no such notion, this half of the check does
+  not apply and is not something to manufacture.
 - **Type and shape safety** — do the types, schemas, or interfaces this
   code introduces or touches actually match what the rest of the codebase
   expects?
@@ -265,7 +267,10 @@ following `core/contracts/handoff-log.md`. Include:
 
 Apply the escalation routing table in `core/contracts/handoff-log.md`: a
 finding that is a durable fact about this codebase belongs in
-`paths.conventions`, not buried here as a task-only detail. Note any such
+`paths.conventions` — appended inside its discoveries span
+(`core/contracts/conventions-template.md`), never inside the managed section,
+which the conventions flow regenerates wholesale on its next run — not
+buried here as a task-only detail. Note any such
 escalation here as well, so a later reader of this log knows the finding
 was acted on rather than dropped.
 

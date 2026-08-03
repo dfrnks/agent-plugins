@@ -53,6 +53,29 @@ Every other key needs a person's decision, not a detected value:
 and whether `pr.enabled`. Ask for each explicitly; do not default any of
 them silently.
 
+The draft is incomplete until it carries **every** key the "Required keys by
+mode" table in `core/contracts/pipeline-config.md` marks always-mandatory,
+not only the ones Step 1 detected and the ones above that obviously need a
+decision. The remaining always-mandatory keys are easy to omit precisely
+because nothing in this flow's own narrative forces them, and a
+configuration missing any one of them fails this flow's own Step 6 doctor
+run against the file it just wrote:
+
+- `version` — the schema version from that contract, written literally.
+- `project` — the project's own name; propose the repository directory's
+  name and let the person correct it.
+- `tracker.prefix` — the task ID prefix, which also becomes the branch
+  name. Ask; it is not derivable from the repository.
+- `paths.tests` — a list, holding every directory this project keeps tests
+  in. Propose what Step 1 found and confirm the list is complete; a project
+  that separates unit and integration tests needs both entries.
+- `paths.specs` and `paths.worktrees` — propose the contract's own layout
+  values and confirm them, rather than leaving them unset because a default
+  exists somewhere in a document; every phase reads them from this file.
+- `git.commit_trailer` — mandatory as a key, commonly empty as a value.
+  Write it explicitly, empty string included, so no phase has to decide
+  whether an absent key means "none" or "not configured yet".
+
 Present the whole draft file and ask for confirmation before writing
 anything — edit any line the person changes, and only once every key is
 settled, write `.agent-pipeline/config.yaml`. Nothing before this point has
@@ -72,6 +95,28 @@ existing entry there — a worktree checked into version control would
 duplicate every file inside it under source control twice, once in the
 worktree and once wherever the base branch already tracks it.
 
+Then **commit the configuration**, on the branch the repository is already
+on:
+
+```bash
+git add .agent-pipeline/config.yaml .gitignore
+git commit -m "pipeline: add configuration"
+```
+
+This is not bookkeeping, and it is not optional. Every phase runs inside a
+worktree created fresh from `git.base_branch`, and a fresh worktree contains
+exactly the files that branch has committed — nothing else. A
+`.agent-pipeline/config.yaml` that exists only in the main checkout's
+working tree is invisible from every phase's own Step 0, so the entire
+pipeline stops at its first step with a message telling the user to run this
+flow, in a project where this flow has already run. Committing here is what
+makes the file reachable from the place it is actually read.
+
+If `git.commit_trailer` was set to a non-empty value in Step 2, append it as
+a trailer on this commit. If the repository has uncommitted work of the
+user's own, stage only the two paths named above — never `git add .` — so
+this flow commits nothing it did not itself write.
+
 ## Step 4 — Worktree setup script
 
 A worktree created fresh from `git.base_branch` starts with nothing that
@@ -86,6 +131,16 @@ those git-ignored directories hold, and propose setting `git.worktree_setup`
 in the configuration to its path. As with every value in this flow, propose
 and wait for confirmation rather than writing the script or the config key
 unattended.
+
+Once confirmed and written, commit the script and the configuration change
+together, for the same reason Step 3 commits the configuration itself — the
+orchestrator runs this script from inside a worktree, where only committed
+files exist:
+
+```bash
+git add <setup script> .agent-pipeline/config.yaml
+git commit -m "pipeline: add worktree setup script"
+```
 
 ## Step 5 — Derive conventions
 

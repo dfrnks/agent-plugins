@@ -12,6 +12,14 @@ service, or a data pipeline alike. An item that only makes sense with a
 particular framework, language, or provider in mind does not belong here —
 it belongs in the derived rules the conventions flow writes on top.
 
+Universal in scope is not the same as universal in applicability: a few
+items below name a hazard that only some projects have (money, mirrored
+external events, multiple owners of data). Each of those states its own
+precondition, and a project the precondition does not hold for marks the
+item not applicable and moves on, exactly as the "Data and migrations"
+section already works. An item with no stated precondition applies to every
+project without exception.
+
 ## Security
 
 - [ ] Every new entry point carries an authorization check before it acts.
@@ -20,8 +28,10 @@ it belongs in the derived rules the conventions flow writes on top.
 - [ ] No secret, token, or credential appears in source code or test
       fixtures, in any form — plain, encoded, or embedded in a sample
       payload.
-- [ ] Data scoped to one tenant, user, or account cannot be reached by
-      supplying another tenant's, user's, or account's identifier.
+- [ ] When the project has any notion of separate owners of data: data
+      scoped to one tenant, user, or account cannot be reached by supplying
+      another tenant's, user's, or account's identifier. A project with a
+      single owner of all data marks this item not applicable.
 
 ## Correctness
 
@@ -29,11 +39,15 @@ it belongs in the derived rules the conventions flow writes on top.
       (`None`, `false`, `-1`, an empty collection) standing in for failure.
 - [ ] Every branch stated in the Definition of Done exists in the code —
       no branch is implied by "similar cases already handled."
-- [ ] Values representing money use an exact decimal type; a binary
-      floating-point type never holds a monetary value.
-- [ ] A timestamp that mirrors an event from an external system is read
-      from that system's own payload, never generated locally at the
-      moment of observation.
+- [ ] When the change touches monetary values: they use an exact decimal
+      type, and a binary floating-point type never holds one. A project
+      that handles no money marks this item not applicable — it is listed
+      because the failure is silent and expensive where it does apply, not
+      because every project has money in it.
+- [ ] When the change records a timestamp mirroring an event in another
+      system: it is read from that system's own payload, never generated
+      locally at the moment of observation. Not applicable to a project
+      that mirrors no external events.
 
 ## Tests
 

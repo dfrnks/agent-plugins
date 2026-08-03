@@ -90,15 +90,19 @@ that make a spec unapprovable regardless of how well everything else reads.
   treat the existing production code that already reads or writes it as
   ground truth for field names and shape — the spec aligns to that reality
   or explicitly documents the migration away from it.
-- **Adding a value to a status enum is a multi-site change.** A spec
-  proposing a new enum value covers every one of these categories before
-  approval, because a value missing from any one of them is a silent gap,
-  not a build error: read schemas exposing the column, client-side type
-  unions mirroring it, aggregation and dashboard builders that group or
-  count by it, "block on terminal status" call sites that decide what is
-  still editable, state-transition maps in synchronization code that route
-  an external status into this one, and filter and badge maps in the
-  interface that let a user see and filter by it.
+- **Adding a value to an enumerated set is a multi-site change.** A spec
+  proposing a new value for an existing enumeration — a status, a kind, a
+  role — enumerates, before approval, every site in *this* project that
+  branches on that set, because a value missing from any one of them is
+  usually a silent gap rather than a build error. Derive that list from the
+  codebase: search for every reader of the field, not only its writers. The
+  categories vary by project, and the way to find them is to follow the
+  existing values; a spec that lists only the definition site has not done
+  this. Common shapes worth checking for, none of them mandatory and none
+  of them exhaustive: places that mirror the set in a second type
+  declaration, places that aggregate or group by it, places that treat some
+  values as terminal, places that translate an external system's value into
+  this one, and places that render it for a user to see or filter by.
 
 ## Subtask structure
 
