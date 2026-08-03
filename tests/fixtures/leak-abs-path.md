@@ -1,1 +1,1 @@
-See /home/someuser/projects/thing for details.
+See /home/realname/secret/ for details.
