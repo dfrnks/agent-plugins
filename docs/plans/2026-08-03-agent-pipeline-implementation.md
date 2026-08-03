@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - **English only.** Every file in this repository — docs, prompts, comments, commit messages, error strings — is written in English.
-- **No leakage.** No file may contain a real project name, organization identifier, person's name, absolute filesystem path, or real email address. Examples use `my-app`, `TASK-1`, `tests/`, `pytest`. The one permitted real-world identifier is this repository's own owner handle and name, which installation instructions cannot work without.
+- **No leakage.** No file may contain a real project name, organization identifier, person's name, absolute filesystem path, or real email address. Examples use `my-app`, `TASK-1`, `tests/`, `pytest`. Two deliberate exemptions: this repository's own owner handle and name, which installation instructions cannot work without; and `tests/fixtures/`, whose files must contain the very patterns the checkers detect — those use invented values (`someuser`, `person@example-company.com`) and are never real.
 - **`core/` is harness-neutral.** Files under `core/` must never contain the words `claude`, `cursor`, `anthropic`, a harness variable such as `${CLAUDE_PLUGIN_ROOT}`, or a harness tool name (`Agent` tool, `Task` tool). Core says "dispatch a subagent", never which tool does it.
 - **`.import/` is gitignored** and must never be committed. It holds the inherited prompts used as porting source.
 - **Commit trailer is empty.** Commits in this repo carry no `Co-Authored-By` line.
