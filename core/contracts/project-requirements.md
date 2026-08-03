@@ -39,8 +39,11 @@ green.
 Therefore the doctor flow treats a conventions file that exists but holds no
 rules as a **fail**, never a pass. "Holds no rules" is defined concretely so
 this is a mechanical check, not a judgment call: fewer than five list items
-or headings beneath the managed-section marker that the conventions flow
-writes. A file above that threshold may still be thin, but a file below it is
-treated as equivalent to absent, and doctor reports it exactly the way it
-reports a missing file — naming the path and directing the user to the
-conventions flow.
+or headings found **between the two managed-section markers** that the
+conventions flow writes — see `conventions-template.md` for the exact marker
+pair. The count never extends past the closing marker or before the opening
+one; hand-written prose anywhere outside that span, however long, does not
+count toward the threshold. A file above that threshold may still be thin,
+but a file below it is treated as equivalent to absent, and doctor reports it
+exactly the way it reports a missing file — naming the path and directing
+the user to the conventions flow.
