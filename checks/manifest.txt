@@ -14,3 +14,6 @@ core/phases/execute.md|## Step 0 — Load configuration;## Step 1 — Read the h
 core/phases/code-review.md|## Step 0 — Load configuration;## Step 1 — Load context;## Step 2 — Read the full diff;## Step 3 — Review dimensions;## Step 4 — Classify findings;## Step 5 — Handoff log;## Step 6 — Commit;## Step 7 — Verdict
 core/phases/end.md|## Step 0 — Load configuration;## Step 1 — Detect changed areas;## Step 2 — Lint;## Step 3 — Persist durable discoveries;## Step 4 — Commit and push;## Step 5 — Open the pull request;## Step 6 — Update tracker status;## Step 7 — Report;## Step 8 — Worktree cleanup hint
 core/phases/pipeline.md|## Step 0 — Load configuration;## Step 1 — Verify the working directory;## Step 2 — Verify the spec was reviewed;## Step 3 — Prepare dependencies;## Step 4 — Run the phases;## Step 5 — Report
+core/flows/task.md|## Step 0 — Load configuration;## Step 1 — Resolve the item;## Step 2 — Write the spec;## Step 3 — Review the spec;## Step 4 — Gate;## Step 5 — Create the worktree;## Step 6 — Run the pipeline;## Step 7 — Report
+core/flows/review.md|## Input;## Mindset;## Step 1 — Load context;## Step 2 — Explore;## Step 3 — Critique;## Step 4 — Fix the spec;## Step 5 — Handoff log
+core/flows/resume.md|## Input;## Phase selection;## Preconditions;## Execution
