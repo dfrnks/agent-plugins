@@ -56,6 +56,8 @@ assert_exit 1 "structure checker rejects a missing file" \
   checks/structure.sh tests/fixtures/manifest-missing-file.txt
 assert_exit 1 "structure checker rejects a file missing a required heading" \
   checks/structure.sh tests/fixtures/manifest-missing-heading.txt
+assert_exit 0 "structure checker passes the real manifest against the repository" \
+  checks/structure.sh
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
