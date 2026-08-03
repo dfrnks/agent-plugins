@@ -36,7 +36,7 @@ on two blocks in particular:
   what that line does, plus one further line for each checklist-relevant
   area the change touched (a new entry point, an authorization check,
   input validation, a schema change, a secret or credential path). This is
-  what Step 3's fifth dimension spot-checks and builds its coverage scan
+  what Step 3's sixth dimension spot-checks and builds its coverage scan
   from.
 - The `### Conventions Applied` block: each rule the execute phase says it
   applied, with a citation to `paths.conventions` and where it applied it,
@@ -50,7 +50,7 @@ If either phase's entry is missing or empty, treat that itself as a
 finding: this phase has no shortcut left and must reconstruct the missing
 context from the diff and the spec directly. A missing
 `### Implementation Manifest` block is a finding under its own name, not
-folded into this general case — see Step 3's fifth dimension for how it is
+folded into this general case — see Step 3's sixth dimension for how it is
 handled specifically.
 
 ## Step 2 — Read the full diff
@@ -65,7 +65,7 @@ finding, not necessarily a blocker, but never silently accepted.
 
 ## Step 3 — Review dimensions
 
-Work through all five in order. Do not skip a dimension because the diff
+Work through all six in order. Do not skip a dimension because the diff
 looks small — a one-line change can violate any of them.
 
 ### 1. Spec compliance
@@ -138,7 +138,25 @@ with a documented, reasoned claim is not the same as waving through a
 silent rewrite, and disagreeing with it is not an automatic blocker either
 — decide it on the evidence, both directions.
 
-### 5. Checklist verification
+### 5. Test quality
+
+Distinct from test integrity: integrity asks whether the tests were
+weakened after being written; quality asks whether they were any good to
+begin with. A suite that was never weakened can still fail every one of
+these checks.
+
+- Is there a test for every Definition of Done item?
+- Do tests cover error and permission paths, not only the happy path?
+- Are authorization tests realistic — does the mocked guard actually
+  enforce the rule, rather than admitting everyone?
+- Do tests clean up after themselves?
+- **Does production code contain logic that exists only to accommodate a
+  test?** Call this out specifically when found. It is the check most
+  likely to be skipped, and the one whose absence does the most damage:
+  such code looks purposeful, reads as if it belongs, and survives review
+  indefinitely once it is let through the first time.
+
+### 6. Checklist verification
 
 This dimension is what makes reviewing a large diff affordable: instead of
 re-reading every changed file, the manifest is trusted strategically —
@@ -207,7 +225,7 @@ following `core/contracts/handoff-log.md`. Include:
 - The result of the test-integrity check from Step 3's fourth dimension —
   which commits touched test files, and confirmation that each was
   inspected, not merely listed.
-- The result of the manifest spot-check from Step 3's fifth dimension —
+- The result of the manifest spot-check from Step 3's sixth dimension —
   which lines were checked and why those were chosen, which held up and
   which didn't, and which checklist items required direct verification
   because the manifest never mentioned them.
