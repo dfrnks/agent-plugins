@@ -34,6 +34,10 @@ assert_exit 1 "leakage checker rejects an email address" \
   checks/no-leakage.sh tests/fixtures/leak-email-real.md
 assert_exit 0 "leakage checker accepts an allowlisted email domain" \
   checks/no-leakage.sh tests/fixtures/leak-email.md
+assert_exit 0 "leakage checker accepts an allowlisted home path" \
+  checks/no-leakage.sh tests/fixtures/leak-abs-path-allowlisted.md
+assert_exit 1 "leakage checker rejects identifiers that merely contain allowlisted substrings" \
+  checks/no-leakage.sh tests/fixtures/leak-lookalike.md
 assert_exit 0 "leakage checker accepts a clean file" \
   checks/no-leakage.sh tests/fixtures/clean.md
 assert_exit 0 "leakage checker passes a whole-repo scan" \
@@ -44,6 +48,14 @@ assert_exit 0 "neutrality checker accepts neutral prose" \
   checks/core-is-neutral.sh tests/fixtures/core-clean
 assert_exit 1 "reference checker rejects a dangling core reference" \
   checks/references-resolve.sh tests/fixtures/dangling.md
+assert_exit 0 "reference checker accepts a reference that resolves" \
+  checks/references-resolve.sh tests/fixtures/reference-ok.md
+assert_exit 0 "structure checker passes when the file exists with its required heading" \
+  checks/structure.sh tests/fixtures/manifest-good.txt
+assert_exit 1 "structure checker rejects a missing file" \
+  checks/structure.sh tests/fixtures/manifest-missing-file.txt
+assert_exit 1 "structure checker rejects a file missing a required heading" \
+  checks/structure.sh tests/fixtures/manifest-missing-heading.txt
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

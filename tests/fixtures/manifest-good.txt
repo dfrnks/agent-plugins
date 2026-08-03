@@ -1,0 +1,2 @@
+# Fixture manifest: every entry should pass.
+tests/fixtures/structure-ok.md|## Example Heading
