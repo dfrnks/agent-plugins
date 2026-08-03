@@ -20,5 +20,5 @@ core/flows/resume.md|## Input;## Phase selection;## Preconditions;## Execution
 core/flows/init.md|## Step 1 — Detect the stack;## Step 2 — Propose the configuration;## Step 3 — Create directories;## Step 4 — Worktree setup script;## Step 5 — Derive conventions;## Step 6 — Verify
 core/flows/conventions.md|## Step 1 — Explore;## Step 2 — Rule versus occurrence;## Step 3 — Confirm with the user;## Step 4 — Write;## Step 5 — Derive the checklist;## Drift reporting
 core/flows/doctor.md|## Checks;## Output;## Repair mode
-adapters/claude-code/.claude-plugin/plugin.json|
+.claude-plugin/plugin.json|
 .claude-plugin/marketplace.json|

@@ -4,7 +4,7 @@
   "plugins": [
     {
       "name": "tdd-pipeline",
-      "source": "./adapters/claude-code",
+      "source": ".",
       "description": "Agent-driven TDD pipeline: spec, red, green, review, ship."
     }
   ]

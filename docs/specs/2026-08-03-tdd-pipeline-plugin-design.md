@@ -87,6 +87,9 @@ dfrnks/agent-pipeline/
 ├── README.md
 ├── install.sh                       symlinks an adapter into a project
 ├── docs/specs/
+├── .claude-plugin/
+│   ├── marketplace.json             lists the tdd-pipeline plugin entry
+│   └── plugin.json                  Claude Code plugin manifest (see below)
 ├── core/                            harness-neutral; the actual content
 │   ├── phases/
 │   │   ├── test.md                  red phase
@@ -111,7 +114,6 @@ dfrnks/agent-pipeline/
 │   └── trackers/{none,linear,github}.md
 └── adapters/
     ├── claude-code/
-    │   ├── .claude-plugin/{marketplace.json,plugin.json}
     │   ├── agents/*.md              frontmatter + pointer into core/phases/
     │   └── commands/*.md            frontmatter + pointer into core/flows/
     └── cursor/
@@ -132,6 +134,56 @@ Dispatch subagents with the `Agent` tool.
 ```
 
 Fixing a rule means editing one file in `core/`, and both harnesses get it.
+
+### Why the Claude Code manifests live at the repository root, not under `adapters/claude-code/`
+
+`${CLAUDE_PLUGIN_ROOT}` resolves to whatever directory the marketplace entry's
+`source` names — nothing more. A `source` of `./adapters/claude-code` installs
+only that subtree; `core/` is never copied alongside it, so every
+`${CLAUDE_PLUGIN_ROOT}/core/...` pointer in an adapter dangles at install time.
+This is verified, not assumed: installing the plugin from a `source` scoped to
+`adapters/claude-code` produces an installed directory containing only
+`agents/`, `commands/`, and `.claude-plugin/` — no `core/`.
+
+The fix keeps `source: "."` — the whole repository installs, so `core/` is
+always present at `${CLAUDE_PLUGIN_ROOT}/core/...` — and narrows which files
+load as commands and agents using `plugin.json`'s own component-path fields,
+which take arbitrary paths relative to the plugin root (here, the repository
+root) instead of the default `commands/` and `agents/` directories:
+
+```json
+{
+  "name": "tdd-pipeline",
+  "version": "0.1.0",
+  "description": "Agent-driven TDD pipeline: spec, red, green, review, ship.",
+  "commands": ["./adapters/claude-code/commands/"],
+  "agents": [
+    "./adapters/claude-code/agents/task-test.md",
+    "./adapters/claude-code/agents/task-execute.md",
+    "./adapters/claude-code/agents/task-code-review.md",
+    "./adapters/claude-code/agents/task-end.md",
+    "./adapters/claude-code/agents/task-pipeline.md"
+  ]
+}
+```
+
+(`commands` accepts a directory; `agents` requires individual file paths —
+confirmed against Claude Code's plugin manifest schema.) Because `plugin.json`
+sits at the repository root next to `marketplace.json`, and its `source` is
+the same root, both files coexist in one `.claude-plugin/` directory rather
+than the plugin nesting its own `.claude-plugin/` a level down. This was
+verified by installing the plugin from a local directory marketplace pointed
+at this repository: the installed tree contained `core/`, both adapter
+directories, and — confirmed by dispatching them — every one of the five
+agents (`tdd-pipeline:task-test` and the other four) resolved
+`${CLAUDE_PLUGIN_ROOT}/core/phases/...` to a real file. `claude plugin
+details` under-reports the agent count for this layout (a display gap in that
+command, not a loading failure); actually dispatching the agents is what
+confirms they load and resolve correctly.
+
+The `adapters/claude-code/` directory itself is unchanged by this — it still
+holds only `agents/*.md` and `commands/*.md`, kept symmetric with
+`adapters/cursor/`. Only the manifest that points into it moved.
 
 ### Installation
 
