@@ -31,9 +31,13 @@ assert_executable checks/references-resolve.sh "reference checker is executable"
 assert_exit 1 "leakage checker rejects an absolute home path" \
   checks/no-leakage.sh tests/fixtures/leak-abs-path.md
 assert_exit 1 "leakage checker rejects an email address" \
+  checks/no-leakage.sh tests/fixtures/leak-email-real.md
+assert_exit 0 "leakage checker accepts an allowlisted email domain" \
   checks/no-leakage.sh tests/fixtures/leak-email.md
 assert_exit 0 "leakage checker accepts a clean file" \
   checks/no-leakage.sh tests/fixtures/clean.md
+assert_exit 0 "leakage checker passes a whole-repo scan" \
+  checks/no-leakage.sh
 assert_exit 1 "neutrality checker rejects a harness token in core" \
   checks/core-is-neutral.sh tests/fixtures/core-dirty
 assert_exit 0 "neutrality checker accepts neutral prose" \
