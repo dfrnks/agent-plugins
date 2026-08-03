@@ -166,6 +166,22 @@ not, and that asymmetry should be stated rather than papered over.
   as **not met**, honestly, and stays that way.
 - Publication happens only after the fix wave lands and validation passes.
 
+## Read this before applying anything
+
+Commit `ea8ebe7` is labelled **UNREVIEWED** and must be treated as such.
+
+When work was paused, 38 files carried uncommitted edits that address several
+findings listed above — the hardcoded red-phase status, the conventions-span
+leak, and others. No fix wave had been dispatched, so where they came from is
+not established. They were committed rather than discarded because they are
+substantive and all gates pass over them, but **they have had no review**.
+
+Before applying the fix wave, diff `144a95a..ea8ebe7` and decide, per finding,
+whether it is already addressed and whether the change is right. Do not assume
+the list above is still accurate — some items may be done, and some of what was
+done may be wrong. Re-verify by execution, as with everything else on this
+project.
+
 ## How to resume
 
 1. Read `.superpowers/sdd/2026-08-03-agent-pipeline-implementation/progress.md`
