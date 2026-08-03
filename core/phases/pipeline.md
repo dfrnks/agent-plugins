@@ -39,10 +39,16 @@ that the task flow must create the worktree first — this phase does not
 create one for itself and does not fall back to running in place.
 
 Then confirm the current branch is the task ID this phase is running
-against:
+against, with the same discipline as the check above — a real conditional
+that stops the phase, not a comment an executing agent has to notice and
+act on by itself:
 
 ```bash
-git branch --show-current   # must equal <task-id>
+BRANCH=$(git branch --show-current)
+if [ "$BRANCH" != "<task-id>" ]; then
+  echo "Refusing to run: current branch '$BRANCH' does not match task '<task-id>'."
+  exit 1
+fi
 ```
 
 A mismatch is the same failure by another name — the worktree exists but is
