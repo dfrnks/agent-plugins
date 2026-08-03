@@ -1,25 +1,26 @@
 # Pipeline configuration contract
 
-`pipeline.yaml`, kept in the pipeline's own directory inside the consuming
-project, is the only file the pipeline requires to exist before it runs. That
-directory is not owned by any single harness — the same relative location is
-used no matter which harness drives the pipeline, precisely so a project keeps
-working when the developer switches tools. Every phase and flow cites this
-contract instead of restating configuration keys.
+`.agent-pipeline/config.yaml`, in the consuming project, is the only file the
+pipeline requires to exist before it runs. The directory is named for the
+pipeline, not for any harness, and holds everything the pipeline owns in a
+consuming project:
+
+```
+.agent-pipeline/
+  config.yaml
+  tasks/TASK-1.md
+  memory/<phase>/
+  worktrees/TASK-1/
+  review-checklist.md      # optional
+```
+
+The location is identical on every harness, so a project keeps working when
+the developer switches tools — and, unlike a harness-named directory, the
+neutrality is real rather than asserted. Harness directories still exist
+alongside it and hold only adapters. Every phase and flow cites this contract
+instead of restating configuration keys.
 
 ## Schema
-
-Two placeholders appear below in place of literal path segments, because the
-segments they stand for are themselves harness-independent conventions rather
-than fixed strings this contract can spell out once and for all:
-
-- `<pipeline-dir>` — the pipeline's own directory described above: the single
-  location, stable across every harness, that holds the configuration file
-  itself, the task specs, and the worktrees.
-- `<conventions-file>` — the project's own conventions document. Its name is a
-  project choice, not something this contract mandates; a project picks
-  whichever file it already uses to record architecture, patterns, and
-  pitfalls.
 
 ```yaml
 version: 1
@@ -39,10 +40,10 @@ commands:
 
 paths:
   tests: [tests]
-  specs: <pipeline-dir>/tasks
-  worktrees: <pipeline-dir>/worktrees
-  conventions: <conventions-file>
-  # review_checklist: <pipeline-dir>/review-checklist.md   # optional
+  specs: .agent-pipeline/tasks
+  worktrees: .agent-pipeline/worktrees
+  conventions: CONVENTIONS.md
+  # review_checklist: .agent-pipeline/review-checklist.md   # optional
 
 git:
   base_branch: main
@@ -52,6 +53,12 @@ git:
 pr:
   enabled: true
 ```
+
+`paths.conventions` names the project's conventions document — the file
+holding its architecture, patterns, and pitfalls. This contract does not
+mandate a default file name for it: projects commonly point this at whatever
+rules file their agent tooling already reads, and `CONVENTIONS.md` above is
+only an example value.
 
 `worktree_setup` covers dependencies excluded from version control (virtual
 environments, installed packages, local `.env` files) that do not exist in a
@@ -101,13 +108,12 @@ else. Three rules govern that read, without exception:
    failed command.
 
 When a required key is missing, the stop message follows this exact template,
-naming the file by its role and the specific missing key:
+naming the file and the specific missing key:
 
 ```
-Cannot start: `pipeline.yaml` is missing key `commands.test`.
+Cannot start: `.agent-pipeline/config.yaml` is missing key `commands.test`.
 Add it, or run the init flow to regenerate the configuration.
 ```
 
-The configuration file's location stays the same regardless of which harness
-is driving the pipeline, because it lives in the pipeline's own directory —
-never a directory owned by a particular harness.
+The configuration path stays `.agent-pipeline/config.yaml` regardless of
+harness, because it is the pipeline's own directory, not a harness directory.
