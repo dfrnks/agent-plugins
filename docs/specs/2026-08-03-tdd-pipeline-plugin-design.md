@@ -1,41 +1,44 @@
-# Design — `tdd-pipeline`: plugin genérico de pipeline de desenvolvimento
+# Design — `tdd-pipeline`: a portable agent-driven development pipeline
 
-**Data:** 2026-08-03
-**Status:** aprovado, pronto para plano de implementação
+**Date:** 2026-08-03
+**Status:** approved, ready for implementation planning
 
-## Problema
+## Problem
 
-Existe um pipeline de desenvolvimento maduro, guiado por agents, que funciona de
-ponta a ponta: da criação da task ao PR aberto, com TDD obrigatório, revisão de
-spec antes da implementação e revisão de código depois. Ele vive dentro de um
-único projeto e está cravado nele: stack, comandos de teste e lint, caminhos
-absolutos, tracker de issues, prefixo de ID.
+A mature agent-driven development pipeline already exists and works end to end:
+from task creation to an open pull request, with mandatory TDD, spec review
+before implementation, and code review after it. It lives inside a single
+project and is wired to that project: stack, test and lint commands, absolute
+paths, issue tracker, ID prefix.
 
-O objetivo é extrair a mecânica desse pipeline para um plugin reutilizável,
-instalável em qualquer projeto, sem nenhum vestígio do projeto de origem.
+The goal is to extract the pipeline's mechanics into a reusable plugin,
+installable in any project, leaving no trace of the originating project.
 
-## Decisões
+## Decisions
 
-| Decisão | Escolha |
+| Decision | Choice |
 |---|---|
-| Distribuição | Plugin Claude Code, em repositório-marketplace `dfrnks/claude-plugins` |
-| Configuração do projeto | `.claude/pipeline.yaml` (determinístico) + arquivo de convenções do projeto (prosa) |
-| Tracker de issues | Plugável: `none` (default) \| `linear` \| `github` |
-| Regras de stack | Nunca no plugin; sempre no arquivo de convenções do projeto |
-| Escopo v1 | Pipeline completo + `/init`. Fora: `/adr`, `/fix-bug`, `/review-pr` |
-| Projeto de origem | Permanece intacto; nenhuma migração na v1 |
-| Trailer de commit | Vazio por default |
+| Distribution | Claude Code plugin, in the `dfrnks/claude-plugins` marketplace repo |
+| Project configuration | `.claude/pipeline.yaml` (deterministic) + the project's conventions file (prose) |
+| Issue tracker | Pluggable: `none` (default) \| `linear` \| `github` |
+| Stack rules | Never in the plugin; always in the project's conventions file |
+| v1 scope | Full pipeline + `/init`. Out: `/adr`, `/fix-bug`, `/review-pr` |
+| Originating project | Left untouched; no migration in v1 |
+| Commit trailer | Empty by default |
 
-### Restrição transversal
+### Cross-cutting constraints
 
-Nenhum arquivo do plugin — prompt, README, exemplo, frontmatter, mensagem de
-erro — pode conter nome de projeto real, caminho absoluto, nome de pessoa ou
-identificador de organização. Exemplos usam `my-app` e IDs `TASK-1`. Um `grep`
-final valida isto antes de qualquer push.
+**Language.** Every document, prompt, README, comment, and error message in this
+repository is written in English.
 
-## Arquitetura
+**No leakage.** No file in the plugin — prompt, README, example, frontmatter, or
+error message — may contain a real project name, absolute path, person's name,
+or organization identifier. Examples use `my-app` and `TASK-1` style IDs. A
+final `grep` gate validates this before any push.
 
-### Layout do repositório
+## Architecture
+
+### Repository layout
 
 ```
 dfrnks/claude-plugins/
@@ -44,48 +47,48 @@ dfrnks/claude-plugins/
 └── plugins/tdd-pipeline/
     ├── .claude-plugin/plugin.json
     ├── agents/
-    │   ├── task-isolate-start.md    orquestrador (roda dentro do worktree)
-    │   ├── task-test.md             fase red
-    │   ├── task-execute.md          fase green
-    │   ├── task-code-review.md      adjudicação impl × spec
-    │   └── task-end.md              lint, commit, push, PR, status
+    │   ├── task-isolate-start.md    orchestrator (runs inside the worktree)
+    │   ├── task-test.md             red phase
+    │   ├── task-execute.md          green phase
+    │   ├── task-code-review.md      adjudicates implementation against spec
+    │   └── task-end.md              lint, commit, push, PR, tracker status
     ├── commands/
-    │   ├── init.md                  bootstrap do projeto consumidor
-    │   ├── task-start.md            resolve/cria item, cria worktree, delega planejamento
-    │   ├── plan.md                  exploração + design colaborativo da spec
-    │   ├── task-review.md           revisão da spec antes da implementação
-    │   ├── review-plan.md           crítica de plano, independente de tracker
-    │   ├── task-isolate-start.md    dispara o orquestrador com isolation: worktree
-    │   └── task-{test,execute,code-review,end}.md   wrappers finos
+    │   ├── init.md                  bootstrap a consuming project
+    │   ├── task-start.md            resolve/create item, create worktree, delegate planning
+    │   ├── plan.md                  exploration + collaborative spec design
+    │   ├── task-review.md           spec review before implementation
+    │   ├── review-plan.md           plan critique, tracker-independent
+    │   ├── task-isolate-start.md    dispatches the orchestrator with isolation: worktree
+    │   └── task-{test,execute,code-review,end}.md   thin wrappers
     ├── references/
-    │   ├── pipeline-config.md       schema e semântica do pipeline.yaml
-    │   ├── spec-template.md         estrutura da task spec + Definition of Done
-    │   ├── handoff-log.md           protocolo do Agent Handoff Log e escalonamento
+    │   ├── pipeline-config.md       pipeline.yaml schema and semantics
+    │   ├── spec-template.md         task spec structure + Definition of Done
+    │   ├── handoff-log.md           Agent Handoff Log protocol and escalation rules
     │   ├── tracker-none.md
     │   ├── tracker-linear.md
     │   └── tracker-github.md
     └── README.md
 ```
 
-Instalação no projeto consumidor:
+Installation in a consuming project:
 
 ```
 /plugin marketplace add dfrnks/claude-plugins
 /plugin install tdd-pipeline
 ```
 
-Comandos e agents ficam namespaced (`/tdd-pipeline:task-start`,
-`subagent_type: "tdd-pipeline:task-test"`). Isso evita colisão com qualquer
-`.claude/` já existente no projeto, permitindo instalação lado a lado.
+Commands and agents are namespaced (`/tdd-pipeline:task-start`,
+`subagent_type: "tdd-pipeline:task-test"`). This avoids collisions with any
+`.claude/` directory the project already has, so the plugin can be installed
+side by side with an existing setup.
 
-Os arquivos de `references/` são carregados por caminho via
-`${CLAUDE_PLUGIN_ROOT}`. Cada contrato (schema de config, template de spec,
-protocolo de handoff) existe em exatamente um lugar, em vez de duplicado nos
-cinco prompts.
+Files under `references/` are loaded by path via `${CLAUDE_PLUGIN_ROOT}`. Each
+contract — config schema, spec template, handoff protocol — exists in exactly
+one place instead of being duplicated across the five prompts.
 
-### Contrato de configuração
+### Configuration contract
 
-`.claude/pipeline.yaml`, no projeto consumidor. É o único arquivo obrigatório.
+`.claude/pipeline.yaml`, in the consuming project. It is the only required file.
 
 ```yaml
 version: 1
@@ -93,152 +96,150 @@ project: my-app
 
 tracker:
   type: none                  # none | linear | github
-  prefix: TASK                # prefixo de ID; vira nome de branch
-  # team:   <string>          # apenas linear
+  prefix: TASK                # ID prefix; becomes the branch name
+  # team:   <string>          # linear only
   # states: { start: "In Progress", review: "In Review" }
 
 commands:
-  test: "pytest {target}"     # {target} = módulo/arquivo específico
+  test: "pytest {target}"     # {target} = a specific module or file
   test_all: "pytest"
   lint: "ruff check . --fix && ruff format ."
-  # typecheck: "mypy ."       # opcional
+  # typecheck: "mypy ."       # optional
 
 paths:
   tests: [tests]
   specs: .claude/tasks
   worktrees: .claude/worktrees
   conventions: CLAUDE.md
-  # review_checklist: .claude/review-checklist.md   # opcional
+  # review_checklist: .claude/review-checklist.md   # optional
 
 git:
   base_branch: main
   commit_trailer: ""
-  # worktree_setup: scripts/setup-worktree.sh       # opcional
+  # worktree_setup: scripts/setup-worktree.sh       # optional
 
 pr:
   enabled: true
 ```
 
-**Fail-fast é obrigatório.** Todo agent lê este arquivo no passo 0. Se ele não
-existir, ou se faltar uma chave que o agent vai usar, o agent para imediatamente
-e nomeia a chave ausente. Nenhum agent infere comando de teste ou de lint a
-partir de `package.json`, `pyproject.toml` ou `Makefile`: o pipeline roda
-desatendido, e adivinhar errado nesse ponto custa uma branch inteira de trabalho
-inválido.
+**Fail-fast is mandatory.** Every agent reads this file at step 0. If it is
+missing, or if a key the agent needs is absent, the agent stops immediately and
+names the missing key. No agent infers test or lint commands from
+`package.json`, `pyproject.toml`, or `Makefile`: the pipeline runs unattended,
+and guessing wrong here costs an entire branch of invalid work.
 
-`worktree_setup` cobre o caso de dependências ignoradas pelo versionamento
-(`.venv`, `node_modules`, `.env`) que não existem num worktree recém-criado. Se
-declarado, o orquestrador executa o script antes de rodar qualquer fase; se
-ausente, segue direto.
+`worktree_setup` covers dependencies excluded from version control (`.venv`,
+`node_modules`, `.env`) that do not exist in a freshly created worktree. When
+declared, the orchestrator runs the script before any phase; when absent, it
+proceeds directly.
 
-### Camada de tracker
+### Tracker layer
 
-`tracker.type` seleciona qual `references/tracker-*.md` o agent carrega. O
-tracker entra em exatamente dois pontos do pipeline: resolver ou criar o item em
-`/task-start`, e atualizar o status em `task-end`. Todo o resto — branch,
-worktree, spec, handoff log, PR — é idêntico nos três modos.
+`tracker.type` selects which `references/tracker-*.md` the agent loads. The
+tracker is involved at exactly two points in the pipeline: resolving or creating
+the item in `/task-start`, and updating status in `task-end`. Everything else —
+branch, worktree, spec, handoff log, PR — is identical across all three modes.
 
-- **`none`** (default): o ID vem do argumento do comando. Spec local, nenhuma
-  chamada externa. É o caminho documentado no README.
-- **`linear`**: MCP do Linear. Resolve ou cria issue, move para `states.start` e
-  depois `states.review`.
-- **`github`**: `gh issue` / `gh pr`. Labels no lugar de estados nomeados.
+- **`none`** (default): the ID comes from the command argument. Local spec, no
+  external calls. This is the path documented in the README.
+- **`linear`**: Linear MCP. Resolves or creates the issue, moves it to
+  `states.start` and later `states.review`.
+- **`github`**: `gh issue` / `gh pr`. Labels instead of named states.
 
-## Genericização dos agents
+## Making the agents generic
 
-Cada prompt herdado é cortado em duas partes: mecânica, que permanece e passa a
-ser parametrizada pela config; e regra de stack, que sai do plugin e passa a ser
-leitura de `paths.conventions`.
+Each inherited prompt is split in two: mechanics, which stay and become
+parameterized by config; and stack rules, which leave the plugin and become a
+read of `paths.conventions`.
 
-| Agent | Permanece | Sai |
+| Agent | Stays | Leaves |
 |---|---|---|
-| `task-isolate-start` | guarda de isolamento, rename da branch para o ID, sync com a base, gate de review-plan, orquestração das quatro fases | caminho absoluto do repositório, script de setup fixo |
-| `task-test` | estudo obrigatório dos padrões de teste existentes, plano de teste por dimensão, verificação da fase red, handoff log, commit | framework de teste, padrões de mock, caminhos, convenções de endpoint |
-| `task-execute` | leitura do handoff log, contrato de proteção dos testes, self-review crítico, loop de verificação por item de DoD, lint gate obrigatório, commit, report ≤300 caracteres | bloco de regras de arquitetura, comandos de lint e teste, procedimento de migration |
-| `task-code-review` | conformidade com a spec, integridade dos testes, qualidade de teste, segurança e isolamento, verificação do manifest contra o checklist, veredito em três níveis | regras de camada específicas, comandos, caminhos |
-| `task-end` | detecção de áreas alteradas, lint, persistência de descobertas nas convenções, commit e push, PR, status no tracker, dica de limpeza do worktree | ferramentas de lint fixas, estrutura de pacotes, caminho de worktree fixo |
+| `task-isolate-start` | isolation guard, branch rename to the task ID, sync with base branch, review-plan gate, orchestration of the four phases | absolute repository path, hardcoded setup script |
+| `task-test` | mandatory study of existing test patterns, test plan by dimension, red-phase verification, handoff log, commit | test framework, mocking patterns, paths, endpoint conventions |
+| `task-execute` | handoff log read, test protection contract, critic-style self-review, per-DoD verification loop, mandatory lint gate, commit, ≤300-character report | architecture rule block, lint and test commands, migration procedure |
+| `task-code-review` | spec compliance, test integrity, test quality, security and isolation, manifest verification against the checklist, three-level verdict | layer-specific rules, commands, paths |
+| `task-end` | changed-area detection, lint, persistence of discoveries into the conventions file, commit and push, PR, tracker status, worktree cleanup hint | hardcoded lint tools, package structure, hardcoded worktree path |
 
-### Guarda de isolamento portátil
+### Portable isolation guard
 
-A guarda que impede o orquestrador de rodar no repositório principal hoje
-compara com um caminho absoluto. A versão portátil compara
-`git rev-parse --show-toplevel` com o diretório-pai de
-`git rev-parse --git-common-dir`: se forem iguais, o processo está no
-repositório principal e não num worktree. Funciona em qualquer repositório, sem
-configuração.
+The guard preventing the orchestrator from running in the main repository
+currently compares against an absolute path. The portable version compares
+`git rev-parse --show-toplevel` with the parent directory of
+`git rev-parse --git-common-dir`: if they are equal, the process is in the main
+repository rather than a worktree. This works in any repository, with no
+configuration.
 
-### Risco principal e mitigação
+### Primary risk and mitigation
 
-Trocar regra inline por ponteiro para o arquivo de convenções reduz
-determinismo: regra inline é lida sempre, ponteiro depende de o agent achar e
-aplicar a seção certa.
+Replacing inline rules with a pointer to the conventions file reduces
+determinism: an inline rule is always read, while a pointer depends on the agent
+finding and applying the right section.
 
-Mitigação em duas pontas: `task-execute` passa a citar no handoff log as linhas
-de convenção que aplicou, e `task-code-review` confere essas citações contra o
-arquivo. Se o agent não encontrou regra para a área que tocou, isso vira aviso
-explícito no veredito em vez de passar em silêncio.
+Mitigation on two ends: `task-execute` cites in the handoff log the exact
+convention lines it applied, and `task-code-review` checks those citations
+against the file. If an agent found no rule covering an area it touched, that
+surfaces as an explicit warning in the verdict instead of passing silently.
 
-## Inversão: mecânica de pipeline sai do arquivo de convenções
+## Inversion: pipeline mechanics leave the conventions file
 
-No projeto de origem, o arquivo de convenções acumulou protocolo de pipeline
-misturado com fatos do projeto: estrutura obrigatória da task spec, estrutura de
-subtask, formato do Agent Handoff Log, regra de não improvisar passos de
-workflow.
+In the originating project, the conventions file accumulated pipeline protocol
+mixed with project facts: the mandatory task spec structure, subtask structure,
+Agent Handoff Log format, and the rule against improvising workflow steps.
 
-Nada disso é fato de projeto — é protocolo do pipeline. Tudo migra para
-`references/spec-template.md` e `references/handoff-log.md` dentro do plugin.
+None of that is a project fact — it is pipeline protocol. All of it moves into
+`references/spec-template.md` and `references/handoff-log.md` inside the plugin.
 
-Consequência prática: um projeto novo adota o pipeline com um `pipeline.yaml` e
-**nenhuma** seção obrigatória no arquivo de convenções. O arquivo de convenções
-volta a conter só o que é do projeto — arquitetura, padrões, armadilhas.
+Practical consequence: a new project adopts the pipeline with a
+`pipeline.yaml` and **no** mandatory sections in its conventions file. The
+conventions file goes back to holding only what belongs to the project —
+architecture, patterns, pitfalls.
 
 ## `/tdd-pipeline:init`
 
-Bootstrap do projeto consumidor:
+Bootstraps a consuming project:
 
-1. Detecta a stack (gerenciador de pacotes, runner de teste, linter) e **propõe**
-   um `pipeline.yaml` para confirmação — nunca escreve sem aprovação.
-2. Cria `paths.specs` e `.claude/agent-memory/`.
-3. Verifica se `paths.conventions` existe; se não, oferece um esqueleto mínimo.
-4. Semeia um `review-checklist.md` genérico, se o usuário quiser.
+1. Detects the stack (package manager, test runner, linter) and **proposes** a
+   `pipeline.yaml` for confirmation — never writes without approval.
+2. Creates `paths.specs` and `.claude/agent-memory/`.
+3. Checks that `paths.conventions` exists; if not, offers a minimal skeleton.
+4. Seeds a generic `review-checklist.md`, if the user wants one.
 
-Detecção automática é aceitável aqui, e só aqui, porque há um humano confirmando
-o resultado antes de qualquer escrita.
+Auto-detection is acceptable here, and only here, because a human confirms the
+result before anything is written.
 
-## Memória de agent
+## Agent memory
 
-Os agents mantêm `memory: project` e escrevem em
-`.claude/agent-memory/<agent>/`. Essa mecânica já é genérica e permanece. O
-bloco extenso de instruções de memória colado dentro de um dos prompts herdados
-é removido: o harness já injeta esse conteúdo, e a cópia manual apenas duplica e
-apodrece.
+Agents keep `memory: project` and write to `.claude/agent-memory/<agent>/`. That
+mechanism is already generic and stays. The long block of memory instructions
+pasted inline into one of the inherited prompts is removed: the harness already
+injects that content, and the manual copy only duplicates and rots.
 
-## Validação
+## Validation
 
-Repositório descartável, Python puro, `tracker: none`, uma task pequena e real
-de ponta a ponta:
+A throwaway repository, plain Python, `tracker: none`, one small real task end
+to end:
 
 ```
 /tdd-pipeline:init
-/tdd-pipeline:task-start "adicionar validação de CPF"
+/tdd-pipeline:task-start "add CPF validation"
 /tdd-pipeline:task-review TASK-1
 /tdd-pipeline:task-isolate-start TASK-1
 ```
 
-Critérios de aceite:
+Acceptance criteria:
 
-1. O pipeline chega a `SHIPPED` com PR aberto, sem intervenção manual.
-2. Cada fase deixou sua entrada no Agent Handoff Log.
-3. `task-code-review` de fato bloqueia quando um teste é enfraquecido —
-   verificado injetando deliberadamente uma alteração de assertion.
-4. `grep -riE` no repositório do plugin não retorna nome de projeto real,
-   caminho absoluto, nome de pessoa nem identificador de organização.
+1. The pipeline reaches `SHIPPED` with an open PR, without manual intervention.
+2. Every phase left its entry in the Agent Handoff Log.
+3. `task-code-review` actually blocks when a test is weakened — verified by
+   deliberately injecting a weakened assertion.
+4. `grep -riE` over the plugin repository returns no real project name, absolute
+   path, person's name, or organization identifier.
 
-Nenhum projeto existente é tocado durante a validação.
+No existing project is touched during validation.
 
-## Fora de escopo
+## Out of scope
 
-- `/adr`, `/fix-bug`, `/review-pr` — independentes do pipeline; entram como um
-  segundo plugin no mesmo marketplace, depois.
-- Packs de convenção prontos por stack.
-- Migração de qualquer projeto existente para consumir o plugin.
+- `/adr`, `/fix-bug`, `/review-pr` — independent of the pipeline; they become a
+  second plugin in the same marketplace later.
+- Prebuilt per-stack convention packs.
+- Migrating any existing project to consume the plugin.
