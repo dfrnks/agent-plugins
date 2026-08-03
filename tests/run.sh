@@ -46,6 +46,10 @@ assert_exit 1 "neutrality checker rejects a harness token in core" \
   checks/core-is-neutral.sh tests/fixtures/core-dirty
 assert_exit 0 "neutrality checker accepts neutral prose" \
   checks/core-is-neutral.sh tests/fixtures/core-clean
+assert_exit 1 "neutrality checker rejects a named third-party tool in core" \
+  checks/core-is-neutral.sh tests/fixtures/core-tool-dirty
+assert_exit 0 "neutrality checker accepts a tool token embedded in a larger word" \
+  checks/core-is-neutral.sh tests/fixtures/core-tool-lookalike
 assert_exit 1 "reference checker rejects a dangling core reference" \
   checks/references-resolve.sh tests/fixtures/dangling.md
 assert_exit 0 "reference checker accepts a reference that resolves" \
