@@ -204,6 +204,35 @@ made after the verification loop is unverified until it runs again.
 Append a dated subsection to `## Agent Handoff Log` in the spec file,
 following `core/contracts/handoff-log.md`. Include:
 
+- The `### Implementation Manifest` block, in exactly this shape:
+
+  ```markdown
+  ### Implementation Manifest
+  - DoD "<Definition of Done item text>" satisfied by <file>:<line> — <claim>
+  - <checklist-relevant area, for example: new entry point, authorization
+    check, input validation, schema change, secret or credential path> —
+    <file>:<line> — <claim>
+  ```
+
+  Write one line per Definition of Done item, mapping it to the file and
+  line that satisfies it, and one further line for anything security- or
+  checklist-relevant the change touched, even when it is not itself a DoD
+  item — a new entry point and the authorization guard on it, input
+  validation added, a schema change, a secret or credential path. A change
+  that touches none of these has no such line to add; a change that
+  touches one and reports nothing forces the code-review phase to hunt for
+  it with no starting point.
+
+  Every line is an assertion about the code that the code-review phase will
+  check against the code, not a summary of what happened — treat it with
+  the same weight as a test assertion. A manifest line that overstates or
+  misdescribes what the cited code actually does is worse than no manifest
+  at all, because it sends the reviewer's attention to a spot that confirms
+  a false claim instead of toward wherever the real gap is. Write only
+  what the cited line actually demonstrates; if a Definition of Done item
+  is not yet satisfied, say so instead of writing a line that reads as if
+  it is.
+
 - The `### Conventions Applied` block from Step 3, in full.
 - Deviations from the spec made during implementation, and the reasoning
   for each.
