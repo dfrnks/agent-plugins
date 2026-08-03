@@ -1,0 +1,5 @@
+{
+  "name": "tdd-pipeline",
+  "version": "0.1.0",
+  "description": "Agent-driven TDD pipeline: spec, red, green, review, ship."
+}

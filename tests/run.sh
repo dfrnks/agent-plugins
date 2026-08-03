@@ -64,6 +64,8 @@ assert_exit 1 "structure checker rejects a file missing a required heading" \
   checks/structure.sh tests/fixtures/manifest-missing-heading.txt
 assert_exit 0 "structure checker passes the real manifest against the repository" \
   checks/structure.sh
+assert_exit 0 "every core phase and flow has a Claude Code adapter" \
+  checks/adapters-cover-core.sh claude-code
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

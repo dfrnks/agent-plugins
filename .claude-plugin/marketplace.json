@@ -1,0 +1,11 @@
+{
+  "name": "agent-pipeline",
+  "owner": { "name": "dfrnks" },
+  "plugins": [
+    {
+      "name": "tdd-pipeline",
+      "source": "./adapters/claude-code",
+      "description": "Agent-driven TDD pipeline: spec, red, green, review, ship."
+    }
+  ]
+}
