@@ -1,10 +1,10 @@
----
-description: Re-enter an interrupted pipeline at one phase, run that phase alone, and stop without chaining into the phases that follow.
----
+Re-enter an interrupted pipeline at one phase, run that phase alone, and stop without chaining into the phases that follow.
+
 Follow `.cursor/agent-pipeline/core/flows/resume.md`.
 
 Dispatch the selected phase as the corresponding `task-test`, `task-execute`,
 `task-code-review`, or `task-end` subagent via the `Task` tool, with the
 confirmed worktree as its working directory.
 
-ARGUMENTS: $ARGUMENTS
+Any text following the command invocation is input to the flow above; how
+Cursor delivers that text to this file is not confirmed on this machine.

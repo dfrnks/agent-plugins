@@ -43,17 +43,56 @@ fi
 
 DEST="$PROJECT/.cursor"
 
-link() { # <target> <linkname>
-  if [ -e "$2" ] && [ ! -L "$2" ]; then
-    echo "refusing to replace existing file: $2" >&2; exit 1
+# A destination is safe to (re-)link when it does not exist yet, or when it
+# is already a symlink pointing at exactly the target this run would create
+# (the idempotent case). Anything else — a real file, a directory, or a
+# symlink pointing somewhere else (including a broken symlink, which counts
+# as "somewhere else" too) — is left alone; this installer only ever
+# replaces links it could itself have produced.
+check_link() { # <target> <linkname>
+  if [ -L "$2" ]; then
+    local current
+    current="$(readlink "$2")"
+    if [ "$current" = "$1" ]; then
+      return 0
+    fi
+    printf 'refusing to replace symlink pointing elsewhere: %s\n  currently -> %s\n  would point -> %s\n' \
+      "$2" "$current" "$1" >&2
+    return 1
   fi
-  ln -sfn "$1" "$2"
+  if [ -e "$2" ]; then
+    echo "refusing to replace existing file: $2" >&2
+    return 1
+  fi
+  return 0
 }
 
 mkdir -p "$DEST/agents" "$DEST/commands" "$DEST/agent-pipeline"
-link "$SRC/core" "$DEST/agent-pipeline/core"
-for f in "$SRC/adapters/$HARNESS/agents/"*.md;   do link "$f" "$DEST/agents/$(basename "$f")"; done
-for f in "$SRC/adapters/$HARNESS/commands/"*.md; do link "$f" "$DEST/commands/$(basename "$f")"; done
+
+# Build the full link plan before touching anything, so a conflict on any
+# one destination aborts before any destination is changed — never a
+# half-installed tree.
+TARGETS=("$SRC/core")
+LINKS=("$DEST/agent-pipeline/core")
+for f in "$SRC/adapters/$HARNESS/agents/"*.md; do
+  TARGETS+=("$f"); LINKS+=("$DEST/agents/$(basename "$f")")
+done
+for f in "$SRC/adapters/$HARNESS/commands/"*.md; do
+  TARGETS+=("$f"); LINKS+=("$DEST/commands/$(basename "$f")")
+done
+
+rc=0
+for i in "${!LINKS[@]}"; do
+  check_link "${TARGETS[$i]}" "${LINKS[$i]}" || rc=1
+done
+if [ "$rc" -ne 0 ]; then
+  echo "aborting: no changes were made to $DEST" >&2
+  exit 1
+fi
+
+for i in "${!LINKS[@]}"; do
+  ln -sfn "${TARGETS[$i]}" "${LINKS[$i]}"
+done
 
 echo "Installed $HARNESS adapter into $DEST"
 echo "Next: run the doctor flow in that project to verify its requirements."
