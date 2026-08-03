@@ -18,10 +18,25 @@ Run one check per row of `core/contracts/project-requirements.md`'s
 requirements table, each reporting `pass`, `fail`, or `n/a`:
 
 - **`.agent-pipeline/config.yaml` with every key the configured mode
-  uses** — the file exists, parses, and holds every always-mandatory key
-  from `core/contracts/pipeline-config.md`'s "Required keys by mode" table,
-  plus whichever conditional keys `tracker.type`'s value requires. A missing
-  file or a missing key is `fail`, naming the exact key.
+  uses, tracked in git** — the file exists, parses, and holds every
+  always-mandatory key from `core/contracts/pipeline-config.md`'s "Required
+  keys by mode" table, plus whichever conditional keys `tracker.type`'s
+  value requires. A missing file or a missing key is `fail`, naming the
+  exact key. The file must also be **tracked in git**, checked
+  mechanically:
+
+  ```bash
+  git ls-files --error-unmatch .agent-pipeline/config.yaml
+  ```
+
+  A non-zero exit is a `fail` on this row, with the message naming the file
+  and saying why an untracked configuration is fatal rather than untidy:
+  every phase runs inside a worktree created fresh from `git.base_branch`,
+  which contains only committed files, so an untracked configuration is
+  invisible at every phase's Step 0 and the pipeline stops at its first
+  step. This row is what keeps that failure from recurring silently — it is
+  the check that would have caught a configuration written but never
+  committed.
 - **Git repository with `git.base_branch` present** — the current directory
   is a git repository and the branch named by `git.base_branch` exists.
   `fail` otherwise; this row is never `n/a`, it is required unconditionally.
@@ -31,8 +46,12 @@ requirements table, each reporting `pass`, `fail`, or `n/a`:
   directory that exists but is not git-ignored is still a `fail`, not a
   partial pass, since committing a worktree's contents duplicates them
   under version control.
-- **`paths.conventions` file, non-empty, with derived stack rules** — the
-  specific check this flow exists to get right, detailed on its own below.
+- **`paths.conventions` file, non-empty, with derived stack rules, tracked
+  in git** — the specific check this flow exists to get right, detailed on
+  its own below. It carries the same `git ls-files --error-unmatch` tracking
+  check as the configuration row above, and for the same reason: a
+  conventions file the phases cannot see from inside a worktree enforces
+  exactly as much as an empty one.
 - **`.agent-pipeline/memory/` directory** — exists. The requirements table
   marks this row "no" under "Required," but that column tracks whether the
   pipeline can run at all without it, not whether this check applies —
@@ -41,9 +60,11 @@ requirements table, each reporting `pass`, `fail`, or `n/a`:
   after the fact, not that this is a project with no use for it.
 - **`paths.review_checklist`** — optional in the table. Report `n/a` when
   the configuration does not set this key at all. When it is set, check
-  that the file it names exists; `fail` if the key is set but the file is
-  missing, since a configured-but-absent path is a broken reference, not an
-  intentional absence.
+  that the file it names exists **and is tracked in git**, the same way the
+  two rows above are checked; `fail` if the key is set but the file is
+  missing or untracked, since a configured-but-absent path is a broken
+  reference, not an intentional absence, and an untracked one is absent
+  from every worktree the code-review phase reads it in.
 - **`git.worktree_setup` script, if dependencies are git-ignored** —
   conditional. Report `n/a` when no dependency directory in this project is
   git-ignored, per the same detection `init`'s Step 4 performs. When one is,
@@ -69,17 +90,34 @@ pipeline: every phase still runs, still reports success, and enforces
 nothing, because there was nothing in the file to enforce.
 
 Apply the threshold defined in `core/contracts/project-requirements.md`
-exactly, mechanically, not as a judgment call: count list items and headings
-found strictly between the `<!-- pipeline:conventions:start -->` and
+exactly, mechanically, not as a judgment call: count **rule lines** found
+strictly between the `<!-- pipeline:conventions:start -->` and
 `<!-- pipeline:conventions:end -->` markers (see
-`core/contracts/conventions-template.md`). Never count anything before the
-opening marker or after the closing one, however long that surrounding
-prose runs — a human's own hand-written notes elsewhere in the file do not
-satisfy this check, by design. Fewer than five such items is a `fail`. A
-missing file, or a file with no markers at all, is also a `fail` — it is
-`fail` the same way a file below the threshold is, not a separate case,
-because both mean the same thing to a phase that reads this file expecting
-real rules: nothing is there to enforce.
+`core/contracts/conventions-template.md`). A rule line is a list item
+carrying a `file:line` citation — the exact shape the conventions flow
+writes a rule in. Nothing else counts:
+
+- **Never count a heading.** The conventions flow emits all seven area
+  headings on every run, including for areas where nothing was derived, so
+  counting headings would clear a five-item bar on a file holding no rules
+  at all — the precise silent pass this threshold exists to prevent.
+- **Never count a "no rule derived" line**, however it is worded. It is the
+  flow reporting an absence, not a rule.
+- **Never count a list item with no `file:line` citation.** An
+  uncited line has nothing a later reader or run can check it against, and
+  the citation is what distinguishes a derived rule from a sentence.
+- Never count anything before the opening marker or after the closing one,
+  however long that surrounding prose runs — a human's own hand-written
+  notes elsewhere in the file do not satisfy this check, by design. Items
+  in the discoveries span (`<!-- pipeline:discoveries:start -->` /
+  `<!-- pipeline:discoveries:end -->`) do not count either; that span holds
+  candidates the conventions flow has not confirmed.
+
+Fewer than five such rule lines is a `fail`. A missing file, or a file with
+no markers at all, is also a `fail` — it is `fail` the same way a file below
+the threshold is, not a separate case, because both mean the same thing to a
+phase that reads this file expecting real rules: nothing is there to
+enforce.
 
 When this check fails, the message names the file and states the specific
 problem plainly, not a generic "requirement not met":

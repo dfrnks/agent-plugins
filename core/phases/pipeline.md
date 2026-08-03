@@ -61,9 +61,8 @@ Read `paths.specs/<task-id>.md` before dispatching any phase. Confirm its
 `## Agent Handoff Log` (per `core/contracts/handoff-log.md`) contains an
 entry whose heading begins with `review` — matched tolerantly: case
 insensitive, and allowing a date suffix or a qualifier to follow the name,
-so `### review (YYYY-MM-DD)`, `### Review-plan`, and `### review
-(post-implementation)` all count as a match, and only an entry with no
-resemblance to the name at all fails it.
+so `### review (YYYY-MM-DD)` and `### Review-plan` both count as a match,
+and only an entry with no resemblance to the name at all fails it.
 
 If no such entry exists, stop here and return `BLOCKED`, naming what to run
 to fix it: run the review flow against this task's spec, then re-invoke this
@@ -116,7 +115,7 @@ Dispatch the test phase. It returns a report of at most 300 characters in
 the shape:
 
 ```
-Tests: <path>. <N> tests written. Status: fail (red). Committed: yes.
+Tests: <path>. <N> tests written. Status: <fail (red)|pass (green)>. Committed: <yes|no>.
 ```
 
 Read the `Status:` field. If it does not report a failing suite — the
@@ -136,9 +135,22 @@ characters in the shape:
 Implemented: <summary>. Tests: pass (<N>). Lint: clean. Committed: yes.
 ```
 
-This report has no field this phase branches on — its role here is
-confirmation that the green phase completed and committed, so code-review
-has a diff to read. Proceed to code-review.
+That shape is what the execute phase returns when it completed: the suite
+passes, the lint gate is clean, and the work is committed. The phase can
+also stop before reaching it — one of its own stop-and-escalate conditions
+(an impossible Definition of Done item, a conflict between two items, a
+task that turns out to need infrastructure changes beyond its scope), or a
+verification loop it could not drive to green. Treat any return that is not
+the completed shape above — a stop, an explicit escalation, a report saying
+the tests still fail or the lint gate is still failing — as a stop of the
+whole pipeline: return `STOPPED`, carrying the execute phase's own account
+of where it stopped into Step 5's reason, and do not dispatch code-review.
+Code-review adjudicates a finished implementation; running it against a
+half-finished one produces a verdict about work nobody claimed was done.
+
+On the completed shape, proceed to code-review. There is no field to branch
+on in that case — the report's role is confirmation that the green phase
+completed and committed, so code-review has a diff to read.
 
 ### 4.3 — code-review
 
@@ -160,8 +172,12 @@ branch:
   rejected review is how a pipeline burns a branch: each unsupervised pass
   makes changes the review that rejected them has never seen, so nothing in
   the loop converges toward an approval — resuming after `CHANGES_REQUESTED`
-  is a deliberate, separate re-entry into this phase, not a retry this phase
-  performs on its own.
+  is a deliberate, operator-initiated act, performed through the resume flow
+  (`core/flows/resume.md`), which dispatches the single execute phase and
+  stops. It is not a retry this phase performs on its own, and it is not a
+  re-invocation of this phase either: this phase runs the whole sequence, so
+  re-entering here would resume the chaining the stop exists to break, which
+  is exactly why that flow forbids dispatching this file.
 
 ### 4.4 — end
 
@@ -170,15 +186,32 @@ branch above. It returns a report, one line per item, with no fixed
 character cap, covering (in order) the lint result, whether a
 `commands.test_all` re-run was needed after autofixing, what it persisted to
 project conventions or phase memory, branch push confirmation, the pull
-request URL or which skip condition applied, and the tracker status result.
-This phase does not branch on any single field in that report — it carries
+request URL or which skip condition applied, the tracker status result, and
+— as its final line — the completion signal this phase branches on, in
+exactly this shape:
+
+```
+End phase: <completed|stopped at Step <N>: <reason>>.
+```
+
+This phase does not branch on any other field in that report — it carries
 the whole report into Step 5 to compose the pull request URL and the final
-result — except for the one signal that decides `SHIPPED` versus `STOPPED`:
-whether the end phase reached its own Step 8 or stopped partway through one
-of its steps per that phase's own stop rules (a push failure, per Step 4, or
-a failed tracker update, per Step 6). Reaching Step 8 means `SHIPPED`;
-stopping short of it means `STOPPED`, carrying the end phase's own account
-of where it stopped into Step 5's reason.
+result. It branches only on that last line, because it is the one signal
+that decides `SHIPPED` versus `STOPPED` and the only one the end phase's
+report states as a field rather than as prose a reader has to interpret.
+`completed` means the end phase reached its own Step 8: `SHIPPED`. Anything
+else means it stopped partway through one of its own steps, per that
+phase's own stop rules — a push failure other than the defined "no remote
+configured" skip (Step 4), a failed tracker update (Step 6), or a
+conventions file whose markers are malformed, which stops Step 3 before
+anything is persisted — and yields `STOPPED`, carrying the end phase's own
+account of where it stopped into Step 5's reason.
+
+If the end phase's report is missing that line entirely, treat it as
+`STOPPED` with the reason "end phase reported no completion signal". Do not
+infer completion from the presence of the other lines: a report can carry a
+lint result and a persistence line and still come from a phase that stopped
+three steps later.
 
 ## Step 5 — Report
 
@@ -186,10 +219,12 @@ Return, in this order:
 
 - **Result** — one of:
   - `SHIPPED` — the end phase ran and completed.
-  - `STOPPED` — code-review returned `CHANGES_REQUESTED`, Step 1's guard or
-    Step 3's dependency setup failed, or the end phase itself stopped
-    partway through one of its own steps (a push failure other than "no
-    remote configured", or a failed tracker update per `end.md` Step 6).
+  - `STOPPED` — code-review returned `CHANGES_REQUESTED`, the execute phase
+    stopped or escalated instead of returning its completed shape (4.2),
+    Step 1's guard or Step 3's dependency setup failed, or the end phase
+    itself stopped partway through one of its own steps (a push failure
+    other than "no remote configured", a failed tracker update per `end.md`
+    Step 6, or a malformed conventions file stopping its Step 3).
   - `BLOCKED` — the test phase reported no failing tests, or Step 2 found no
     review entry in the spec's handoff log.
 - **Branch** — the task ID confirmed in Step 1.
@@ -199,6 +234,7 @@ Return, in this order:
 - On any result other than `SHIPPED`, a one-line reason so the operator
   knows where to resume: the blocker list on `STOPPED` from code-review, the
   guard or setup failure message on `STOPPED` from Step 1 or Step 3, the
+  execute phase's own stop or escalation on `STOPPED` from 4.2, the
   step and error the end phase reported on `STOPPED` from 4.4, the
   missing-review instruction from Step 2 on `BLOCKED`, or the confirmation
   that the test suite came back green on the other `BLOCKED` case.

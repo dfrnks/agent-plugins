@@ -98,6 +98,23 @@ Each rule is one line, an imperative instruction, ending with the
 one area into a single paragraph; a later reader, human or another flow
 run, needs to be able to check one rule at a time against its own citation.
 
+Then commit the file:
+
+```bash
+git add <paths.conventions>
+git commit -m "pipeline: derive project conventions"
+```
+
+Stage that path specifically — never `git add .` — and append
+`git.commit_trailer` as a trailer if it is non-empty. The commit is part of
+this step, not an afterthought a caller might do later: the execute and
+code-review phases read `paths.conventions` from inside a worktree created
+fresh from `git.base_branch`, and such a worktree holds only what that
+branch has committed. A conventions file left uncommitted is, from every
+phase's point of view, a conventions file that does not exist — which is the
+silent non-enforcement this whole flow exists to prevent, arriving by a
+different route.
+
 ## Step 5 — Derive the checklist
 
 Derive `paths.review_checklist`, seeded from
@@ -109,6 +126,15 @@ check" reads equally as a rule to follow and a box to check during review,
 and belongs in both places. Never replace the seed's own four sections;
 this flow only appends to them, the same way it only appends to the
 conventions file's managed section.
+
+Commit the checklist as well, for the same reason Step 4 commits the
+conventions file — the code-review phase reads `paths.review_checklist`
+from inside a worktree, which holds only committed files:
+
+```bash
+git add <paths.review_checklist>
+git commit -m "pipeline: derive review checklist"
+```
 
 If `paths.review_checklist` is not set in the configuration, skip this step
 and say so in the report — it is an optional key, and this flow does not

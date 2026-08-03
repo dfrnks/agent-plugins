@@ -28,6 +28,21 @@ What existing code would this break? Which assumptions does this spec make
 that aren't actually true? What's missing from the Definition of Done that
 would let a phase call this task finished while real gaps remain?
 
+## Step 0 — Load configuration
+
+Read `.agent-pipeline/config.yaml` before anything else. Follow the
+fail-fast protocol in `core/contracts/pipeline-config.md` — which governs
+every flow and phase "without exception", this one included: stop and name
+the exact missing key if the file or a key this flow needs is absent. This
+flow needs `paths.specs`, `paths.conventions`, and `git.commit_trailer`.
+
+Being invoked inline by `task`, which already loaded the configuration, is
+not a reason to skip this step. This flow is equally reachable standalone,
+and a flow that reads three configured values while trusting a caller to
+have validated them has no defined behaviour on the path where it is the
+first thing to run — the same reasoning the pipeline phase gives for
+re-checking preconditions the task flow already established.
+
 ## Step 1 — Load context
 
 Read the spec file in full — every section in
@@ -110,7 +125,10 @@ Include:
 
 Apply the escalation routing table in `core/contracts/handoff-log.md`: a
 finding that is a durable fact about the codebase belongs in
-`paths.conventions`, not buried here as a task-only detail. Note any such
+`paths.conventions` — appended inside its discoveries span
+(`core/contracts/conventions-template.md`), never inside the managed section,
+which the conventions flow regenerates wholesale on its next run — not
+buried here as a task-only detail. Note any such
 escalation in this same entry.
 
 Commit the spec file's changes:

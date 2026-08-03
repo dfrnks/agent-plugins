@@ -127,10 +127,27 @@ defines, since not everything durable belongs in the same place:
 - A detail specific only to this task, with no reuse value beyond it —
   stays in the handoff log, untouched.
 
-When a finding is escalated, note the escalation in a final dated
-subsection this phase appends to `## Agent Handoff Log`, per the
-contract's escalation-routing note, so a later reader of the log knows
-the finding was acted on rather than silently dropped.
+Append a dated `### end` subsection to `## Agent Handoff Log` in
+`paths.specs/<task-id>.md` — **unconditionally, on every run of this phase,
+whether or not anything was escalated**, exactly as the test, execute, and
+code-review phases each append their own (`core/contracts/handoff-log.md`,
+"Writing"). Record in it:
+
+- Each finding escalated to `paths.conventions` or to
+  `.agent-pipeline/memory/<phase>/`, in the contract's escalation form — or
+  an explicit line stating nothing durable was found this task.
+- The lint result from Step 2, including a skip and its reason.
+- That this phase ran, and how far it got.
+
+A conditional entry here is not a cosmetic gap. This is the only entry that
+records that the task was shipped at all, and the resume flow infers the
+phase to run next from the last leaf-phase entry in this log: with no `end`
+entry, a shipped task reads as one whose end phase never ran, and the next
+`resume` dispatches `end` a second time — pushing again, opening a second
+pull request, and moving the tracker on work already closed. Write the entry
+before Step 4 commits, so it ships in the same commit as everything else
+this phase produced, and so it survives even if a later step of this phase
+stops.
 
 State the outcome of this step explicitly in Step 7's report even when it
 found nothing worth persisting. An absent statement and a considered
@@ -177,11 +194,20 @@ for a remote before pushing:
 git remote
 ```
 
-If that lists at least one remote, push the current branch to it:
+If that lists at least one remote, push the current branch to it — to the
+remote that command actually named, not to an assumed name:
 
 ```bash
-git push -u origin HEAD
+REMOTE=$(git remote | head -n 1)
+git push -u "$REMOTE" HEAD
 ```
+
+A repository whose only remote is called something other than `origin` is
+ordinary, and pushing to a hardcoded `origin` there fails with "does not
+appear to be a git repository" — a stop, on a project that has a perfectly
+usable remote. If more than one remote is configured, prefer `origin` when
+it is among them and otherwise use the first listed, saying in Step 7's
+report which remote was pushed to.
 
 A push failure for any other reason (authentication, a rejected
 non-fast-forward push, a network error) is a stop: report it in Step 7 and
@@ -244,10 +270,23 @@ Report, in order:
 - What Step 3 persisted to `paths.conventions` or phase memory, naming
   each item, or an explicit statement that nothing durable was found this
   task. Never leave this silent.
-- Confirmation that the branch was pushed and what it carries, or that no
-  remote was configured and the push was skipped.
+- Confirmation that the branch was pushed, to which remote, and what it
+  carries — or that no remote was configured and the push was skipped.
 - The pull request's URL, or which of Step 5's skip conditions applied.
 - The tracker status result from Step 6.
+- As the **final line**, the completion signal the orchestrator branches on
+  (`core/phases/pipeline.md` Step 4.4), in exactly this shape:
+
+  ```
+  End phase: <completed|stopped at Step <N>: <reason>>.
+  ```
+
+  Write `completed` only when Step 8 is reached — that is, every step above
+  either ran or applied a defined skip. When this phase stops at one of its
+  own stop rules, write that instead, naming the step number and the reason,
+  and emit the report at that point rather than ending silently. Without
+  this line the orchestrator has no field to read and must treat the run as
+  stopped, which turns a shipped task into a reported failure.
 
 Keep it to one line per item. Unlike the phases before it, this report is
 read by a human deciding whether to merge, not by another phase resuming

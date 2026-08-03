@@ -60,24 +60,41 @@ never be left guessing which row applies:
 
 | What was learned | Where it goes |
 |---|---|
-| Project convention: pattern, naming, command, path, contract | the file at `paths.conventions` |
+| Project convention: pattern, naming, command, path, contract | the file at `paths.conventions`, inside its **discoveries span** |
 | Phase-workflow learning | `.agent-pipeline/memory/<phase>/` |
 | Detail specific to this task only | this handoff log |
 | Personal communication preference | the operator's own memory, outside the repository |
+
+Row 1 names a span, not just a file, and the span is not optional. A
+convention written anywhere else inside `paths.conventions` — most
+temptingly, straight under the matching area heading in the managed
+section — is written into a span the conventions flow regenerates wholesale
+on its next run, so the finding survives exactly until someone re-derives
+the project's conventions and then disappears with no trace that it was
+ever there. Append to the discoveries span instead
+(`<!-- pipeline:discoveries:start -->` / `<!-- pipeline:discoveries:end -->`,
+defined in `core/contracts/conventions-template.md`), which no flow
+overwrites; a discovery there is a candidate a later conventions run can
+confirm and promote into the managed section through its own rule bar.
 
 Rows 1 and 2 are the pair a reader is most likely to blur together, since
 both sound like "something the pipeline figured out while doing this work."
 The test that separates them: a **convention** is a fact about the target
 codebase itself — true whether or not this pipeline ever ran against it —
 while a **phase-workflow learning** is an operational quirk of running a
-phase, meaningful only to the phase that hit it. "This project's migrations
-must be generated with a name argument or the autogenerate step silently
-produces an empty file" is a convention: it is true of the codebase, and
-matters to a human working in it with no pipeline involved. "The execute
-phase needs to re-read the spec's Files to Modify section after a rebase,
-because the phase's own cached file list goes stale" is a phase-workflow
-learning: it is about how *this pipeline's phase* behaves, and means nothing
-outside that context — a human editing the codebase by hand never hits it.
+phase, meaningful only to the phase that hit it.
+
+"Every module in this project reads its settings through the shared
+configuration loader; reading an environment variable directly bypasses the
+defaults the loader applies" is a convention: it is true of the codebase,
+and it matters to a human working in it with no pipeline involved.
+
+"The code-review phase must reconstruct a test file's state as the test
+phase committed it from version control rather than reading the working
+tree, since the execute phase may have changed it since" is a
+phase-workflow learning: it is about how *this pipeline's phase* does its
+own job, and means nothing outside that context — a human reading the diff
+by hand never hits it.
 
 The hard rule: project conventions never go to personal memory. Personal
 memory is invisible to teammates and to every other phase running against
