@@ -81,7 +81,7 @@ before any phase; when absent, it proceeds directly.
 | `tracker.type` | yes | | | |
 | `tracker.prefix` | yes | | | |
 | `tracker.team` | | yes | | |
-| `tracker.states` | | yes | | |
+| `tracker.states` | | yes | optional | |
 | `commands.test` | yes | | | |
 | `commands.test_all` | yes | | | |
 | `commands.lint` | yes | | | |
@@ -96,9 +96,21 @@ before any phase; when absent, it proceeds directly.
 | `git.worktree_setup` | | | | yes |
 | `pr.enabled` | yes | | | |
 
-`tracker.type: github` needs nothing beyond the always-mandatory keys: it
-authenticates and labels through the prefix already required for every mode,
-using labels in place of the named states a `linear` tracker needs.
+`tracker.type: github` needs nothing beyond the always-mandatory keys to
+function: it authenticates through `gh` and can label using nothing but the
+prefix already required for every mode. `tracker.states` is accepted but
+optional in this mode — a project that prefers named labels like
+`In Progress` / `In Review` over the prefix-derived defaults may set
+`tracker.states.start` and `tracker.states.review` and github mode uses
+those as the label names instead. When the key is absent, the defaults are
+`<prefix>:in-progress` and `<prefix>:in-review`, built from `tracker.prefix`
+— naming the exact default here, rather than leaving it to each tracker
+file to invent one, is what keeps the label names identical however many
+times a project regenerates its configuration or reads this contract.
+`tracker.states` with only `start` or only `review` set is a configuration
+error under github mode, handled like any other malformed key: stop and
+name the missing half, rather than silently defaulting it while honoring
+the one that was provided.
 
 ## Fail-fast protocol
 

@@ -17,7 +17,7 @@ Input: the argument passed to the task flow — either a tracker identifier
 or a free-text description.
 
 1. If the argument matches `<prefix>-<number>` (the prefix from
-   `tracker.type`), that string is the task ID. Nothing else to resolve.
+   `tracker.prefix`), that string is the task ID. Nothing else to resolve.
 2. Otherwise, treat the argument as a free-text description of new work:
    - List `paths.specs` for files matching `<prefix>-<number>.md`.
    - Take the highest existing `<number>`, add one. An empty directory
@@ -26,6 +26,20 @@ or a free-text description.
      using it — the scan only sees local spec files, not any work tracked
      elsewhere, so a stale or partially-cleaned directory could produce an
      ID that collides with something the user already knows about.
+
+Two task flows started close together can both scan `paths.specs` before
+either has written a spec file, both compute the same highest-plus-one, and
+both present the same derived ID for confirmation — a real race, not a
+theoretical one, since this pipeline explicitly supports running multiple
+worktrees in parallel. The user-confirmation step above is the guard: it is
+a natural point for a person running two flows at once to notice the
+duplicate before either proceeds. It is not sufficient by itself, because
+confirmation depends on a human catching a coincidence they may not be
+watching for. The deterministic backstop is the write itself: immediately
+before creating the spec file at `paths.specs/<id>.md`, re-check that no
+file already exists at that path. If one now exists — the other flow won
+the race — stop rather than overwrite it, and re-derive the ID from a fresh
+scan.
 
 Output: the task ID, used as-is for the branch name and the spec filename.
 
