@@ -126,6 +126,13 @@ request.
 
 ## Step 4 — Commit and push
 
+A task whose entire diff already landed in commits made by earlier phases
+can reach this step with nothing left to stage — Step 2 found nothing to
+lint, Step 3 found nothing durable to persist, and the working tree is
+empty. That is not a failure: report it plainly in Step 7 and continue on
+to Step 5 as if the commit had happened, rather than failing this phase or
+fabricating a commit to have something to point to.
+
 Stage whatever Step 2's lint fixes left in this task's own diff, any edit
 Step 3 made to `paths.conventions` or `.agent-pipeline/memory/<phase>/`,
 and the spec file's updated handoff log, then commit:
