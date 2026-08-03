@@ -33,10 +33,10 @@ tracker:
   # states: { start: "In Progress", review: "In Review" }
 
 commands:
-  test: "pytest {target}"     # {target} = a specific module or file
-  test_all: "pytest"
-  lint: "ruff check . --fix && ruff format ."
-  # typecheck: "mypy ."       # optional
+  test: "<test runner invocation> {target}"   # {target} = a specific module or file, substituted in at run time
+  test_all: "<test runner invocation, run with no {target}>"
+  lint: "<lint/format invocation>"
+  # typecheck: "<typecheck invocation>"       # optional
 
 paths:
   tests: [tests]
