@@ -9,3 +9,4 @@ core/contracts/review-checklist-base.md|## Security;## Correctness;## Tests;## D
 core/trackers/none.md|## resolve_or_create;## set_status
 core/trackers/linear.md|## resolve_or_create;## set_status
 core/trackers/github.md|## resolve_or_create;## set_status
+core/phases/test.md|## Step 0 — Load configuration;## Step 1 — Load the spec;## Step 2 — Study existing test patterns;## Step 3 — Design the test plan;## Step 4 — Write the tests;## Step 5 — Verify the tests fail;## Step 6 — Handoff log;## Step 7 — Commit;## Step 8 — Report
