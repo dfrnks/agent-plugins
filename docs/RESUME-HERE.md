@@ -11,8 +11,9 @@ package is complete in structure:
 - `install.sh`, five checkers, a 27-case suite
 - `README.md` and `docs/validation-2026-08-03.md`
 
-Branch: `implement-pipeline`, 45 commits from `main`. Suite 27/27, all four
-gates pass. **Nothing has been published; there is no git remote.**
+Everything lives on `main`, in a single working directory — the earlier
+two-folder split was a git worktree and has been consolidated. Suite 27/27, all
+four gates pass. **Nothing has been published; there is no git remote.**
 
 ## What was closed, and how it was verified
 
@@ -40,10 +41,12 @@ Verified by execution:
   same absolute root from the project and from inside a worktree.
 - **install.sh** — a refused install now leaves no directories behind.
 
-Verified by reading only, there being no executable to run: **BP6**. Walking
-the problematic log (`review`, `test`, `code-review`, `execute`) through the
-new single procedure yields `code-review`, which is correct, and the two old
-rules did diverge on it.
+**BP6** was first checked by reading — walking the problematic log (`review`,
+`test`, `code-review`, `execute`) through the new single procedure yields
+`code-review`, which is correct, where the two old rules diverged. It has since
+been confirmed under execution as well: `resume` inferred `test` from a log
+holding only a `review` entry and ran that one phase without chaining, and the
+end phase left its own handoff entry in the full run.
 
 ### One defect found in `ea8ebe7`, and fixed
 
@@ -89,31 +92,27 @@ after, clean lint, all four handoff entries, and a code-review verdict of
 BP1, BP2 and BP6 were each confirmed under execution rather than by reading,
 and the spec gate caught three real blockers before any code existed.
 
+**It also runs unattended.** The first run needed nudging between phases; that
+was traced to `pipeline.md` Step 4 never requiring the sequence to be carried
+through in one pass, fixed, and re-verified — a single call with no
+intervention now reaches `SHIPPED` through all four phases.
+
 ## What is left
 
-1. **The orchestrator did not chain unattended.** It dispatched the test phase,
-   returned control, and needed two external nudges to run execute →
-   code-review → end. Whether that is an artifact of the non-interactive
-   harness or a real weakness in `pipeline.md` was not determined. **This is
-   the most important open question.**
-2. **`git.worktree_setup` has never executed.** The script was blocked; the
+1. **`git.worktree_setup` has never executed.** The script was blocked; the
    orchestrator correctly stopped, and the venv was then provisioned by hand.
    The stop behaviour is verified, the script is not.
-3. **A repository-sourced install.** The Claude Code marketplace was added from
+2. **A repository-sourced install.** The Claude Code marketplace was added from
    a local path, because nothing is published. The cache path has never been
    the resolved root in a live dispatch.
-4. **A full run on Cursor.** Cursor is verified as far as loading and
+3. **A full run on Cursor.** Cursor is verified as far as loading and
    dispatching; no task has been run through it.
-5. **Re-review the fix wave** (`edc253e`, `3e59a66`, `8641ac0`).
-6. **Publish** to `dfrnks/agent-pipeline` — there is still no remote.
+4. **Re-review the fix wave** (`edc253e`, `3e59a66`, `8641ac0`).
+5. **Publish** to `dfrnks/agent-pipeline` — there is still no remote.
 
-Criterion 3 of the design (a task reaching `SHIPPED` with an open pull request)
-remains **not met**: validation ran locally with no remote, so push and pull
-request were correctly skipped rather than exercised.
-
-Acceptance criterion 3 of the design (a `task` reaching `SHIPPED` with an open
-pull request) remains **not met**, honestly: validation ran locally with no
-remote. That stays recorded as-is.
+The design's pull-request criterion remains **not met**: validation ran locally
+with no remote, so push and pull request were correctly skipped rather than
+exercised.
 
 ## What the review found genuinely good — preserve under later change
 
