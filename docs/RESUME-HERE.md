@@ -76,16 +76,40 @@ That dispatch also **disproved a README claim**: with a local-path marketplace,
 a `git pull` takes effect with no reinstall. Both install modes are now
 documented.
 
+## The pipeline works end to end
+
+A full run was completed and independently verified on 2026-08-04 — see the
+second addendum in `docs/validation-2026-08-03.md`. A throwaway Python project
+was bootstrapped (`doctor`: 8 pass, 0 fail, 1 n/a) and taken through a real
+task: six commits, tests that genuinely failed before the implementation
+(**5 failed, 7 passed** at the red commit, re-checked by hand), 12 passing
+after, clean lint, all four handoff entries, and a code-review verdict of
+`APPROVED_WITH_WARNINGS` with five substantive warnings.
+
+BP1, BP2 and BP6 were each confirmed under execution rather than by reading,
+and the spec gate caught three real blockers before any code existed.
+
 ## What is left
 
-1. **A full `task` run**, on either harness. What has been dispatched is a
-   phase asked to report and stop — loading, dispatch and pointer resolution
-   are proven; a phase doing its own work is not.
-2. **A repository-sourced install.** The Claude Code marketplace was added from
+1. **The orchestrator did not chain unattended.** It dispatched the test phase,
+   returned control, and needed two external nudges to run execute →
+   code-review → end. Whether that is an artifact of the non-interactive
+   harness or a real weakness in `pipeline.md` was not determined. **This is
+   the most important open question.**
+2. **`git.worktree_setup` has never executed.** The script was blocked; the
+   orchestrator correctly stopped, and the venv was then provisioned by hand.
+   The stop behaviour is verified, the script is not.
+3. **A repository-sourced install.** The Claude Code marketplace was added from
    a local path, because nothing is published. The cache path has never been
    the resolved root in a live dispatch.
-3. **Re-review the fix wave** (`edc253e`, `3e59a66`).
-4. **Publish** to `dfrnks/agent-pipeline` — there is still no remote.
+4. **A full run on Cursor.** Cursor is verified as far as loading and
+   dispatching; no task has been run through it.
+5. **Re-review the fix wave** (`edc253e`, `3e59a66`, `8641ac0`).
+6. **Publish** to `dfrnks/agent-pipeline` — there is still no remote.
+
+Criterion 3 of the design (a task reaching `SHIPPED` with an open pull request)
+remains **not met**: validation ran locally with no remote, so push and pull
+request were correctly skipped rather than exercised.
 
 Acceptance criterion 3 of the design (a `task` reaching `SHIPPED` with an open
 pull request) remains **not met**, honestly: validation ran locally with no
