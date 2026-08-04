@@ -128,8 +128,14 @@ restage it — and keep the two source directories' files distinctly named,
 because a filename collision there silently destroyed the source for four
 tasks earlier in this project.
 
-The session ledger this file used to point at
-(`.superpowers/sdd/2026-08-03-agent-pipeline-implementation/progress.md`) is
-**gone** — it lived outside version control and is not in this worktree. The
-per-task rulings and deferred findings it held cannot be recovered. This file
-and the git history are what remain.
+The session ledger is **present**, at
+`.superpowers/sdd/2026-08-03-agent-pipeline-implementation/` — `progress.md`
+(117 lines), a per-task brief and report for each of the 16 tasks, and the
+review diffs. It is gitignored, so it travels with the working directory and
+not with the branch: keep it when moving or consolidating checkouts.
+
+Read `task-14-report.md:274-298` before touching the Claude Code agent layout.
+It records `claude plugin details` reporting `Agents (0)` while a live session
+listed all five agents and a dispatched one resolved its pointer — which is
+what `docs/validation-2026-08-03.md`'s D1 section originally read as proof the
+agents were not loading.

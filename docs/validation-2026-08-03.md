@@ -336,9 +336,27 @@ rather than the plugin cache. Dispatch, agent loading and pointer resolution
 are exercised identically either way, but a repository-sourced install has not
 been run, because nothing has been published yet.
 
-The task record holding the live-session observation was kept in a session
-ledger outside version control, which is no longer present in this worktree.
-It cannot be re-read, only re-run.
+The task record holding the live-session observation is
+`.superpowers/sdd/2026-08-03-agent-pipeline-implementation/task-14-report.md`,
+lines 274-298 — outside version control, but present. Read directly, it says
+more than "a live session listed the agents": `claude plugin details` reported
+`Agents (0)` **at the same time** as a real `claude -p` session listed all five
+as `tdd-pipeline:task-*`, and a dispatched `task-test` quoted back the absolute
+path its instructions resolved to.
+
+That makes the reasoning above the wrong way round. `Agents (0)` was already
+known to coexist with agents that load and dispatch, so it is evidence about
+the reporting command, not about the plugin — and the comparison with other
+plugins' counts does not distinguish the two. D1 may therefore have been a
+display gap misdiagnosed as a load failure, with the agent layout changed on
+the strength of it.
+
+This does not mean the current layout is wrong: it was dispatched live on
+2026-08-04 and works (see the addendum below). It means **both layouts have now
+been shown to load and dispatch**, and the change between them was justified by
+an inventory count that the project's own records had already shown to be
+unreliable. Anyone revisiting this should start from the task-14 transcript,
+not from this section's original conclusion.
 
 Three variants were installed from clean, each a fresh marketplace add plus
 install, after a control experiment established that `claude plugin details`
