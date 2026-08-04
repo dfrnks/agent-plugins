@@ -68,8 +68,15 @@ requirements table, each reporting `pass`, `fail`, or `n/a`:
 - **`git.worktree_setup` script, if dependencies are git-ignored** —
   conditional. Report `n/a` when no dependency directory in this project is
   git-ignored, per the same detection `init`'s Step 4 performs. When one is,
-  `fail` if `git.worktree_setup` is unset or points at a script that does
-  not exist; `pass` otherwise.
+  `fail` if `git.worktree_setup` is unset, points at a script that does not
+  exist, or points at one that is **not executable**; `pass` otherwise.
+  Check the last condition mechanically, with `test -x <path>`, and name it
+  distinctly from a missing file when it fails — "exists but is not
+  executable" is a one-command fix, and reporting it as absent sends the user
+  to regenerate a script that is already correct. The bit matters because the
+  orchestrator runs this script directly: without it, the run stops at the
+  step before any phase, in a worktree, with an error that looks like a
+  pipeline failure rather than a file mode.
 - **Tracker auth (Linear or a connected tracker CLI)** — conditional on
   `tracker.type`. Report `n/a` for `tracker.type: none`. For the other two
   modes, perform the connection check that mode's own tracker file requires
