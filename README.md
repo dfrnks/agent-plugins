@@ -200,9 +200,24 @@ git pull
 Re-run `install.sh` only when a release adds a new command or agent file,
 which needs a new link. It is idempotent, so re-running it costs nothing.
 
-**Claude Code** copies the plugin into its own cache at install time. Your
-clone is not what it reads, and a `git pull` does not reach it — reinstall
-the plugin to pick up changes.
+**Claude Code** depends on how you added the marketplace, and the difference
+is worth knowing because it decides whether editing your clone changes what
+runs:
+
+- **Added from a local path** (`claude plugin marketplace add /path/to/clone`)
+  — `${CLAUDE_PLUGIN_ROOT}` resolves to that clone, so a `git pull`, or any
+  edit you make, takes effect on the next dispatch with no reinstall. This is
+  the useful mode for working *on* the pipeline. Verified by dispatching a
+  phase and having it report the absolute path it resolved: the clone, not the
+  cache.
+- **Added from a repository** (`claude plugin marketplace add owner/name`) —
+  the plugin is fetched into Claude Code's own cache under
+  `~/.claude/plugins/cache/`, which is a real copy rather than a link. Update
+  it through the plugin flow rather than by pulling your clone.
+
+If you are unsure which mode you are in, dispatch anything and look at the
+path it reports, or read the `path` under your marketplace entry in
+`~/.claude/settings.json`.
 
 ## Constraints worth knowing before you rely on it
 

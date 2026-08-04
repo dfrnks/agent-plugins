@@ -317,12 +317,24 @@ loaded one way behaving differently from the same plugin loaded another — and
 this document never ran the experiment that would separate them.
 
 Second, and more important for anyone relying on the current layout: **the
-previous layout was tested by live dispatch and the current one was not.** The
-current layout's evidence is `claude plugin details` reporting `Agents (5)`,
-which is an install-time snapshot, not a phase actually running. That is a
-weaker class of evidence than what the layout it replaced had, and the
-asymmetry should be closed by dispatching a real phase before this package is
-relied on — not argued away.
+previous layout was tested by live dispatch and the current one initially was
+not.** The current layout's first evidence was `claude plugin details`
+reporting `Agents (5)` — an install-time snapshot, not a phase actually
+running, and a weaker class of evidence than the layout it replaced had.
+
+**That asymmetry is now closed.** On 2026-08-04 the plugin was installed from
+a clean marketplace add and the `task-test` agent dispatched for real, in an
+empty repository, instructed to do no work beyond reporting what it resolved.
+It reported the absolute path of the phase file its own instructions name, read
+that file, and returned its first heading (`# Phase: test`). The agent is
+dispatchable, `${CLAUDE_PLUGIN_ROOT}` resolves, and the core file is readable
+from inside the dispatched agent — verified by execution, not by inventory.
+
+One caveat that belongs with the result rather than under it: the marketplace
+was added from a **local path**, so the resolved root was the working clone
+rather than the plugin cache. Dispatch, agent loading and pointer resolution
+are exercised identically either way, but a repository-sourced install has not
+been run, because nothing has been published yet.
 
 The task record holding the live-session observation was kept in a session
 ledger outside version control, which is no longer present in this worktree.
@@ -548,6 +560,46 @@ single character outside the markers" rule against the new section's
 placement, not by running the conventions flow against a file holding both
 spans.
 
+## Addendum, 2026-08-04 — live dispatch on both harnesses
+
+The original run above could not dispatch a phase from an installed adapter on
+either harness. That was its single largest gap. It has now been closed on both,
+by execution.
+
+**Claude Code.** Installed from a clean `marketplace add` plus `install`;
+`claude plugin details` reports `Skills (6)` and `Agents (5)`. The `task-test`
+agent was then dispatched for real in an empty repository, instructed to do no
+work beyond reporting what it resolved. It returned the absolute path of its
+phase file, confirmed the path resolved, and read back its first heading
+(`# Phase: test`).
+
+**Cursor.** `install.sh` linked the adapter into a throwaway project. A live
+`cursor-agent` session listed all six commands — each with the description
+Cursor derived from the file — and all five agents by name. It then dispatched
+`task-test`, which reported
+`…/proj/.cursor/agent-pipeline/core/phases/test.md`, confirmed it exists, and
+returned `# Phase: test`.
+
+**BP5's root resolution, verified in the scenario it exists for.** In a project
+with `.cursor/` git-ignored — the realistic case, since the links point at an
+absolute local path — a worktree created from the base branch contains no
+`.cursor/` of its own. The adapter's
+`dirname $(git rev-parse --path-format=absolute --git-common-dir)` still
+resolved to the project root's `.cursor/agent-pipeline`, and the phase file
+read from there. A project-relative pointer would have dangled.
+
+Two caveats belong with this result rather than under it:
+
+- The Claude Code marketplace was added from a **local path**, so
+  `${CLAUDE_PLUGIN_ROOT}` resolved to the working clone rather than to the
+  plugin cache. Dispatch, agent loading and pointer resolution are exercised
+  identically either way, but a repository-sourced install has not been run,
+  because nothing is published yet. This also corrected a false claim in the
+  README, which had said Claude Code never reads from your clone.
+- What was dispatched is a phase agent asked to report and stop, not a phase
+  doing its own work. Loading, dispatch and resolution are proven; a full
+  `task` run on either harness is not, and criterion 3 remains **not met**.
+
 ## Carried forward as known-unverified
 
 Everything below is a genuine gap. None of it was tested, and none of it should
@@ -555,10 +607,14 @@ be read as though it were.
 
 ### Cursor
 
-No live Cursor session was available at any point in this project. The six
-items below were raised by the task that built the Cursor adapter and remain
-open; installing the adapter and confirming its `core/` pointers resolve on the
-filesystem, which this validation did do, does not close any of them.
+Items 1 and 2 below were **closed on 2026-08-04** by the live session recorded
+in the addendum above — Cursor does load `.cursor/agents/*.md` and
+`.cursor/commands/*.md`, and it does derive a description from a
+frontmatterless command file's first line of prose, which the adapter had
+assumed only because it degrades gracefully. They are left in place, struck
+through in substance rather than deleted, so the reasoning that produced them
+stays legible. The rest remain open; installing the adapter and confirming its
+`core/` pointers resolve on the filesystem does not close any of them.
 
 1. **Whether Cursor loads `.cursor/agents/*.md` and `.cursor/commands/*.md`**
    the way its two shipped `SKILL.md` documents describe. Those documents were
