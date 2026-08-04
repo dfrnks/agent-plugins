@@ -668,12 +668,8 @@ implementation, code review, ship.
 
 ### What this run did not establish
 
-- **The orchestrator did not chain unattended.** It dispatched the test phase,
-  returned control, and needed two external nudges before running execute →
-  code-review → end. The phases did their own work; the sequencing between 4.1
-  and 4.2 did not hold on its own. Whether that is an artifact of the
-  non-interactive harness or a real weakness in `pipeline.md` was **not
-  determined**, and it is the most important open question from this run.
+- **The orchestrator did not chain unattended** — since **diagnosed, fixed and
+  re-verified**; see the next section.
 - **`git.worktree_setup` never executed.** The script was blocked, the
   orchestrator correctly stopped rather than proceeding with unresolved
   dependencies, and the virtual environment was then provisioned by hand. The
@@ -754,3 +750,55 @@ path (`.venv/bin/python -m ...`), which returns unfiltered output. This is a
 property of the machine, not of the package, but it is recorded because it
 briefly made a broken toolchain look like a working one — the exact failure
 mode this document is written to avoid.
+
+## Addendum, 2026-08-04 — the orchestrator's yield, diagnosed and fixed
+
+The run above left one open question: the orchestrator dispatched the test
+phase, returned control, and had to be nudged to continue. It is now settled.
+
+**Reproduced.** The same task was re-run from the reviewed spec in a single
+call with no intervention. The orchestrator yielded again, and this time the
+calling session — not a human — was what restarted it. Two independent
+observations, no hand-holding in the second.
+
+**The cause was textual, not a harness artifact.** Step 4 of `pipeline.md`
+specified the ordering and every branch precisely, but never stated that the
+sequence must be carried through in one pass. Nothing in it said to await a
+dispatch, to avoid a detached one, or that reporting progress mid-sequence was
+not an option. An orchestrator that dispatched a phase and reported having
+dispatched it satisfied every written rule.
+
+That is the whole defect: the phase that exists to make a task run unattended
+had no instruction requiring it to.
+
+**Fixed.** Step 4 now states that each dispatch is awaited, that a background
+or detached dispatch must not be used there, and that Step 4 has exactly four
+exits — `BLOCKED`, `STOPPED`, `CHANGES_REQUESTED`, `SHIPPED` — with stopping
+anywhere else, including to summarise progress, named as not being one of
+them. A closing note removes the apparent reason to pause: the three phases
+after `test` read their inputs from the handoff log and from git, never from
+the orchestrator's context.
+
+**Re-verified by execution.** Same task, same reviewed spec, one call, no
+intervention:
+
+| Claim | Checked | Result |
+|---|---|---|
+| Runs unattended | single call, no nudges | **SHIPPED**, four phases, one pass |
+| All phases logged | grepped the spec's log | `test`, `execute`, `code-review`, `end` |
+| Tests genuinely failed first | ran the suite at the red commit | **5 failed, 7 passed** |
+| Implementation makes them pass | ran the suite at `HEAD` | 12 passed |
+| Lint clean | ran the configured command | 0 violations |
+| Discoveries kept out of the managed span | grepped the markers | discoveries span present and disjoint |
+
+Push and pull request were skipped, both defined skip conditions rather than
+failures — no remote, `pr.enabled: false`. Criterion 3 stays **not met**.
+
+### Why several reviews missed this
+
+Every prior review of `pipeline.md` was a reading, and read, Step 4 looks
+complete: it describes each decision correctly and in order. The absence has no
+textual signature — it is a rule that is not there. It became visible only when
+the orchestrator stopped somewhere the text never forbade, which is the same
+lesson this project has now learned four times: the serious defects were found
+by running something and missed by reasoning about it.
