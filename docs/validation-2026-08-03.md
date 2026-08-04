@@ -615,8 +615,76 @@ Two caveats belong with this result rather than under it:
   because nothing is published yet. This also corrected a false claim in the
   README, which had said Claude Code never reads from your clone.
 - What was dispatched is a phase agent asked to report and stop, not a phase
-  doing its own work. Loading, dispatch and resolution are proven; a full
-  `task` run on either harness is not, and criterion 3 remains **not met**.
+  doing its own work. That gap is closed by the run below.
+
+## Addendum, 2026-08-04 — a full pipeline run, verified independently
+
+A throwaway Python project (`pytest`, `ruff`, `tracker: none`, no remote) was
+bootstrapped and taken through a real task: *reject non-numeric and negative
+amounts in `add_entry`*. Every claim below was checked against the repository
+afterwards rather than taken from the phases' own reports.
+
+**Bootstrap.** `init` detected the stack, wrote a config carrying all fourteen
+always-mandatory keys, created the directories, wrote a worktree-setup script,
+ran `conventions` — seven exploration subagents in parallel — and made the four
+commits the flows mandate. `doctor` then returned **8 pass, 0 fail, 1 n/a**.
+
+**The task.** Six commits on branch `TASK-1`: spec, spec review, failing tests,
+implementation, code review, ship.
+
+**Verified independently, not reported:**
+
+| Claim | How it was checked | Result |
+|---|---|---|
+| The tests genuinely failed before the implementation | checked out `src/` at the red commit and ran the suite | **5 failed, 7 passed** |
+| The implementation makes them pass | ran the suite at `HEAD` | 12 passed |
+| Lint is clean | ran the configured lint command | 0 violations |
+| The implementation is real | read `src/ledger.py` | two `raise ValueError` guards |
+| Every phase logged its handoff | grepped the spec's log headings | `test`, `execute`, `code-review`, `end` |
+| The end phase wrote outside the managed span | grepped the marker pairs | discoveries span disjoint from the conventions span |
+
+**Fix-wave items confirmed under execution, not by reading:**
+
+- **BP1** — `init` committed all four artifacts; `doctor`'s tracked-in-git rows
+  passed. In two earlier attempts where git was denied, those same rows failed
+  with the correct diagnosis — the check fires in both directions.
+- **BP2** — `doctor` counted **12 rule lines**, excluding all seven headings and
+  both "no rule derived" lines.
+- **BP6** — the end phase left its handoff entry; `resume` inferred `test` from
+  a log holding only a `review` entry and ran that one phase without chaining.
+- **The `Status:` field is a real field.** When the test phase could not run its
+  suite it reported `Status: unverified (NOT observed red)` and the run stopped.
+  The pre-fix prompt hardcoded `fail (red)`, which would have reported red
+  without observing anything.
+- **The spec gate earns its place.** Before any code existed, the review caught
+  three blockers in the spec the previous agent had just written: message
+  assertions placed inside `with pytest.raises(...)` where they are unreachable;
+  `Decimal("NaN") < 0` raising `InvalidOperation` where `float("nan") < 0`
+  merely returns `False`, so the sign guard would have escaped as the wrong
+  exception type; and an undecidable Definition-of-Done item.
+- **The test-protection contract held.** The execute phase changed exactly one
+  line in a test file; the code-review phase verified that change independently
+  and confirmed it was not a weakening.
+
+### What this run did not establish
+
+- **The orchestrator did not chain unattended.** It dispatched the test phase,
+  returned control, and needed two external nudges before running execute →
+  code-review → end. The phases did their own work; the sequencing between 4.1
+  and 4.2 did not hold on its own. Whether that is an artifact of the
+  non-interactive harness or a real weakness in `pipeline.md` was **not
+  determined**, and it is the most important open question from this run.
+- **`git.worktree_setup` never executed.** The script was blocked, the
+  orchestrator correctly stopped rather than proceeding with unresolved
+  dependencies, and the virtual environment was then provisioned by hand. The
+  stop behaviour is verified; the script is not.
+- **Push and pull request were skipped**, correctly — no remote, `pr.enabled:
+  false`. Criterion 3 remains **not met**.
+- Three separate runs were lost to a harness permission trap before the cause
+  was found: an untrusted workspace makes Claude Code discard the project's
+  whole `permissions.allow` list, and the symptom is `doctor` failing its
+  tracked-in-git rows — indistinguishable from the pipeline defect BP1
+  described. Now documented in the README's permissions section.
 
 ## Carried forward as known-unverified
 

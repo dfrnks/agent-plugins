@@ -82,6 +82,52 @@ directory (the plugin root, not under `adapters/claude-code/`) — see
 [`docs/specs/2026-08-03-tdd-pipeline-plugin-design.md`](docs/specs/2026-08-03-tdd-pipeline-plugin-design.md)
 for why that placement, specifically, is the one that works.
 
+## Permissions the pipeline needs
+
+The pipeline reads files outside your project and writes git commits inside it.
+Both need permission, and when either is missing the failure does not look like
+a permission problem — so this section is worth reading before the first run
+rather than after it.
+
+**1. The plugin root must be readable.** Every command points at a file under
+the package's own `core/`, which lives outside your project directory. In an
+interactive session you approve that read once and it is remembered. In a
+non-interactive one (`claude -p`, CI, a hook) there is no prompt to approve, so
+the read is denied and the flow stops before writing anything. Pass the root
+explicitly there:
+
+```bash
+claude -p "…" --add-dir /path/to/your/agent-pipeline/clone
+```
+
+**2. `git add` and `git commit` must be permitted.** `init` and `conventions`
+commit what they write, deliberately — a worktree created from the base branch
+contains only committed files, so an uncommitted config is invisible to every
+phase. If git is denied, both flows still write their files and everything
+looks like it worked, and then `doctor` fails on the three "tracked in git"
+rows. That reads like a pipeline defect and is a permission setting.
+
+**3. The configured `commands` must be runnable.** The test phase has to
+observe its suite actually fail before the implementation exists. If it cannot
+run the suite it reports `Status: unverified` rather than claiming red, and the
+orchestrator stops — correct behaviour, but the run gets no further.
+
+**4. On Claude Code, trust the workspace first.** This one is the trap. An
+untrusted workspace makes Claude Code **ignore the project's entire
+`.claude/settings.json` `permissions.allow` list** — not the offending entry,
+the whole list — while printing one line about it. The visible symptom is
+identical to item 2: flows write, commits silently fail, `doctor` reports the
+project not ready. Open the project interactively once and accept the trust
+dialog, or set it directly:
+
+```json
+// ~/.claude.json
+{ "projects": { "/path/to/your/project": { "hasTrustDialogAccepted": true } } }
+```
+
+If `doctor` reports a config or conventions file as untracked right after a
+flow that says it committed one, check this before suspecting the pipeline.
+
 ## Configuration
 
 `init` writes `.agent-pipeline/config.yaml` for you, after showing you the draft
