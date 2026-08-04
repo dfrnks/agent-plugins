@@ -43,8 +43,14 @@ lines** found **between the two managed-section markers** that the
 conventions flow writes — see `conventions-template.md` for the exact marker
 pair.
 
-A rule line is a list item ending in a `file:line` citation, which is the
-exact shape the conventions flow writes a rule in. Headings never count,
+A rule line is a list item **carrying** a `file:line` citation anywhere in
+it, which is the exact shape the conventions flow writes a rule in. Count
+list items, not physical lines: a rule wraps across as many lines as it
+needs, and its citation closes the item rather than its first line — the
+worked example in `conventions-template.md` is itself two lines long, with
+the citation on the second. Reading this as "the line ends in a citation"
+would miss every wrapped rule, and so fail a conventions file holding five
+perfectly good ones. Headings never count,
 and this is the load-bearing part of the definition rather than a detail:
 the conventions flow emits all seven area headings on every run, including
 for areas where nothing was derived, so a threshold counting headings would

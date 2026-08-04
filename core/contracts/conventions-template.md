@@ -31,8 +31,13 @@ nothing outside them:
   span it owns.
 - The doctor flow's five-rule threshold (see `project-requirements.md`) is
   counted only across **rule lines** found between these markers — list
-  items ending in a `file:line` citation, in the shape the "Area headings"
-  section below defines. Headings never count toward it, and neither does a
+  items carrying a `file:line` citation anywhere in the item, in the shape
+  the "Area headings" section below defines. The unit counted is the list
+  item, not the physical line: the worked example in that section wraps onto
+  a second line and closes with its citation there, which is the normal shape
+  for a rule, so counting only lines that themselves end in a citation would
+  undercount almost every real file. Headings never count toward it, and
+  neither does a
   "no rule derived" line or an uncited list item: the generated block always
   carries all seven headings, so counting them would let a file with no
   rules at all clear a five-item bar. Prose outside the markers, however

@@ -70,6 +70,12 @@ is_allowlisted() { # <kind> <matched text>
   return 1
 }
 
+# Scratch files go under a per-run mktemp directory, not a fixed /tmp path:
+# a fixed name collides when two runs overlap (a developer and a hook, or two
+# checkouts) and is a symlink-attack target on a shared /tmp.
+SCRATCH="$(mktemp -d)"
+trap 'rm -rf "$SCRATCH"' EXIT
+
 rc=0
 for f in "${targets[@]}"; do
   [ -f "$f" ] || continue
@@ -84,8 +90,8 @@ for f in "${targets[@]}"; do
     done < <(grep -noEI "$p" "$f" 2>/dev/null)
   done
   if [ -n "${AGENT_PIPELINE_DENYLIST:-}" ] && [ -f "$AGENT_PIPELINE_DENYLIST" ]; then
-    if grep -nIiFf "$AGENT_PIPELINE_DENYLIST" "$f" >/tmp/ap-leak 2>/dev/null; then
-      printf 'denylisted term in %s:\n' "$f"; sed 's/^/  /' /tmp/ap-leak; rc=1
+    if grep -nIiFf "$AGENT_PIPELINE_DENYLIST" "$f" >"$SCRATCH/denylist" 2>/dev/null; then
+      printf 'denylisted term in %s:\n' "$f"; sed 's/^/  /' "$SCRATCH/denylist"; rc=1
     fi
   fi
 done

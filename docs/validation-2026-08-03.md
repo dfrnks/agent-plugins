@@ -300,10 +300,33 @@ exists once the plugin is installed.
 
 A prior task recorded this as probably "a display artifact" of
 `claude plugin details`, on the structural evidence that all five agents are
-declared and every pointer resolves. **That is disproved.** The same command
-reports agents correctly for other installed plugins — `Agents (15)`,
-`Agents (7)`, `Agents (3)` for three unrelated plugins in the same session. It
-is not blind to agents; these agents are genuinely not loaded.
+declared and every pointer resolves. **The structural half of that argument is
+disproved.** The same command reports agents correctly for other installed
+plugins — `Agents (15)`, `Agents (7)`, `Agents (3)` for three unrelated
+plugins in the same session. It is not blind to agents; these agents are
+genuinely not loaded.
+
+What that disproof does **not** address, and what this document previously
+elided: the earlier record also reported a live session in which all five
+agents were listed and a dispatched agent confirmed its resolved path. That is
+a different kind of evidence than the structural argument, and refuting the
+structural argument leaves it standing. Two honest consequences follow.
+
+First, the two observations may both be true of different things — a plugin
+loaded one way behaving differently from the same plugin loaded another — and
+this document never ran the experiment that would separate them.
+
+Second, and more important for anyone relying on the current layout: **the
+previous layout was tested by live dispatch and the current one was not.** The
+current layout's evidence is `claude plugin details` reporting `Agents (5)`,
+which is an install-time snapshot, not a phase actually running. That is a
+weaker class of evidence than what the layout it replaced had, and the
+asymmetry should be closed by dispatching a real phase before this package is
+relied on — not argued away.
+
+The task record holding the live-session observation was kept in a session
+ledger outside version control, which is no longer present in this worktree.
+It cannot be re-read, only re-run.
 
 Three variants were installed from clean, each a fresh marketplace add plus
 install, after a control experiment established that `claude plugin details`

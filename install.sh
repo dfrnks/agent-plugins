@@ -34,9 +34,13 @@ variable every Claude Code adapter file uses to reach core/ — is only set
 when Claude Code loads the adapter through its own plugin system, not
 because matching files happen to exist under a project's .claude/ directory.
 
-Install it instead via Claude Code's plugin flow, e.g.:
-  claude plugin marketplace add <path-or-url-to-this-repository>
-  claude plugin install tdd-pipeline
+Install it instead via Claude Code's plugin flow:
+  claude plugin marketplace add dfrnks/agent-pipeline
+  claude plugin install tdd-pipeline@agent-pipeline
+
+The plugin is "tdd-pipeline"; the marketplace it comes from is
+"agent-pipeline". The "@" form names both, so the install works the same way
+whether or not another marketplace also offers a plugin by that name.
 EOF
   exit 2
 fi
@@ -67,8 +71,6 @@ check_link() { # <target> <linkname>
   return 0
 }
 
-mkdir -p "$DEST/agents" "$DEST/commands" "$DEST/agent-pipeline"
-
 # Build the full link plan before touching anything, so a conflict on any
 # one destination aborts before any destination is changed — never a
 # half-installed tree.
@@ -89,6 +91,12 @@ if [ "$rc" -ne 0 ]; then
   echo "aborting: no changes were made to $DEST" >&2
   exit 1
 fi
+
+# Only now create the destination directories. Doing it before the conflict
+# check above would leave three directories behind on a refusal, making the
+# "no changes were made" message false — the message is what tells the user
+# it is safe to re-run after resolving the conflict.
+mkdir -p "$DEST/agents" "$DEST/commands" "$DEST/agent-pipeline"
 
 for i in "${!LINKS[@]}"; do
   ln -sfn "${TARGETS[$i]}" "${LINKS[$i]}"

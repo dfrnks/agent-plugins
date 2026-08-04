@@ -10,14 +10,32 @@ switches tools.
 
 ## Commands
 
-| Command | What it does |
-|---|---|
-| `init` | Bootstraps a project: detects the stack, proposes `.agent-pipeline/config.yaml` for confirmation, creates the directories, and hands off to `conventions`. Run once per project. |
-| `conventions` | Explores the codebase and derives its actual rules — one line per rule, each ending in a `file:line` citation — into the project's conventions file. This is what the execute and code-review phases enforce. |
-| `doctor` | Checks the project against every requirement the pipeline needs, one row per requirement, and reports `pass` / `fail` / `n/a`. Takes an optional `repair` argument. |
-| `task` | The single entry point for work. Resolves the item, writes a spec, reviews it, stops at a confirmation gate, then creates a worktree and runs the four phases against it. |
-| `review` | Critiques an existing spec against the real codebase and fixes it in place. Runs standalone, or inline as `task`'s own step 3. |
-| `resume` | Re-enters an interrupted pipeline at exactly one phase, runs that phase alone, and stops. A recovery tool, not a retry loop. |
+The six commands are the same on both harnesses, but **you type them
+differently**, because the two install by different mechanisms:
+
+| What it does | Claude Code | Cursor |
+|---|---|---|
+| Bootstraps a project: detects the stack, proposes `.agent-pipeline/config.yaml` for confirmation, creates the directories, commits them, and hands off to conventions. Run once per project. | `/tdd-pipeline:init` | `/init` |
+| Explores the codebase and derives its actual rules — one per list item, each carrying a `file:line` citation — into the project's conventions file, and commits it. This is what the execute and code-review phases enforce. | `/tdd-pipeline:conventions` | `/conventions` |
+| Checks the project against every requirement the pipeline needs, one row per requirement, and reports `pass` / `fail` / `n/a`. Takes an optional `repair` argument. | `/tdd-pipeline:doctor` | `/doctor` |
+| The single entry point for work. Resolves the item, writes a spec, reviews it, stops at a confirmation gate, then creates a worktree and runs the four phases against it. | `/tdd-pipeline:task` | `/task` |
+| Critiques an existing spec against the real codebase and fixes it in place. Runs standalone, or inline as `task`'s own step 3. | `/tdd-pipeline:review` | `/review` |
+| Re-enters an interrupted pipeline at exactly one phase, runs that phase alone, and stops. A recovery tool, not a retry loop. | `/tdd-pipeline:resume` | `/resume` |
+
+On Claude Code the commands are namespaced under the plugin name, which is
+what keeps `/tdd-pipeline:init` and `/tdd-pipeline:review` distinct from the
+built-in `/init` and `/review`.
+
+On Cursor, `install.sh` links the command files into `.cursor/commands/`,
+where they take their bare filenames — so **`/init`, `/review` and `/doctor`
+are the pipeline's, and they will shadow or be shadowed by anything else
+claiming those names** in that project. If you already use commands by those
+names, rename the links after installing; nothing in the pipeline depends on
+what its command files are called, only on what they point at.
+
+Throughout the rest of this README the commands are written bare — `init`,
+`task`, `doctor` — meaning "whichever of the two forms above your harness
+uses."
 
 Behind `task` sit four phases — **test** (write the failing suite), **execute**
 (make it pass without weakening it), **code-review** (adjudicate), and **end**
@@ -167,22 +185,49 @@ stops. State lives in files, not in a session.
 
 ## Updating
 
-Both harnesses read the package from your clone, so updating is a `git pull` in
-that clone:
+The two harnesses update differently, because only one of them reads the
+package from your clone.
+
+**Cursor** reads from your clone, through the symlinks `install.sh` created.
+A `git pull` is the whole update, and every project you installed into picks
+it up at once:
 
 ```bash
 cd ~/src/agent-pipeline
 git pull
 ```
 
-For Cursor, that is the whole update: `install.sh` created symlinks into
-`.cursor/`, so every project you installed into now points at the new content
-with no reinstallation. Re-running `install.sh` is safe and idempotent if a
-release adds a new command or agent file, which needs a new link.
+Re-run `install.sh` only when a release adds a new command or agent file,
+which needs a new link. It is idempotent, so re-running it costs nothing.
 
-For Claude Code, the plugin is copied into its own cache at install time rather
-than symlinked, so a `git pull` alone does not reach it — reinstall the plugin
-to pick up changes.
+**Claude Code** copies the plugin into its own cache at install time. Your
+clone is not what it reads, and a `git pull` does not reach it — reinstall
+the plugin to pick up changes.
+
+## Constraints worth knowing before you rely on it
+
+**The branch name is the task ID, exactly.** `task` creates the worktree with
+`git worktree add <path> -b <task-id> <base>`, and `resume` finds an
+interrupted task by looking up `refs/heads/<task-id>`. Rename the branch and
+`resume` reports there is nothing to resume, because as far as it can tell the
+task was never started. If your team has a branch naming convention —
+`feature/`, a username prefix — this pipeline does not currently accommodate
+it; the ID is the whole name.
+
+**Three of the five agents are pinned to the larger model.** On Claude Code,
+`task-test`, `task-execute` and `task-code-review` declare `model: opus`;
+`task-pipeline` and `task-end` use `sonnet`. That is a deliberate split — the
+three pinned ones are the phases where a weaker model produces work that looks
+right and is not — but it is also a cost decision that was made for you, and a
+full task runs all five. Edit the frontmatter in `agents/` if you want a
+different trade-off. Cursor's adapter carries no model field, so on Cursor the
+choice is whatever your own configuration selects.
+
+**The pipeline commits on your behalf, on your current branch.** `init` and
+`conventions` each commit what they write, because a worktree created from the
+base branch contains only committed files — an uncommitted config is invisible
+to every phase. Both stage only the specific paths they wrote, never `git add
+.`, so uncommitted work of your own stays uncommitted.
 
 ## Repository layout
 
@@ -203,8 +248,21 @@ tests/         the test suite covering the checkers
 install.sh     links core/ and the Cursor adapter into a project
 ```
 
-`core/` never names a tool, a language, or a harness. That neutrality is
-enforced mechanically by `checks/core-is-neutral.sh`, not by convention.
+`core/` never names a **harness** — not Claude Code, not Cursor, not a
+harness-specific variable or tool. It says "dispatch a subagent"; which tool
+does the dispatching is an adapter's business. That rule is enforced
+mechanically by `checks/core-is-neutral.sh`, not by convention.
+
+The same checker also flags a sample of third-party tool and framework names,
+so a concrete `pytest` or `webpack` cannot drift into a phase file. That half
+is a **sample, not a gate**: it knows the tools it lists and nothing else.
+
+Two deliberate exceptions, both under `core/trackers/`: `github.md` names
+`gh` and `linear.md` names Linear. A tracker file whose whole job is to drive
+one specific tracker cannot describe that job without naming it — the
+alternative would be prose so indirect it stops being executable. The
+neutrality that matters is that no *phase* or *flow* depends on which tracker
+you chose, and `tracker.type` is what selects between them.
 
 ## Validation
 
