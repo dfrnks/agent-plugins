@@ -19,7 +19,7 @@ this contract only names which keys and paths must exist, not their format.
 | `paths.conventions` file, non-empty, with derived stack rules, tracked in git | yes | conventions (writes and commits) | doctor, execute phase |
 | `.agent-pipeline/memory/` directory | no | init | doctor |
 | `paths.review_checklist`, tracked in git when set | no | conventions (writes and commits) | doctor |
-| `git.worktree_setup` script, if dependencies are git-ignored | conditional | init proposes | task |
+| `git.worktree_setup` script, executable, if dependencies are git-ignored | conditional | init proposes and sets the executable bit | doctor, task |
 | Tracker auth (Linear or `gh auth`) | conditional on `tracker.type` | — | doctor, task |
 
 ## Why a populated conventions file is mandatory

@@ -132,10 +132,29 @@ in the configuration to its path. As with every value in this flow, propose
 and wait for confirmation rather than writing the script or the config key
 unattended.
 
-Once confirmed and written, commit the script and the configuration change
-together, for the same reason Step 3 commits the configuration itself — the
-orchestrator runs this script from inside a worktree, where only committed
-files exist:
+Once confirmed and written, **make the script executable and verify that it
+is**, before committing it:
+
+```bash
+chmod +x <setup script>
+test -x <setup script>
+```
+
+The orchestrator runs this script directly, so the executable bit is part of
+the artifact rather than a detail of how it was created. A script written
+without it fails at the moment the orchestrator tries to run it, which is
+inside a worktree, on the first task — long after the flow that produced it
+reported success. Git records the bit, so setting it here is what carries it
+to every worktree and every other clone.
+
+If `chmod` cannot be run, say so plainly and stop this step rather than
+committing a script that will not run: an unexecutable setup script is the
+same as a missing one to every phase downstream, and it is worse than a
+missing one to a reader, who sees a configured path and a file that exists.
+
+Then commit the script and the configuration change together, for the same
+reason Step 3 commits the configuration itself — the orchestrator runs this
+script from inside a worktree, where only committed files exist:
 
 ```bash
 git add <setup script> .agent-pipeline/config.yaml

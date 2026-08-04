@@ -89,8 +89,22 @@ A freshly created worktree is missing whatever the project excludes from
 version control — installed packages, a virtual environment, local
 configuration files — none of which exist there yet.
 
-If `git.worktree_setup` is configured, run it now and stop on a non-zero
-exit; do not proceed into Step 4 with dependencies unresolved, since every
+If `git.worktree_setup` is configured, run it now — **directly, by its own
+path, from the root of the worktree**, not through an interpreter chosen
+here:
+
+```bash
+./<git.worktree_setup>
+```
+
+The script carries its own shebang and its executable bit, both guaranteed by
+the flow that created it and checked by the doctor flow. Invoking it through
+a named interpreter instead would work by accident for one language and
+silently pick the wrong one for another, and would mask exactly the
+misconfiguration the doctor row exists to catch.
+
+Stop on a non-zero exit; do not proceed into Step 4 with dependencies
+unresolved, since every
 phase this step precedes assumes a working project environment and has no
 way of diagnosing a setup failure it never expected to see. If
 `git.worktree_setup` is absent, proceed directly — the project has declared
