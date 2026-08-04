@@ -94,9 +94,16 @@ exactly, mechanically, not as a judgment call: count **rule lines** found
 strictly between the `<!-- pipeline:conventions:start -->` and
 `<!-- pipeline:conventions:end -->` markers (see
 `core/contracts/conventions-template.md`). A rule line is a list item
-carrying a `file:line` citation — the exact shape the conventions flow
-writes a rule in. Nothing else counts:
+carrying a `file:line` citation anywhere in it — the exact shape the
+conventions flow writes a rule in. Nothing else counts:
 
+- **Count list items, never physical lines.** A rule wraps onto as many
+  lines as it needs, and its citation closes the item, commonly on a
+  continuation line rather than the first — that is what the worked example
+  in the template does. Count each `- ` item once, reading it through to the
+  next item or the closing marker, and ask whether a citation appears
+  anywhere inside it. Counting lines that themselves end in a citation would
+  fail a file holding five real rules.
 - **Never count a heading.** The conventions flow emits all seven area
   headings on every run, including for areas where nothing was derived, so
   counting headings would clear a five-item bar on a file holding no rules

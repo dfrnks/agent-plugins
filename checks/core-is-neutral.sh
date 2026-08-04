@@ -19,15 +19,30 @@ tokens='claude|cursor|anthropic|CLAUDE_PLUGIN_ROOT|CLAUDE\.md|\bAgent tool\b|\bT
 # gate: it will miss tools it doesn't know about. Grow it only when a real
 # instance slips through and is found some other way — padding it
 # preemptively buys no real coverage and just makes the list slower to read.
-tools='\bnpm\b|\byarn\b|\bpnpm\b|\bpip\b|\bpoetry\b|\bcargo\b|\bcomposer\b|\bbundler\b|\bnuget\b|\bmaven\b|\bgradle\b|\bpytest\b|\bjest\b|\bmocha\b|\brspec\b|\bjunit\b|\bvitest\b|\beslint\b|\bprettier\b|\bruff\b|\bflake8\b|\bpylint\b|\brubocop\b|\bwebpack\b|\bvite\b|\brollup\b|\bgulp\b|\bgrunt\b|\bbazel\b|\bsqlalchemy\b|\bhibernate\b|\bprisma\b|\bsequelize\b|\bdjango\b|\bflask\b|\brails\b|\blaravel\b|\bspring\b|\bexpress\b|\bfastapi\b|\bnestjs\b'
+#
+# Deliberately absent: tool names that are also ordinary English words —
+# express, spring, rails, cargo, maven, grunt, bundler, pip. Matching is
+# case-insensitive and core/ is English prose, so each of those flags
+# sentences like "express the rule as an imperative" as a leak. A gate that
+# fires on correct prose gets disabled or worked around, which costs more
+# coverage than the handful of tool names it was buying: this list is
+# explicitly a sample, and dropping a name only means this gate is not the
+# thing that catches it.
+tools='\bnpm\b|\byarn\b|\bpnpm\b|\bpoetry\b|\bcomposer\b|\bnuget\b|\bgradle\b|\bpytest\b|\bjest\b|\bmocha\b|\brspec\b|\bjunit\b|\bvitest\b|\beslint\b|\bprettier\b|\bruff\b|\bflake8\b|\bpylint\b|\brubocop\b|\bwebpack\b|\brollup\b|\bbazel\b|\bsqlalchemy\b|\bhibernate\b|\bprisma\b|\bsequelize\b|\bdjango\b|\bflask\b|\blaravel\b|\bfastapi\b|\bnestjs\b'
+
+# Scratch files go under a per-run mktemp directory, not a fixed /tmp path:
+# a fixed name collides when two runs overlap (a developer and a hook, or two
+# checkouts) and is a symlink-attack target on a shared /tmp.
+SCRATCH="$(mktemp -d)"
+trap 'rm -rf "$SCRATCH"' EXIT
 
 rc=0
 while IFS= read -r f; do
-  if grep -nEiI "$tokens" "$f" >/tmp/ap-neutral 2>/dev/null; then
-    printf 'harness token in %s:\n' "$f"; sed 's/^/  /' /tmp/ap-neutral; rc=1
+  if grep -nEiI "$tokens" "$f" >"$SCRATCH/tokens" 2>/dev/null; then
+    printf 'harness token in %s:\n' "$f"; sed 's/^/  /' "$SCRATCH/tokens"; rc=1
   fi
-  if grep -nEiI "$tools" "$f" >/tmp/ap-neutral-tool 2>/dev/null; then
-    printf 'third-party tool name in %s:\n' "$f"; sed 's/^/  /' /tmp/ap-neutral-tool; rc=1
+  if grep -nEiI "$tools" "$f" >"$SCRATCH/tools" 2>/dev/null; then
+    printf 'third-party tool name in %s:\n' "$f"; sed 's/^/  /' "$SCRATCH/tools"; rc=1
   fi
 done < <(find "$ROOT" -type f -name '*.md')
 exit $rc
