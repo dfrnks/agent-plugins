@@ -55,18 +55,36 @@ count as one. A project with five legitimate rules would have failed doctor.
 All three files now say "carrying", and count list items rather than physical
 lines.
 
+## Live dispatch — closed on both harnesses
+
+Both harnesses now load the adapter and dispatch a phase for real. Recorded in
+full in `docs/validation-2026-08-03.md`'s 2026-08-04 addendum.
+
+- **Claude Code** — clean marketplace add plus install, `Skills (6)` and
+  `Agents (5)`, and `task-test` dispatched in an empty repository returned its
+  resolved phase path and that file's first heading.
+- **Cursor** — `install.sh` into a throwaway project; a live `cursor-agent`
+  session listed all six commands and five agents and dispatched `task-test`,
+  which resolved and read its phase file. This also closed items 1 and 2 of the
+  carried-forward Cursor list.
+- **BP5 in its real scenario** — with `.cursor/` git-ignored, a worktree has no
+  `.cursor/` of its own, and the `git-common-dir` resolution still reached the
+  project root's copy.
+
+That dispatch also **disproved a README claim**: with a local-path marketplace,
+`${CLAUDE_PLUGIN_ROOT}` resolves to the working clone, not the plugin cache, so
+a `git pull` takes effect with no reinstall. Both install modes are now
+documented.
+
 ## What is left
 
-1. **Live-dispatch validation on Claude Code.** This is the real gap, and
-   `docs/validation-2026-08-03.md` now states it plainly: the current agent
-   layout's only evidence is `claude plugin details` reporting `Agents (5)`,
-   which is an install-time snapshot. The layout it replaced had been tested by
-   actually dispatching a phase. Close that asymmetry by running one — not by
-   arguing about it.
-2. **Validation on Cursor.** Never run end to end. `install.sh` is tested by a
-   fixture case, but no phase has ever executed under that harness, so BP5's
-   root resolution is verified as a shell command and not as a working install.
-3. **Re-review the fix wave** (`edc253e`).
+1. **A full `task` run**, on either harness. What has been dispatched is a
+   phase asked to report and stop — loading, dispatch and pointer resolution
+   are proven; a phase doing its own work is not.
+2. **A repository-sourced install.** The Claude Code marketplace was added from
+   a local path, because nothing is published. The cache path has never been
+   the resolved root in a live dispatch.
+3. **Re-review the fix wave** (`edc253e`, `3e59a66`).
 4. **Publish** to `dfrnks/agent-pipeline` — there is still no remote.
 
 Acceptance criterion 3 of the design (a `task` reaching `SHIPPED` with an open
