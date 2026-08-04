@@ -109,6 +109,27 @@ of its own; do not nest worktrees.
 
 Pass the task ID to each dispatched phase.
 
+**Run the four phases in a single pass, and do not hand control back in the
+middle of it.** Dispatch each phase and **wait for it to return** before
+deciding anything; dispatching one and reporting that it was dispatched is not
+running it. Never dispatch a phase in a way that lets this phase finish while
+that one is still working — if the tooling offers a background or detached
+dispatch, do not use it here.
+
+There are exactly four ways out of Step 4, and every one of them is a defined
+result rather than a pause: `BLOCKED` from 4.1, `STOPPED` from 4.2 or 4.4,
+`CHANGES_REQUESTED` from 4.3, or reaching the end phase and returning
+`SHIPPED`. Stopping anywhere else — to summarise progress, to report a phase's
+output, to ask whether to continue — is not one of them. This phase is the
+thing that makes a task run unattended: an orchestrator that narrates its
+progress and yields has satisfied the ordering above and defeated the purpose
+of having an orchestrator, because a person now has to notice and restart it
+at each boundary.
+
+The three phases after `test` are the ones this matters for. Their inputs come
+from the handoff log and from git, not from this phase's context, so there is
+never a reason to pause between them to gather anything.
+
 ### 4.1 — test
 
 Dispatch the test phase. It returns a report of at most 300 characters in
