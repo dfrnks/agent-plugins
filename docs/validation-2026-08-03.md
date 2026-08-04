@@ -802,3 +802,59 @@ textual signature — it is a rule that is not there. It became visible only whe
 the orchestrator stopped somewhere the text never forbade, which is the same
 lesson this project has now learned four times: the serious defects were found
 by running something and missed by reasoning about it.
+
+## Addendum, 2026-08-04 — `git.worktree_setup`, and a defect only running found
+
+The setup script had never executed: in the first full run it was blocked, the
+orchestrator correctly stopped, and the virtual environment was provisioned by
+hand. Testing it properly exposed a defect in three files at once.
+
+**The executable bit was absent from the package's vocabulary.** Neither
+`init.md`, `doctor.md`, `pipeline.md` nor `project-requirements.md` contained
+the word `chmod` or `executable`. So `init` wrote a setup script without the
+bit, `doctor` passed it because its row only required existence, and
+`pipeline.md` Step 3 said "run it now" without saying how.
+
+That last one is what made this invisible. Whether the pipeline worked depended
+on whether the agent invoked `./scripts/setup-worktree.sh` or
+`bash scripts/setup-worktree.sh` — a choice the text never constrained. Earlier
+runs happened to pick the interpreter and worked. The generated file was
+`-rw-rw-r--`.
+
+**Fixed in all four.** `init` sets the bit and verifies it, and stops rather
+than committing a script that will not run. `doctor` checks `test -x` and
+reports "exists but is not executable" as distinct from missing, because the
+two have different fixes. `pipeline` invokes the script by its own path, with
+the reason stated: a named interpreter would work by accident for one language
+and pick the wrong one for another. The requirements row now says executable.
+
+**Verified by execution, in two stages.**
+
+Doctor against a project whose script lacked the bit: **8 pass, 1 fail, 1
+n/a**, failing that row alone, naming the mode, and giving the one-command
+fix. It also surfaced something the fix had not considered — git records the
+file mode, so `chmod` alone does not reach a worktree; the bit needs
+`git add --chmod=+x` to be carried by the commit.
+
+Then a full task (`TASK-2`) from scratch with the bit set: the worktree was
+created, **the script ran inside it and built the virtual environment**, and
+the run reached `SHIPPED` through all four phases with no intervention.
+Checked independently afterwards — 9 tests pass, `ruff` clean, all four
+handoff entries present.
+
+### A note on what the test phase did, since it looked wrong and was not
+
+At `TASK-2`'s red commit the whole suite returns a **collection error**, not
+failing tests: the tests import a function that does not exist yet, so pytest
+cannot collect them. Read from outside, that looks like a phase reporting
+`fail (red)` on a suite that never ran.
+
+The handoff log shows otherwise. The phase named the collection error as "the
+missing behavior itself, not a broken test", recognised that a collection
+error hides each test's individual outcome, and built a temporary stub purely
+to check them — recording "5 failed, 4 passed" with the asserted reason for
+each of the five, and noting one test that only goes red against a mutating
+implementation. The stub was not committed.
+
+That is the contract's requirement met exactly: a test failing *for the reason
+it asserts*, not merely a suite that is not green.

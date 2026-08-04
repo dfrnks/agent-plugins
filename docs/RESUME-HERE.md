@@ -97,18 +97,23 @@ was traced to `pipeline.md` Step 4 never requiring the sequence to be carried
 through in one pass, fixed, and re-verified — a single call with no
 intervention now reaches `SHIPPED` through all four phases.
 
+**`git.worktree_setup` runs too.** Testing it exposed a defect spanning four
+files — the executable bit was never set, never checked, and `pipeline.md`
+never said how to invoke the script, so it worked or not depending on a choice
+the text left open. Fixed and re-verified: doctor fails a non-executable
+script by name, and a second full task created its worktree, ran the script in
+it, and shipped unattended.
+
 ## What is left
 
-1. **`git.worktree_setup` has never executed.** The script was blocked; the
-   orchestrator correctly stopped, and the venv was then provisioned by hand.
-   The stop behaviour is verified, the script is not.
-2. **A repository-sourced install.** The Claude Code marketplace was added from
+1. **A repository-sourced install.** The Claude Code marketplace was added from
    a local path, because nothing is published. The cache path has never been
    the resolved root in a live dispatch.
-3. **A full run on Cursor.** Cursor is verified as far as loading and
+2. **A full run on Cursor.** Cursor is verified as far as loading and
    dispatching; no task has been run through it.
-4. **Re-review the fix wave** (`edc253e`, `3e59a66`, `8641ac0`).
-5. **Publish** to `dfrnks/agent-pipeline` — there is still no remote.
+3. **Re-review the fix wave** (`edc253e`, `3e59a66`, `8641ac0`, `101af6e`,
+   `deb6be8`).
+4. **Publish** to `dfrnks/agent-pipeline` — there is still no remote.
 
 The design's pull-request criterion remains **not met**: validation ran locally
 with no remote, so push and pull request were correctly skipped rather than
