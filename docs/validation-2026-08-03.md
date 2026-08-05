@@ -336,10 +336,9 @@ rather than the plugin cache. Dispatch, agent loading and pointer resolution
 are exercised identically either way, but a repository-sourced install has not
 been run, because nothing has been published yet.
 
-The task record holding the live-session observation is
-`.superpowers/sdd/2026-08-03-agent-pipeline-implementation/task-14-report.md`,
-lines 274-298 — outside version control, but present. Read directly, it says
-more than "a live session listed the agents": `claude plugin details` reported
+The live-session observation comes from this package's own build record, which
+is not part of the published repository. It says more than "a live session
+listed the agents": `claude plugin details` reported
 `Agents (0)` **at the same time** as a real `claude -p` session listed all five
 as `tdd-pipeline:task-*`, and a dispatched `task-test` quoted back the absolute
 path its instructions resolved to.
