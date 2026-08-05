@@ -36,11 +36,12 @@ because matching files happen to exist under a project's .claude/ directory.
 
 Install it instead via Claude Code's plugin flow:
   claude plugin marketplace add dfrnks/agent-plugins
-  claude plugin install tdd-pipeline@dfrnks
+  claude plugin install tdd-pipeline@agent-plugins
 
-The plugin is "tdd-pipeline"; the marketplace it comes from is "dfrnks". The
-"@" form names both, so the install works the same way whether or not another
-marketplace also offers a plugin by that name.
+The plugin is "tdd-pipeline"; the marketplace it comes from is
+"agent-plugins", the repository itself. The "@" form names both, so the
+install works the same way whether or not another marketplace also offers a
+plugin by that name.
 EOF
   exit 2
 fi

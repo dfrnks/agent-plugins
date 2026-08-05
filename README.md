@@ -2,8 +2,8 @@
 
 A plugin marketplace holding one plugin today, **`tdd-pipeline`**.
 
-It is a harness-neutral, test-driven development pipeline for coding agents: it turns
-a one-line request into a reviewed spec, a failing test suite, an
+It is a harness-neutral, test-driven development pipeline for coding agents: it
+turns a one-line request into a reviewed spec, a failing test suite, an
 implementation that satisfies it, an adjudicated code review, and a shipped
 branch. The pipeline's behaviour lives entirely in `core/` as plain Markdown —
 thin per-harness adapters point at it, so the same pipeline runs unchanged on
@@ -68,12 +68,12 @@ Claude Code's own plugin flow instead:
 
 ```bash
 claude plugin marketplace add dfrnks/agent-plugins
-claude plugin install tdd-pipeline@dfrnks
+claude plugin install tdd-pipeline@agent-plugins
 ```
 
-The plugin is `tdd-pipeline`; the marketplace it comes from is `dfrnks`. The
-`@` form names both, so the install works the same way whether or not another
-marketplace also offers a plugin by that name.
+The plugin is `tdd-pipeline`; the marketplace it comes from is `agent-plugins`,
+the repository itself. The `@` form names both, so the install works the same
+way whether or not another marketplace also offers a plugin by that name.
 
 The adapter reaches `core/` through `${CLAUDE_PLUGIN_ROOT}`, a variable Claude
 Code sets only when it loads the adapter through its plugin system. Symlinking
@@ -81,7 +81,7 @@ the adapter into a project's `.claude/` directory would produce files that look
 installed but whose every `core/` pointer dangles, which is why the installer
 refuses rather than producing that layout.
 
-Verified by a clean install: `claude plugin details tdd-pipeline@dfrnks`
+Verified by a clean install: `claude plugin details tdd-pipeline@agent-plugins`
 reports `Skills (6)` and `Agents (5)` — every command and every subagent
 loads. The five agent files live at this repository's own `agents/`
 directory (the plugin root, not under `adapters/claude-code/`) — see
