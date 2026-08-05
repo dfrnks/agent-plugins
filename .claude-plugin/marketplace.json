@@ -1,6 +1,6 @@
 {
   "name": "agent-plugins",
-  "owner": { "name": "dfrnks" },
+  "owner": { "name": "deepcloud-dev" },
   "plugins": [
     {
       "name": "tdd-pipeline",
