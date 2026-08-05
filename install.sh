@@ -35,12 +35,12 @@ when Claude Code loads the adapter through its own plugin system, not
 because matching files happen to exist under a project's .claude/ directory.
 
 Install it instead via Claude Code's plugin flow:
-  claude plugin marketplace add dfrnks/agent-pipeline
-  claude plugin install tdd-pipeline@agent-pipeline
+  claude plugin marketplace add dfrnks/agent-plugins
+  claude plugin install tdd-pipeline@dfrnks
 
-The plugin is "tdd-pipeline"; the marketplace it comes from is
-"agent-pipeline". The "@" form names both, so the install works the same way
-whether or not another marketplace also offers a plugin by that name.
+The plugin is "tdd-pipeline"; the marketplace it comes from is "dfrnks". The
+"@" form names both, so the install works the same way whether or not another
+marketplace also offers a plugin by that name.
 EOF
   exit 2
 fi
