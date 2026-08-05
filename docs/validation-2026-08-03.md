@@ -861,3 +861,134 @@ implementation. The stub was not committed.
 
 That is the contract's requirement met exactly: a test failing *for the reason
 it asserts*, not merely a suite that is not green.
+
+## Addendum, 2026-08-05 — the flows added after the girolend comparison
+
+Comparing this package against the pipeline it was extracted from surfaced
+four gaps. Two were behaviours lost in the extraction, two were flows
+consolidated away on a reading that turned out to be wrong. All four were
+addressed, and then run — the point of this addendum is what running them
+found that reading them had not.
+
+A fresh throwaway Python project was used (an inventory ledger: five
+functions, eight tests, a git-ignored `.venv`, and a `file://` remote so the
+push path is real).
+
+### `init` and `doctor` — pass
+
+`8 pass, 0 fail, 2 n/a — ready`, in three commits. The configured commands
+were verified by hand afterwards (`8 passed`, `All checks passed!`), and
+`scripts/setup-worktree.sh` was created `100755` — the executable-bit fix
+holds on a bootstrap from nothing.
+
+The conventions exploration surfaced an unplanted real defect:
+`remove_item` has no floor, so removing more than the current stock yields a
+negative quantity silently. It was correctly held out of `CONVENTIONS.md` as
+a defect rather than a convention.
+
+The run also reported honestly that the sandbox had declined to execute the
+test and lint binaries, rather than claiming they passed. That was a fault in
+how the run was invoked, not in the flow, and the flow said so instead of
+papering over it.
+
+### `plan` — pass
+
+Checked against the repository rather than against its own report: no
+worktree created, still on the base branch, one commit touching one file, all
+six template sections present, and the report naming the next command while
+stating it ran neither. The stop is the whole feature, and the stop held.
+
+### `fix-bug` — pass
+
+A defect was planted where the existing suite could not see it:
+`restock_report` used `qty < threshold` against a docstring reading "at or
+below", and the only test covering it used a threshold no item sat exactly
+on, so `<` and `<=` were indistinguishable. The symptom was reported without
+naming file, function, or cause.
+
+Verified independently:
+
+- The main checkout was untouched — same branch, same HEAD, no source edits.
+- Two commits in a worktree, red then green. **At the red commit: `1 failed,
+  8 passed`** — only the new test fails. At green: `9 passed`, lint clean.
+- The fix is one character. No existing test was edited: `tests/` gained four
+  lines, `src/` changed one.
+- Nothing was pushed. The remote held only the base branch afterwards.
+
+It found the same unplanted `remove_item` defect and declined to fix it,
+citing the conventions rule it contradicts and saying the open question
+("raise, or clamp at zero?") belongs in its own spec.
+
+### The base-branch sync — FAILED, then fixed
+
+The fetch added earlier that day was wrong, and the run that exposed it was
+not testing it. `fix-bug` created its worktree from `origin/main` on a
+project whose remote was four commits **behind** local `main`, found the
+setup script absent, recovered by recreating from local, and reported it.
+
+The text only described falling back when the *fetch* failed. It said nothing
+about a fetch that succeeds while the fetched ref is behind — where branching
+from the remote silently drops the user's unpushed commits, which routinely
+include `.agent-pipeline/config.yaml` itself. Every phase then fails at Step 0
+in a project `doctor` calls ready.
+
+It had also reintroduced the defect the original was criticised for. The
+inherited pipeline's `git reset --hard origin/main` destroys local commits;
+branching from the remote ref ignores them. The same loss, with less noise.
+
+Both flows now compare with `git rev-list --left-right --count` and take the
+remote ref only when the local side is zero. The recovery in the failing run
+was the agent reasoning, not the specification — the same shape as the
+throwaway-implementation check, which the agent improvised before it was
+written down and which is now specified.
+
+### Cursor — `init` passes; the full task is UNMEASURED
+
+`install.sh` linked all fourteen files, and `init` on a live `cursor-agent`
+session produced a correct configuration, a conventions file, and a `100755`
+setup script.
+
+The full task did not validate anything. The session reported
+`.cursor/agent-pipeline` as empty, could not read `core/phases/pipeline.md`,
+and **improvised its own TDD pipeline** rather than following the package.
+The artifacts prove it: the branch is `task/clamp-stock` where the package
+requires the branch name to equal the task ID — `pipeline.md` Step 1's hard
+guard would have refused to run — and no task ID was allocated at all.
+
+The cause is environmental, not a package defect. Three hypotheses were
+tested and all three were wrong before the real one was found:
+
+1. `cursor-agent` cannot follow a symlink out of the workspace — **false**,
+   it read the file directly.
+2. Subagents run under a tighter sandbox — **false**, a dispatched subagent
+   read `pipeline.md` from inside the worktree and reported 287 lines.
+3. Cursor's file-listing tool hides symlinks — **false**, it enumerated all
+   twenty `core/` files correctly.
+
+The actual cause: on this machine `ls` is intercepted by a proxy that returns
+empty output with exit code 0, while `/usr/bin/ls` returns `core`. The agent
+listed the directory, saw nothing, and concluded the install was missing.
+
+That closes a loop worth recording. The comparison earlier the same day
+identified two generic agent memories the extraction left behind, one of them
+`ls_swallowed_by_rtk_proxy.md` — and that exact unported memory is what
+invalidated this run.
+
+**The item stands as unmeasured, not failed.** Nothing here says the package
+works on Cursor for a full task, and nothing says it does not.
+
+### Standing after this round
+
+Eleven of the package's thirteen flows and phases had been executed before
+this round; `plan` and `fix-bug` had not, and now have. What remains
+unexercised is a full task on Cursor, and a repository-sourced install, which
+becomes testable once the pull request merges.
+
+The round's most useful result is the one that failed. A correction written
+that morning, reviewed by its author, passing all five gates and the 27-case
+suite, was wrong in a way no reading caught — and it surfaced sideways, from
+a run aimed at something else. That is now the fourth instance of the same
+pattern in this project's record, and it should be read as a property of the
+artifact rather than as a run of bad luck: the text of a flow can be
+complete, coherent, and wrong, and no amount of reading separates that from
+correct.
