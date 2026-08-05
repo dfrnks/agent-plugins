@@ -448,7 +448,11 @@ coverage gate does not regress; its negative fixture
 (`tests/fixtures/adapters-missing-coverage`) still fails the check, unchanged.
 
 Verified by execution — a real install-uninstall cycle, not a reading of the
-manifest:
+manifest. The transcripts below are reproduced as they ran, so they carry the
+marketplace's name at the time, `agent-pipeline`; it was renamed to `dfrnks`
+before publication, and the repository to `agent-plugins`. Rewriting a
+transcript to show a command that was never typed would cost this document the
+only thing it is for.
 
 ```
 $ claude plugin marketplace add <this repository>

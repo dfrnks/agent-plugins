@@ -1,6 +1,8 @@
-# agent-pipeline
+# agent-plugins
 
-A harness-neutral, test-driven development pipeline for coding agents: it turns
+A plugin marketplace holding one plugin today, **`tdd-pipeline`**.
+
+It is a harness-neutral, test-driven development pipeline for coding agents: it turns
 a one-line request into a reviewed spec, a failing test suite, an
 implementation that satisfies it, an adjudicated code review, and a shipped
 branch. The pipeline's behaviour lives entirely in `core/` as plain Markdown —
@@ -49,8 +51,8 @@ Behind `task` sit four phases — **test** (write the failing suite), **execute*
 project's `.cursor/` directory:
 
 ```bash
-git clone https://github.com/dfrnks/agent-pipeline.git ~/src/agent-pipeline
-cd ~/src/agent-pipeline
+git clone https://github.com/dfrnks/agent-plugins.git ~/src/agent-plugins
+cd ~/src/agent-plugins
 ./install.sh --harness cursor --project /path/to/your/project
 ```
 
@@ -65,9 +67,13 @@ The Claude Code adapter ships as a plugin, not as project-local symlinks, so
 Claude Code's own plugin flow instead:
 
 ```bash
-claude plugin marketplace add dfrnks/agent-pipeline
-claude plugin install tdd-pipeline@agent-pipeline
+claude plugin marketplace add dfrnks/agent-plugins
+claude plugin install tdd-pipeline@dfrnks
 ```
+
+The plugin is `tdd-pipeline`; the marketplace it comes from is `dfrnks`. The
+`@` form names both, so the install works the same way whether or not another
+marketplace also offers a plugin by that name.
 
 The adapter reaches `core/` through `${CLAUDE_PLUGIN_ROOT}`, a variable Claude
 Code sets only when it loads the adapter through its plugin system. Symlinking
@@ -75,7 +81,7 @@ the adapter into a project's `.claude/` directory would produce files that look
 installed but whose every `core/` pointer dangles, which is why the installer
 refuses rather than producing that layout.
 
-Verified by a clean install: `claude plugin details tdd-pipeline@agent-pipeline`
+Verified by a clean install: `claude plugin details tdd-pipeline@dfrnks`
 reports `Skills (6)` and `Agents (5)` — every command and every subagent
 loads. The five agent files live at this repository's own `agents/`
 directory (the plugin root, not under `adapters/claude-code/`) — see
@@ -97,7 +103,7 @@ the read is denied and the flow stops before writing anything. Pass the root
 explicitly there:
 
 ```bash
-claude -p "…" --add-dir /path/to/your/agent-pipeline/clone
+claude -p "…" --add-dir /path/to/your/agent-plugins/clone
 ```
 
 **2. `git add` and `git commit` must be permitted.** `init` and `conventions`
@@ -239,7 +245,7 @@ A `git pull` is the whole update, and every project you installed into picks
 it up at once:
 
 ```bash
-cd ~/src/agent-pipeline
+cd ~/src/agent-plugins
 git pull
 ```
 

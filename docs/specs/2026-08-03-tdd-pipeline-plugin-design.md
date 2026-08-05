@@ -21,7 +21,7 @@ originating project.
 |---|---|
 | Harnesses | Claude Code and Cursor, first-class both |
 | Packaging | Harness-neutral `core/`, thin per-harness adapters |
-| Distribution | Git repo `dfrnks/agent-pipeline`; native plugin install for Claude Code, install script for Cursor |
+| Distribution | Git repo `dfrnks/agent-plugins`; native plugin install for Claude Code, install script for Cursor |
 | Project configuration | `.agent-pipeline/config.yaml` (deterministic) + the project's conventions file (prose) |
 | Issue tracker | Pluggable: `none` (default) \| `linear` \| `github` |
 | Stack rules | Never in the package; always in the project's conventions file, derived by `/conventions` |
@@ -83,7 +83,7 @@ always preserved anyway.
 ## Repository layout
 
 ```
-dfrnks/agent-pipeline/
+dfrnks/agent-plugins/
 ├── README.md
 ├── install.sh                       symlinks an adapter into a project
 ├── docs/specs/
@@ -192,7 +192,7 @@ installing machine as found.
 **Claude Code** — native plugin, `${CLAUDE_PLUGIN_ROOT}` resolves `core/` paths:
 
 ```
-/plugin marketplace add dfrnks/agent-pipeline
+/plugin marketplace add dfrnks/agent-plugins
 /plugin install tdd-pipeline
 ```
 
