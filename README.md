@@ -51,7 +51,7 @@ Behind `task` sit four phases — **test** (write the failing suite), **execute*
 project's `.cursor/` directory:
 
 ```bash
-git clone https://github.com/dfrnks/agent-plugins.git ~/src/agent-plugins
+git clone https://github.com/deepcloud-dev/agent-plugins.git ~/src/agent-plugins
 cd ~/src/agent-plugins
 ./install.sh --harness cursor --project /path/to/your/project
 ```
@@ -67,7 +67,7 @@ The Claude Code adapter ships as a plugin, not as project-local symlinks, so
 Claude Code's own plugin flow instead:
 
 ```bash
-claude plugin marketplace add dfrnks/agent-plugins
+claude plugin marketplace add deepcloud-dev/agent-plugins
 claude plugin install tdd-pipeline@agent-plugins
 ```
 
