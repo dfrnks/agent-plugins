@@ -12,7 +12,7 @@ switches tools.
 
 ## Commands
 
-The six commands are the same on both harnesses, but **you type them
+The eight commands are the same on both harnesses, but **you type them
 differently**, because the two install by different mechanisms:
 
 | What it does | Claude Code | Cursor |
@@ -21,6 +21,8 @@ differently**, because the two install by different mechanisms:
 | Explores the codebase and derives its actual rules — one per list item, each carrying a `file:line` citation — into the project's conventions file, and commits it. This is what the execute and code-review phases enforce. | `/tdd-pipeline:conventions` | `/conventions` |
 | Checks the project against every requirement the pipeline needs, one row per requirement, and reports `pass` / `fail` / `n/a`. Takes an optional `repair` argument. | `/tdd-pipeline:doctor` | `/doctor` |
 | The single entry point for work. Resolves the item, writes a spec, reviews it, stops at a confirmation gate, then creates a worktree and runs the four phases against it. | `/tdd-pipeline:task` | `/task` |
+| Designs a change and **stops** — explores, settles the open questions with you, writes a spec, runs nothing. For work whose shape has to be decided before it is scheduled. | `/tdd-pipeline:plan` | `/plan` |
+| Fixes a defect test-first: reproduces it with a failing test, names the root cause, makes the minimal change, verifies. Stops before pushing, because nothing reviewed it. | `/tdd-pipeline:fix-bug` | `/fix-bug` |
 | Critiques an existing spec against the real codebase and fixes it in place. Runs standalone, or inline as `task`'s own step 3. | `/tdd-pipeline:review` | `/review` |
 | Re-enters an interrupted pipeline at exactly one phase, runs that phase alone, and stops. A recovery tool, not a retry loop. | `/tdd-pipeline:resume` | `/resume` |
 
@@ -29,9 +31,10 @@ what keeps `/tdd-pipeline:init` and `/tdd-pipeline:review` distinct from the
 built-in `/init` and `/review`.
 
 On Cursor, `install.sh` links the command files into `.cursor/commands/`,
-where they take their bare filenames — so **`/init`, `/review` and `/doctor`
-are the pipeline's, and they will shadow or be shadowed by anything else
-claiming those names** in that project. If you already use commands by those
+where they take their bare filenames — so **`/init`, `/review`, `/doctor`
+and `/plan` are the pipeline's, and they will shadow or be shadowed by
+anything else claiming those names** in that project. If you already use
+commands by those
 names, rename the links after installing; nothing in the pipeline depends on
 what its command files are called, only on what they point at.
 
@@ -82,7 +85,7 @@ installed but whose every `core/` pointer dangles, which is why the installer
 refuses rather than producing that layout.
 
 Verified by a clean install: `claude plugin details tdd-pipeline@agent-plugins`
-reports `Skills (6)` and `Agents (5)` — every command and every subagent
+reports `Skills (8)` and `Agents (5)` — every command and every subagent
 loads. The five agent files live at this repository's own `agents/`
 directory (the plugin root, not under `adapters/claude-code/`) — see
 [`docs/specs/2026-08-03-tdd-pipeline-plugin-design.md`](docs/specs/2026-08-03-tdd-pipeline-plugin-design.md)

@@ -110,8 +110,48 @@ Only an explicit answer to proceed continues to Step 5.
 
 ## Step 5 — Create the worktree
 
-Create the worktree with plain version control, branching from
-`git.base_branch` so the branch is correct from the moment it exists:
+First bring `git.base_branch` up to date, if this project has a remote at
+all. A worktree branches from whatever the base branch points at locally,
+and a local base branch is only as current as the last time someone
+fetched — so on a machine that has not fetched in a week, every phase below
+runs against week-old code. That failure is expensive precisely because it
+is invisible: the tests pass, the review approves, and the conflict surfaces
+in the pull request, long after the point where it could have been avoided.
+
+Resolve the remote the way the end phase does — the name the repository
+actually reports, preferring `origin` when several exist, never an assumed
+one:
+
+```bash
+REMOTE=$(git remote | head -n 1)
+```
+
+If that names no remote, go straight to creating the worktree below: a
+project with no remote is a fully supported configuration here, and there is
+nothing for it to be out of date with.
+
+With a remote, fetch the base branch and branch the worktree from the
+fetched ref rather than from the local branch:
+
+```bash
+git fetch "$REMOTE" "<git.base_branch>"
+git worktree add "<paths.worktrees>/<task-id>" -b "<task-id>" "$REMOTE/<git.base_branch>"
+```
+
+Branching from the remote-tracking ref, rather than resetting the local base
+branch to match it, is deliberate: it leaves the user's own checkout exactly
+as they left it. A flow that hard-resets a branch the user may have local
+commits on destroys work that was never this flow's to touch.
+
+If the fetch fails — no network, or an authentication prompt with nobody
+there to answer it — do not stop. Create the worktree from the local base
+branch instead, and **say in Step 7's report that the base branch could not
+be refreshed, naming the local commit it was based on**. Working offline is
+legitimate; working from silently stale code is not, and the only difference
+between the two is whether the report says so.
+
+Without a remote, or after a failed fetch, branch from the local base
+branch:
 
 ```bash
 git worktree add "<paths.worktrees>/<task-id>" -b "<task-id>" "<git.base_branch>"
@@ -150,3 +190,9 @@ Return, in order:
 - Past the gate: the worktree path from Step 5, and the pipeline's own
   report from Step 6 in full — result, branch, pull request URL if any, and
   the reason given for any result other than shipped.
+- Whether the base branch was refreshed in Step 5. Say so only when it was
+  **not** — no remote configured, or a fetch that failed — naming which of
+  the two applied and the local commit the worktree was based on instead. A
+  run that fetched successfully needs no line here; a run that did not is
+  the one case where every result below it was produced against code that
+  may already be behind, and the reader cannot tell from any other field.

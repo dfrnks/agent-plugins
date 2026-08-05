@@ -20,5 +20,7 @@ core/flows/resume.md|## Input;## Phase selection;## Preconditions;## Execution
 core/flows/init.md|## Step 1 — Detect the stack;## Step 2 — Propose the configuration;## Step 3 — Create directories;## Step 4 — Worktree setup script;## Step 5 — Derive conventions;## Step 6 — Verify
 core/flows/conventions.md|## Step 1 — Explore;## Step 2 — Rule versus occurrence;## Step 3 — Confirm with the user;## Step 4 — Write;## Step 5 — Derive the checklist;## Drift reporting
 core/flows/doctor.md|## Checks;## Output;## Repair mode
+core/flows/plan.md|## Input;## Step 0 — Load configuration;## Step 1 — Understand the goal;## Step 2 — Explore;## Step 3 — Resolve the open questions;## Step 4 — Draft the spec;## Step 5 — Confirm with the user;## Step 6 — Commit;## Step 7 — Report
+core/flows/fix-bug.md|## Input;## Mindset;## Step 0 — Load configuration;## Step 1 — Gather the report;## Step 2 — Create the worktree;## Step 3 — Locate the fault;## Step 4 — Name the root cause;## Step 5 — Reproduce with a failing test;## Step 6 — Fix;## Step 7 — Verify;## Step 8 — Report
 .claude-plugin/plugin.json|
 .claude-plugin/marketplace.json|

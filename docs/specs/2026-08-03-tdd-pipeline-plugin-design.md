@@ -215,7 +215,31 @@ one.
 The inherited pipeline had eleven commands with substantial overlap: a
 tracker-aware spec review wrapping a tracker-independent one, a planning command
 duplicating the first half of the start command, a deprecated alias, and four
-thin wrappers that each launched exactly one agent. The package exposes six.
+thin wrappers that each launched exactly one agent. The package exposed six.
+
+**Revised after comparing the package against the pipeline it came from.** Two
+of those consolidations were wrong, and the package now exposes eight.
+
+The planning command was judged a duplicate of the first half of `task`, and
+its steps are indeed near-identical. What that reading missed is that the two
+differ in where they stop, and the stop is the entire feature: `task` commits
+— it resolves an item, builds a worktree, and runs four phases — so routing a
+design conversation through it either burns a pipeline run or turns its
+confirmation gate into a design review it was never built to be. `plan` is now
+a flow of its own, writing the same spec artifact so nothing downstream has to
+know which flow produced it.
+
+Bug fixing was dropped as already covered by the pipeline. It is not: the
+pipeline starts from a spec, and a defect starts from a symptom. The work that
+matters in a fix — reproducing it, and finding the cause rather than the place
+the symptom surfaced — has no counterpart in a flow that begins by reading a
+design someone already wrote. `fix-bug` is now its own flow, keeping the
+test-first discipline and stopping before it pushes, because no code-review
+phase stands behind it.
+
+The lesson generalizes past these two: overlap was measured by comparing steps,
+and two commands with the same steps and different stopping points are not the
+same command.
 
 ### Setup — run once per project, safe to re-run
 

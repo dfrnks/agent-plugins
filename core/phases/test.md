@@ -160,6 +160,53 @@ silent regression.
 Then run `commands.test_all` to confirm the new tests did not break any
 existing, previously-passing test in the suite.
 
+### Proving the contract is satisfiable
+
+Red is not the same as correct. A suite that fails because the module it
+imports does not exist yet has proved exactly one thing: the module does not
+exist. It has proved nothing about whether the expectations inside those
+tests can be met at all.
+
+That gap matters whenever the tests carry **expected values the author
+computed rather than observed** — a financial calculation, a rounding rule,
+a normalization, a parser: any deliverable whose assertions are dense with
+literal numbers or strings. If one of those literals is wrong, the execute
+phase cannot tell whether the test or its own implementation is at fault,
+and the test-protection contract it runs under tells it the tests are the
+contract. So it will bend the implementation until it matches a wrong
+number — and every gate downstream will agree, because the suite is green
+and nothing there has an independent source to check the number against.
+
+When this task's tests are of that kind, prove the contract is satisfiable
+before committing them:
+
+1. Confirm the suite is red for the right reason, per the checks above.
+2. Write a throwaway reference implementation **outside the repository** —
+   a scratch location, never a path under version control.
+3. Put it in place, run this task's tests, and confirm they go green **with
+   no errors and no warnings**, not merely that the failure count reached
+   zero.
+4. Remove it, and verify the removal mechanically with `git status` — the
+   only files that may remain untracked are the test files themselves.
+5. Re-run the tests, confirming red again, before Step 7 commits anything.
+
+The reference implementation must never be committed, and it must not be
+where the expected values came from. It proves the assertions are mutually
+**consistent** — that one implementation can satisfy all of them at once.
+It cannot prove they are **right**: an implementation written from the same
+misunderstanding that produced the tests will satisfy them perfectly.
+Anchor the expected values in something outside this codebase — the
+specification, a provider's documentation, a worked example the spec cites
+— and verify them against that source first. Without the anchor, step 3 is
+circular: it only shows the tests agree with an implementation written by
+the same reasoning that wrote the tests.
+
+Skip this whole check when the tests are dominated by mocks and I/O — a
+route, a handler, a service whose assertions check status codes and call
+shapes rather than computed values. There, an import error is the whole of
+what red can mean, and a reference implementation would only restate the
+mocks.
+
 ## Step 6 — Handoff log
 
 Append a dated subsection to `## Agent Handoff Log` in the spec file,
@@ -169,6 +216,12 @@ following `core/contracts/handoff-log.md`. Include:
 - Confirmation that the suite is red, and why (each failure traced to
   missing behavior, not a broken test) — and, separately, which tests (if
   any) were kept green on purpose as regression guards, per Step 5.
+- Whether the contract was verified satisfiable, per Step 5's check, and
+  what the expected values were anchored against — or that the check did
+  not apply here, and why. State this as its own line, separate from the
+  red confirmation above: they answer different questions, and a reader who
+  sees only "red for the right reason" cannot tell which of the two was
+  actually established.
 - Any mock or fixture pattern established here that the execute phase
   should reuse rather than reinvent.
 - Whether `paths.conventions` held a testing section (Step 2). If it held
