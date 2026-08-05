@@ -33,7 +33,14 @@ tools='\bnpm\b|\byarn\b|\bpnpm\b|\bpoetry\b|\bcomposer\b|\bnuget\b|\bgradle\b|\b
 # Scratch files go under a per-run mktemp directory, not a fixed /tmp path:
 # a fixed name collides when two runs overlap (a developer and a hook, or two
 # checkouts) and is a symlink-attack target on a shared /tmp.
-SCRATCH="$(mktemp -d)"
+#
+# Stop if it cannot be created. This script does not set -e, so an unchecked
+# failure would leave SCRATCH empty and every redirection below would target
+# an absolute path at the filesystem root: those writes fail, grep's exit
+# status is read anyway, and the gate reports clean without having examined
+# anything. A checker that passes because it could not run is worse than one
+# that fails.
+SCRATCH="$(mktemp -d)" || { echo "cannot create a scratch directory" >&2; exit 2; }
 trap 'rm -rf "$SCRATCH"' EXIT
 
 rc=0
