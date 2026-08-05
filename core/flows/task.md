@@ -130,28 +130,50 @@ If that names no remote, go straight to creating the worktree below: a
 project with no remote is a fully supported configuration here, and there is
 nothing for it to be out of date with.
 
-With a remote, fetch the base branch and branch the worktree from the
-fetched ref rather than from the local branch:
+With a remote, fetch the base branch — and then decide which of the two refs
+to branch from, because the fetch answers that question and does not settle
+it:
 
 ```bash
 git fetch "$REMOTE" "<git.base_branch>"
+git rev-list --left-right --count "$REMOTE/<git.base_branch>...<git.base_branch>"
+```
+
+That prints two numbers: how many commits the remote has that the local
+branch does not, and how many the local branch has that the remote does not.
+Branch from the remote-tracking ref **only when the second number is zero** —
+when the local base branch holds nothing the remote lacks:
+
+```bash
 git worktree add "<paths.worktrees>/<task-id>" -b "<task-id>" "$REMOTE/<git.base_branch>"
 ```
 
-Branching from the remote-tracking ref, rather than resetting the local base
-branch to match it, is deliberate: it leaves the user's own checkout exactly
-as they left it. A flow that hard-resets a branch the user may have local
-commits on destroys work that was never this flow's to touch.
+Otherwise branch from the local base branch, using the command below, and
+say so in Step 7's report.
+
+The second number being non-zero means the local base branch has commits
+that were never pushed, and they are the user's own work. Branching from the
+remote there does not merely lose a convenience — it produces a worktree
+missing whatever those commits added, which routinely includes the pipeline's
+own scaffolding: a project configured but not yet pushed has its
+`.agent-pipeline/config.yaml` only on the local branch, so every phase fails
+at its Step 0 in a project where `doctor` reports ready. This is the failure
+that the obvious version of this step causes, and it is worse than the
+staleness it was written to prevent, because stale code at least runs.
+
+Branching, rather than resetting the local base branch to match the remote,
+is deliberate in either direction: it leaves the user's checkout exactly as
+they left it. A flow that hard-resets a branch the user has local commits on
+destroys work that was never this flow's to touch.
 
 If the fetch fails — no network, or an authentication prompt with nobody
 there to answer it — do not stop. Create the worktree from the local base
-branch instead, and **say in Step 7's report that the base branch could not
-be refreshed, naming the local commit it was based on**. Working offline is
-legitimate; working from silently stale code is not, and the only difference
-between the two is whether the report says so.
+branch, and say so in Step 7's report. Working offline is legitimate;
+working from silently stale code is not, and the only difference between the
+two is whether the report names it.
 
-Without a remote, or after a failed fetch, branch from the local base
-branch:
+Without a remote, when the local branch is ahead of or diverged from it, or
+after a failed fetch, branch from the local base branch:
 
 ```bash
 git worktree add "<paths.worktrees>/<task-id>" -b "<task-id>" "<git.base_branch>"
@@ -190,9 +212,11 @@ Return, in order:
 - Past the gate: the worktree path from Step 5, and the pipeline's own
   report from Step 6 in full — result, branch, pull request URL if any, and
   the reason given for any result other than shipped.
-- Whether the base branch was refreshed in Step 5. Say so only when it was
-  **not** — no remote configured, or a fetch that failed — naming which of
-  the two applied and the local commit the worktree was based on instead. A
-  run that fetched successfully needs no line here; a run that did not is
-  the one case where every result below it was produced against code that
-  may already be behind, and the reader cannot tell from any other field.
+- Which ref Step 5 branched from, whenever it was not the remote-tracking
+  one — no remote configured, a fetch that failed, or a local base branch
+  holding commits the remote does not have — naming which of the three
+  applied and the local commit the worktree was based on. A run that
+  branched from the fetched ref needs no line here. Any other run produced
+  every result below it against code that may already be behind, or against
+  local work that was never pushed, and no other field in this report
+  reveals which.

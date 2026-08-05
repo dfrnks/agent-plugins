@@ -90,17 +90,34 @@ on arrival, and the staleness is invisible until then:
 REMOTE=$(git remote | head -n 1)
 ```
 
-With a remote, fetch and branch from the fetched ref; with none, or after a
-fetch that failed, branch from the local base branch and say so in Step 8:
+With a remote, fetch and then decide which ref to branch from, exactly as
+that step specifies — the fetch raises the question and does not answer it:
 
 ```bash
 git fetch "$REMOTE" "<git.base_branch>"
+git rev-list --left-right --count "$REMOTE/<git.base_branch>...<git.base_branch>"
+```
+
+Branch from the remote-tracking ref only when the second count is zero — when
+the local base branch holds nothing the remote lacks:
+
+```bash
 git worktree add "<paths.worktrees>/<branch>" -b "<branch>" "$REMOTE/<git.base_branch>"
 ```
+
+With no remote, with a local base branch that is ahead or diverged, or after
+a fetch that failed, branch from the local base branch and say which case
+applied in Step 8:
 
 ```bash
 git worktree add "<paths.worktrees>/<branch>" -b "<branch>" "<git.base_branch>"
 ```
+
+A local base branch ahead of the remote is not an edge case here: a project
+whose pipeline configuration has been committed but not yet pushed has
+`.agent-pipeline/config.yaml` on the local branch only, so a worktree cut
+from the remote lacks it and every step below fails on a project `doctor`
+calls ready.
 
 If a worktree already exists at that path, reuse it rather than recreating
 it. If it holds uncommitted work this flow did not just create, stop and ask
