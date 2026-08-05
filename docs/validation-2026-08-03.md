@@ -449,10 +449,10 @@ coverage gate does not regress; its negative fixture
 
 Verified by execution — a real install-uninstall cycle, not a reading of the
 manifest. The transcripts below are reproduced as they ran, so they carry the
-marketplace's name at the time, `agent-pipeline`; it was renamed to `dfrnks`
-before publication, and the repository to `agent-plugins`. Rewriting a
-transcript to show a command that was never typed would cost this document the
-only thing it is for.
+name at the time, `agent-pipeline` — renamed to `agent-plugins`, both the
+repository and the marketplace, before publication. Rewriting a transcript to
+show a command that was never typed would cost this document the only thing it
+is for.
 
 ```
 $ claude plugin marketplace add <this repository>
