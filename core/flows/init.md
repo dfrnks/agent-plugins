@@ -39,6 +39,34 @@ carry that forward as an explicit gap in Step 2's proposal instead, so the
 person confirming it fills in what detection could not find rather than
 receiving a silently incomplete file.
 
+Detection finding nothing has two quite different causes, and this step
+distinguishes them because Steps 5 and 6 behave differently for each. Run the
+greenfield test from `core/contracts/project-requirements.md`'s
+`## Greenfield projects` section here, once, and carry its result forward
+alongside the detected values:
+
+- **A project with source code but no tooling detected** — the tooling exists
+  and detection missed it, or the project genuinely has none configured yet.
+  Either way a person fills the gap in Step 2 and everything downstream
+  proceeds normally.
+- **A greenfield project** — nothing is tracked but the pipeline's own
+  artifacts and prose. There is no tooling to detect because there is no
+  project yet, and no amount of closer inspection will change that.
+
+Say which one it is in Step 2's proposal, in those terms. The difference is
+invisible in a report that only says "no test runner found," and it decides
+whether the commands a person is about to supply describe tooling that exists
+today or tooling they intend to add — worth stating before they answer, not
+after.
+
+This flow configures a project; it does not create one. A greenfield project
+is a supported input and this flow runs to completion against it, producing a
+working configuration that a `ready` verdict can be reached with. It will not
+scaffold a manifest, a test runner, or a first package to make detection
+succeed, and it will not ask whether it should — that is the project's own
+first task, and inventing one here would mean guessing a layout in the one
+flow whose entire discipline is refusing to guess.
+
 ## Step 2 — Propose the configuration
 
 Draft a complete `.agent-pipeline/config.yaml` following the schema in
@@ -169,6 +197,20 @@ populates the file with rules derived from this codebase — this step only
 triggers that handoff, it does not duplicate any part of how that flow
 explores the codebase or decides what counts as a rule.
 
+Hand off on a greenfield project too, rather than skipping the step. That
+flow has its own defined behaviour for a codebase with nothing to explore
+(its `## Greenfield projects` section): it skips the exploration pass, writes
+the seven headings with no rules under them, and commits. The file the
+execute and code-review phases read must exist and be committed either way,
+so the handoff is what creates it — skipping the step here to save an
+exploration that would find nothing would also skip the write, leaving those
+phases pointed at a file that is not there.
+
+Report which of the two happened, rather than reporting the handoff as
+uniformly successful. "Derived 6 rules" and "derived none, because there is
+no code yet" are both correct outcomes of this step, and only one of them
+means the next flow to touch this project has nothing left to do.
+
 ## Step 6 — Verify
 
 Run the doctor flow (`core/flows/doctor.md`) and print its report in full.
@@ -176,3 +218,10 @@ This flow never claims the project is ready on its own account — every
 claim of readiness comes from doctor's own checks, run fresh against what
 Steps 1 through 5 actually produced, not from this flow's assumption that
 its own steps succeeded.
+
+Print doctor's verdict as doctor reports it, including its greenfield line
+when there is one. Do not restate a greenfield `n/a` on the conventions row
+as a failure of this flow's own Step 5, and do not follow it with an
+instruction to run the conventions flow — that flow ran, in Step 5, and
+behaved correctly. A greenfield project reaching `ready` here is this flow
+succeeding, not this flow settling.

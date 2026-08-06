@@ -155,6 +155,36 @@ found nothing worth persisting. An absent statement and a considered
 report says which one happened — silence here is indistinguishable from
 the step never having run at all, and only one of those is acceptable.
 
+### When this task is the first code in the project
+
+While reading `paths.conventions` for the appends above, check whether its
+**managed section** holds any rule at all. If it does, there is nothing more
+to do here. If it holds none, the project was greenfield when it was
+configured (`core/contracts/project-requirements.md`, `## Greenfield
+projects`), and this task has just committed the source code that ends that
+state.
+
+Report that transition in Step 7, in one line:
+
+```
+This task is the first source code in this project. Conventions are now
+derivable; run the conventions flow to derive them.
+```
+
+Do not run the conventions flow from here, and do not write rules into the
+managed section. That section is the conventions flow's to own and to rewrite
+wholesale, and its rule bar needs several independent call sites — one task's
+worth of new code is exactly the single-source evidence that bar exists to
+reject. Anything this phase wrote there would be both unconfirmed and
+discarded on that flow's next run.
+
+The report line is the whole mechanism, and it is deliberately the minimum
+that works. The greenfield state clears on a commit rather than on a run of
+any flow, so nothing else in the pipeline is watching for the moment it ends:
+doctor would report it correctly, but only if somebody happened to run doctor.
+This phase is the one place that is guaranteed to be looking at the
+conventions file at the moment the first code lands.
+
 This step runs before Step 4's commit, not after, so any edit to
 `paths.conventions` ships in the same commit as the work that motivated
 it — a rule discovered by this task and recorded in some later commit is

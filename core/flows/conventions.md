@@ -19,6 +19,43 @@ Step 5 against the `paths.conventions` file that flow just confirmed. Reads
 protocol every other flow uses (`core/contracts/pipeline-config.md`): stop
 and name the exact missing key rather than guessing a path.
 
+## Greenfield projects
+
+Before Step 1, run the greenfield test from
+`core/contracts/project-requirements.md`'s `## Greenfield projects` section.
+If it reports greenfield, this flow takes a shorter path and says so:
+
+- **Skip Step 1 entirely.** Do not dispatch the exploration subagents. There
+  is no file for them to cite, so every one of them would return either
+  nothing or something it invented, and Step 2's bar exists to catch exactly
+  the second case — better not to create the pressure at all than to rely on
+  a later step to resist it.
+- **Skip Steps 2 and 3.** With no occurrences there is nothing to weigh
+  against the rule bar and nothing to confirm. Do not ask a person to confirm
+  an empty set; there is no decision in it.
+- **Run Step 4 as written**, with no accepted rules — all seven headings, each
+  followed by its "no rule derived" line, written between the markers and
+  committed exactly as that step specifies. The commit is the point: the
+  execute and code-review phases read this file from inside a worktree, so a
+  file left uncommitted is a file that does not exist to them, and that is
+  just as true when what it holds is seven headings.
+- **Run Step 5 as written**, which means seeding `paths.review_checklist`
+  from its base contract with nothing appended, or skipping it when the key
+  is unset.
+
+Then report the outcome as greenfield explicitly — that this run derived no
+rules **because the repository tracks no source code**, not because
+exploration came back empty-handed. Those read identically in a report and
+mean opposite things: one is a project with nothing to find yet, the other is
+this flow failing to find what is there.
+
+This is the one path on which producing no rules is a correct result. It does
+not soften Step 2's bar anywhere else: a repository with source code in it
+gets the full exploration pass, and "the codebase is small" or "it is early"
+is never a reason to reach for this section. The test named above is
+mechanical and empty-or-nothing, and this flow does not second-guess it in
+either direction.
+
 ## Step 1 — Explore
 
 Dispatch exploration subagents in parallel, one per area, each covering a

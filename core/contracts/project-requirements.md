@@ -1,9 +1,13 @@
 # Project requirements contract
 
-The pipeline does not run against an empty project. This is the single
-normative list of what a consuming project must have in place, who creates
-each artifact, and who checks it afterward. The init, conventions, and doctor
-flows all cite this table instead of restating it.
+This is the single normative list of what a consuming project must have in
+place, who creates each artifact, and who checks it afterward. The init,
+conventions, and doctor flows all cite this table instead of restating it.
+
+Every requirement below applies to a project that already holds source code.
+A project that holds none yet is a defined state, not a broken one — see
+`## Greenfield projects` for which requirement it suspends, how that state is
+detected, and when it ends.
 
 See `core/contracts/pipeline-config.md` for the configuration schema itself —
 this contract only names which keys and paths must exist, not their format.
@@ -16,7 +20,7 @@ this contract only names which keys and paths must exist, not their format.
 | Git repository with `git.base_branch` present | yes | — | doctor, task |
 | `paths.specs` directory | yes | init | doctor |
 | `paths.worktrees` directory, git-ignored | yes | init | doctor |
-| `paths.conventions` file, non-empty, with derived stack rules, tracked in git | yes | conventions (writes and commits) | doctor, execute phase |
+| `paths.conventions` file, non-empty, with derived stack rules, tracked in git | yes, except while greenfield | conventions (writes and commits) | doctor, execute phase |
 | `.agent-pipeline/memory/` directory | no | init | doctor |
 | `paths.review_checklist`, tracked in git when set | no | conventions (writes and commits) | doctor |
 | `git.worktree_setup` script, executable, if dependencies are git-ignored | conditional | init proposes and sets the executable bit | doctor, task |
@@ -68,3 +72,85 @@ that threshold may still be thin, but a file below it is treated as
 equivalent to absent, and doctor reports it exactly the way it reports a
 missing file — naming the path and directing the user to the conventions
 flow.
+
+## Greenfield projects
+
+The threshold above assumes there was something to derive rules from. A
+repository that holds no source code yet breaks that assumption, and
+enforcing the threshold against it produces a failure with no reachable fix:
+the conventions flow's own rule bar needs two or more independent call sites
+(`core/flows/conventions.md`, Step 2), a repository with no source has zero,
+so the flow correctly derives nothing, doctor correctly counts zero rules,
+and the remedy doctor names is the flow that just ran. Init would end at
+`not ready` on every new project, permanently, and the report would blame
+the conventions file rather than the absence of code.
+
+So this contract defines that absence as a state with a name. **While a
+project is greenfield, the `paths.conventions` row is `n/a`, not `fail`** —
+the file still gets created and committed with its seven headings, and every
+other requirement in the table applies unchanged.
+
+### Detecting it
+
+Greenfield is a mechanical test, run against what git tracks — not a
+judgment about whether a project "feels" new, and not a count of files on
+disk, since an untracked working tree is invisible from the worktrees every
+phase runs inside:
+
+```bash
+git ls-files -- . \
+  ':(exclude).agent-pipeline/**' \
+  ':(exclude)*.md' \
+  ':(exclude).gitignore' \
+  ':(exclude)LICENSE*'
+```
+
+The exclusions are the pipeline's own artifacts, the project's prose, and
+repository metadata — none of which a rule could carry a `file:line`
+citation into. **Empty output means greenfield.** Any remaining path at all
+means the project is not greenfield and the five-rule threshold applies in
+full.
+
+### Why the test is empty-or-nothing
+
+That last sentence is the load-bearing part, and it is deliberately blunt
+rather than proportionate. A greenfield verdict *waives* the one check that
+exists to prevent silent non-enforcement, so a wrong verdict in that
+direction is the exact failure `## Why a populated conventions file is
+mandatory` describes: every phase runs, every phase reports success, and
+nothing project-specific is enforced.
+
+The two directions of error are therefore not symmetric, and the test is
+tuned accordingly:
+
+- Wrongly reporting a real codebase as greenfield **waives enforcement
+  silently** — the failure this whole contract exists to prevent.
+- Wrongly reporting an empty project as non-greenfield produces a `fail`
+  naming the conventions file. Noisy, visible, and no worse than the
+  behaviour this section replaces.
+
+Never soften the test toward the first error to make a report look tidier —
+no "mostly empty," no "only scaffolding," no threshold of a few files that
+seem unimportant. One tracked source file is enough to end the state,
+because one file is enough for a human to have made a choice worth
+enforcing.
+
+### When it ends
+
+The state is self-clearing and nothing needs to remember it: the test above
+is re-run fresh on every doctor invocation, so the first commit that tracks
+a source file flips the `paths.conventions` row from `n/a` back to whatever
+it honestly is — which, on a project whose conventions have never been
+derived, is `fail`, naming the conventions flow, which can now succeed.
+
+Nothing is persisted to record that a project was ever greenfield. A stored
+flag would have to be cleared by whoever adds the first source file, and the
+one thing that can be relied on not to happen is a person updating a marker
+about a state they were never told they were in.
+
+Because the state clears on a commit rather than on a run of any flow, the
+first task the pipeline ships against a greenfield project is the moment it
+stops being true. The end phase reports that transition when it sees it
+(`core/phases/end.md`, Step 3), so the first person to add code learns that
+conventions are now derivable — rather than discovering it at the next
+unrelated doctor run.
