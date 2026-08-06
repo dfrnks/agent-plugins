@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/../.."
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+git -C "$TMP" init -q
+./install.sh --harness cursor --project "$TMP" >/dev/null
+[ -L "$TMP/.cursor/agents/task-test.md" ]
+[ -L "$TMP/.cursor/commands/task.md" ]
+[ -d "$TMP/.cursor/agent-pipeline/core" ]
+./install.sh --harness cursor --project "$TMP" >/dev/null   # idempotent
+[ -L "$TMP/.cursor/agents/task-test.md" ]

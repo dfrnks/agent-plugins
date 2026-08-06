@@ -1,0 +1,2 @@
+# Fixture manifest: the file exists but lacks the required heading.
+tests/fixtures/structure-missing-heading.md|## Required Heading

@@ -1,0 +1,26 @@
+# <path>|<required heading>;<required heading>;…
+# Add the line for a file BEFORE writing the file, so the check fails first.
+core/contracts/pipeline-config.md|## Schema;## Required keys by mode;## Fail-fast protocol
+core/contracts/project-requirements.md|## Requirements;## Why a populated conventions file is mandatory
+core/contracts/spec-template.md|## Skeleton;## Completeness rules;## Subtask structure
+core/contracts/handoff-log.md|## Format;## Reading;## Writing;## Escalation routing
+core/contracts/conventions-template.md|## Managed section markers;## Area headings;## Discoveries section markers
+core/contracts/review-checklist-base.md|## Security;## Correctness;## Tests;## Data and migrations
+core/trackers/none.md|## resolve_or_create;## set_status
+core/trackers/linear.md|## resolve_or_create;## set_status
+core/trackers/github.md|## resolve_or_create;## set_status
+core/phases/test.md|## Step 0 — Load configuration;## Step 1 — Load the spec;## Step 2 — Study existing test patterns;## Step 3 — Design the test plan;## Step 4 — Write the tests;## Step 5 — Verify the tests fail;## Step 6 — Handoff log;## Step 7 — Commit;## Step 8 — Report
+core/phases/execute.md|## Step 0 — Load configuration;## Step 1 — Read the handoff log;## Step 2 — Plan before editing;## Step 3 — Load project conventions;## Step 4 — Test protection contract;## Step 5 — Implement;## Step 6 — Self-review;## Step 7 — Verification loop;## Step 8 — Lint gate;## Step 9 — Handoff log;## Step 10 — Commit;## Step 11 — Report
+core/phases/code-review.md|## Step 0 — Load configuration;## Step 1 — Load context;## Step 2 — Read the full diff;## Step 3 — Review dimensions;## Step 4 — Classify findings;## Step 5 — Handoff log;## Step 6 — Commit;## Step 7 — Verdict
+core/phases/end.md|## Step 0 — Load configuration;## Step 1 — Detect changed areas;## Step 2 — Lint;## Step 3 — Persist durable discoveries;## Step 4 — Commit and push;## Step 5 — Open the pull request;## Step 6 — Update tracker status;## Step 7 — Report;## Step 8 — Worktree cleanup hint
+core/phases/pipeline.md|## Step 0 — Load configuration;## Step 1 — Verify the working directory;## Step 2 — Verify the spec was reviewed;## Step 3 — Prepare dependencies;## Step 4 — Run the phases;## Step 5 — Report
+core/flows/task.md|## Step 0 — Load configuration;## Step 1 — Resolve the item;## Step 2 — Write the spec;## Step 3 — Review the spec;## Step 4 — Gate;## Step 5 — Create the worktree;## Step 6 — Run the pipeline;## Step 7 — Report
+core/flows/review.md|## Input;## Mindset;## Step 0 — Load configuration;## Step 1 — Load context;## Step 2 — Explore;## Step 3 — Critique;## Step 4 — Fix the spec;## Step 5 — Handoff log
+core/flows/resume.md|## Input;## Phase selection;## Preconditions;## Execution
+core/flows/init.md|## Step 1 — Detect the stack;## Step 2 — Propose the configuration;## Step 3 — Create directories;## Step 4 — Worktree setup script;## Step 5 — Derive conventions;## Step 6 — Verify
+core/flows/conventions.md|## Step 1 — Explore;## Step 2 — Rule versus occurrence;## Step 3 — Confirm with the user;## Step 4 — Write;## Step 5 — Derive the checklist;## Drift reporting
+core/flows/doctor.md|## Checks;## Output;## Repair mode
+core/flows/plan.md|## Input;## Step 0 — Load configuration;## Step 1 — Understand the goal;## Step 2 — Explore;## Step 3 — Resolve the open questions;## Step 4 — Draft the spec;## Step 5 — Confirm with the user;## Step 6 — Commit;## Step 7 — Report
+core/flows/fix-bug.md|## Input;## Mindset;## Step 0 — Load configuration;## Step 1 — Gather the report;## Step 2 — Create the worktree;## Step 3 — Locate the fault;## Step 4 — Name the root cause;## Step 5 — Reproduce with a failing test;## Step 6 — Fix;## Step 7 — Verify;## Step 8 — Report
+.claude-plugin/plugin.json|
+.claude-plugin/marketplace.json|

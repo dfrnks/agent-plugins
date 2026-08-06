@@ -1,0 +1,11 @@
+{
+  "name": "agent-plugins",
+  "owner": { "name": "deepcloud-dev" },
+  "plugins": [
+    {
+      "name": "tdd-pipeline",
+      "source": ".",
+      "description": "Agent-driven TDD pipeline: spec, red, green, review, ship."
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# Fixture manifest: the referenced file does not exist.
+tests/fixtures/structure-does-not-exist.md|## Example Heading
