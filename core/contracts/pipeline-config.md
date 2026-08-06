@@ -1,12 +1,12 @@
 # Pipeline configuration contract
 
-`.agent-pipeline/config.yaml`, in the consuming project, is the only file the
+`.tdd-pipeline/config.yaml`, in the consuming project, is the only file the
 pipeline requires to exist before it runs. The directory is named for the
 pipeline, not for any harness, and holds everything the pipeline owns in a
 consuming project:
 
 ```
-.agent-pipeline/
+.tdd-pipeline/
   config.yaml
   tasks/TASK-1.md
   memory/<phase>/
@@ -40,10 +40,10 @@ commands:
 
 paths:
   tests: [tests]
-  specs: .agent-pipeline/tasks
-  worktrees: .agent-pipeline/worktrees
+  specs: .tdd-pipeline/tasks
+  worktrees: .tdd-pipeline/worktrees
   conventions: CONVENTIONS.md  # example only — no default; see note below
-  # review_checklist: .agent-pipeline/review-checklist.md   # optional
+  # review_checklist: .tdd-pipeline/review-checklist.md   # optional
 
 git:
   base_branch: main
@@ -130,9 +130,9 @@ When a required key is missing, the stop message follows this exact template,
 naming the file and the specific missing key:
 
 ```
-Cannot start: `.agent-pipeline/config.yaml` is missing key `commands.test`.
+Cannot start: `.tdd-pipeline/config.yaml` is missing key `commands.test`.
 Add it, or run the init flow to regenerate the configuration.
 ```
 
-The configuration path stays `.agent-pipeline/config.yaml` regardless of
+The configuration path stays `.tdd-pipeline/config.yaml` regardless of
 harness, because it is the pipeline's own directory, not a harness directory.

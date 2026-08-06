@@ -61,7 +61,7 @@ never be left guessing which row applies:
 | What was learned | Where it goes |
 |---|---|
 | Project convention: pattern, naming, command, path, contract | the file at `paths.conventions`, inside its **discoveries span** |
-| Phase-workflow learning | `.agent-pipeline/memory/<phase>/` |
+| Phase-workflow learning | `.tdd-pipeline/memory/<phase>/` |
 | Detail specific to this task only | this handoff log |
 | Personal communication preference | the operator's own memory, outside the repository |
 

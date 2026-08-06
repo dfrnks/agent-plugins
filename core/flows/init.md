@@ -1,7 +1,7 @@
 # Flow: init
 
 Bootstrap a project so the pipeline has something to run against. Every
-other phase and flow reads `.agent-pipeline/config.yaml` at its own step 0
+other phase and flow reads `.tdd-pipeline/config.yaml` at its own step 0
 and stops the moment a key it needs is absent — none of them infers a
 missing value, because a wrong guess there costs an entire branch of invalid
 work. This flow is where that inference happens instead, once, in front of a
@@ -69,7 +69,7 @@ flow whose entire discipline is refusing to guess.
 
 ## Step 2 — Propose the configuration
 
-Draft a complete `.agent-pipeline/config.yaml` following the schema in
+Draft a complete `.tdd-pipeline/config.yaml` following the schema in
 `core/contracts/pipeline-config.md`, using Step 1's findings for
 `commands.test`, `commands.test_all`, `commands.lint`, and
 `commands.typecheck` where one was found. Detect `git.base_branch` from the
@@ -106,13 +106,13 @@ run against the file it just wrote:
 
 Present the whole draft file and ask for confirmation before writing
 anything — edit any line the person changes, and only once every key is
-settled, write `.agent-pipeline/config.yaml`. Nothing before this point has
+settled, write `.tdd-pipeline/config.yaml`. Nothing before this point has
 touched disk.
 
 ## Step 3 — Create directories
 
 Once the configuration is confirmed and written, create what it points at:
-`paths.specs`, `paths.worktrees`, and `.agent-pipeline/memory/`, per the
+`paths.specs`, `paths.worktrees`, and `.tdd-pipeline/memory/`, per the
 layout in `core/contracts/pipeline-config.md`. `paths.conventions` is not
 created here — Step 5 hands that off to a flow whose entire job is
 populating it with real content, not an empty placeholder this step could
@@ -127,14 +127,14 @@ Then **commit the configuration**, on the branch the repository is already
 on:
 
 ```bash
-git add .agent-pipeline/config.yaml .gitignore
+git add .tdd-pipeline/config.yaml .gitignore
 git commit -m "pipeline: add configuration"
 ```
 
 This is not bookkeeping, and it is not optional. Every phase runs inside a
 worktree created fresh from `git.base_branch`, and a fresh worktree contains
 exactly the files that branch has committed — nothing else. A
-`.agent-pipeline/config.yaml` that exists only in the main checkout's
+`.tdd-pipeline/config.yaml` that exists only in the main checkout's
 working tree is invisible from every phase's own Step 0, so the entire
 pipeline stops at its first step with a message telling the user to run this
 flow, in a project where this flow has already run. Committing here is what
@@ -185,7 +185,7 @@ reason Step 3 commits the configuration itself — the orchestrator runs this
 script from inside a worktree, where only committed files exist:
 
 ```bash
-git add <setup script> .agent-pipeline/config.yaml
+git add <setup script> .tdd-pipeline/config.yaml
 git commit -m "pipeline: add worktree setup script"
 ```
 

@@ -17,7 +17,7 @@ differently**, because the two install by different mechanisms:
 
 | What it does | Claude Code | Cursor |
 |---|---|---|
-| Bootstraps a project: detects the stack, proposes `.agent-pipeline/config.yaml` for confirmation, creates the directories, commits them, and hands off to conventions. Run once per project. | `/tdd-pipeline:init` | `/init` |
+| Bootstraps a project: detects the stack, proposes `.tdd-pipeline/config.yaml` for confirmation, creates the directories, commits them, and hands off to conventions. Run once per project. | `/tdd-pipeline:init` | `/init` |
 | Explores the codebase and derives its actual rules — one per list item, each carrying a `file:line` citation — into the project's conventions file, and commits it. This is what the execute and code-review phases enforce. | `/tdd-pipeline:conventions` | `/conventions` |
 | Checks the project against every requirement the pipeline needs, one row per requirement, and reports `pass` / `fail` / `n/a`. Takes an optional `repair` argument. | `/tdd-pipeline:doctor` | `/doctor` |
 | The single entry point for work. Resolves the item, writes a spec, reviews it, stops at a confirmation gate, then creates a worktree and runs the four phases against it. | `/tdd-pipeline:task` | `/task` |
@@ -139,7 +139,7 @@ flow that says it committed one, check this before suspecting the pipeline.
 
 ## Configuration
 
-`init` writes `.agent-pipeline/config.yaml` for you, after showing you the draft
+`init` writes `.tdd-pipeline/config.yaml` for you, after showing you the draft
 and waiting for your confirmation. The directory is named for the pipeline
 rather than for any harness, so it is identical on every harness.
 
@@ -163,10 +163,10 @@ commands:
 
 paths:
   tests: [tests]
-  specs: .agent-pipeline/tasks
-  worktrees: .agent-pipeline/worktrees
+  specs: .tdd-pipeline/tasks
+  worktrees: .tdd-pipeline/worktrees
   conventions: CONVENTIONS.md
-  review_checklist: .agent-pipeline/review-checklist.md   # optional
+  review_checklist: .tdd-pipeline/review-checklist.md   # optional
 
 git:
   base_branch: main

@@ -76,7 +76,7 @@ check_link() { # <target> <linkname>
 # one destination aborts before any destination is changed — never a
 # half-installed tree.
 TARGETS=("$SRC/core")
-LINKS=("$DEST/agent-pipeline/core")
+LINKS=("$DEST/tdd-pipeline/core")
 for f in "$SRC/adapters/$HARNESS/agents/"*.md; do
   TARGETS+=("$f"); LINKS+=("$DEST/agents/$(basename "$f")")
 done
@@ -97,7 +97,7 @@ fi
 # check above would leave three directories behind on a refusal, making the
 # "no changes were made" message false — the message is what tells the user
 # it is safe to re-run after resolving the conflict.
-mkdir -p "$DEST/agents" "$DEST/commands" "$DEST/agent-pipeline"
+mkdir -p "$DEST/agents" "$DEST/commands" "$DEST/tdd-pipeline"
 
 for i in "${!LINKS[@]}"; do
   ln -sfn "${TARGETS[$i]}" "${LINKS[$i]}"

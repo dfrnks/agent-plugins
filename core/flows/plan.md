@@ -37,7 +37,7 @@ exist.
 
 ## Step 0 — Load configuration
 
-Read `.agent-pipeline/config.yaml`. Follow the fail-fast protocol in
+Read `.tdd-pipeline/config.yaml`. Follow the fail-fast protocol in
 `core/contracts/pipeline-config.md`: stop and name the exact missing key if
 the file or a key this flow needs is absent. This flow needs `paths.specs`,
 `paths.conventions`, and `git.commit_trailer`.

@@ -7,7 +7,7 @@ that one runs with the worktree as its working directory, so a
 project-relative path would dangle there:
 
 ```bash
-PIPELINE_ROOT="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/.cursor/agent-pipeline"
+PIPELINE_ROOT="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/.cursor/tdd-pipeline"
 ```
 
 `git rev-parse --git-common-dir` names the main repository's own git

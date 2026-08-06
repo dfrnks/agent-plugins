@@ -16,12 +16,12 @@ this contract only names which keys and paths must exist, not their format.
 
 | Requirement | Required | Created by | Validated by |
 |---|---|---|---|
-| `.agent-pipeline/config.yaml` with every key the configured mode uses, tracked in git | yes | init (writes and commits) | every phase, step 0 |
+| `.tdd-pipeline/config.yaml` with every key the configured mode uses, tracked in git | yes | init (writes and commits) | every phase, step 0 |
 | Git repository with `git.base_branch` present | yes | — | doctor, task |
 | `paths.specs` directory | yes | init | doctor |
 | `paths.worktrees` directory, git-ignored | yes | init | doctor |
 | `paths.conventions` file, non-empty, with derived stack rules, tracked in git | yes, except while greenfield | conventions (writes and commits) | doctor, execute phase |
-| `.agent-pipeline/memory/` directory | no | init | doctor |
+| `.tdd-pipeline/memory/` directory | no | init | doctor |
 | `paths.review_checklist`, tracked in git when set | no | conventions (writes and commits) | doctor |
 | `git.worktree_setup` script, executable, if dependencies are git-ignored | conditional | init proposes and sets the executable bit | doctor, task |
 | Tracker auth (Linear or `gh auth`) | conditional on `tracker.type` | — | doctor, task |
@@ -99,7 +99,7 @@ phase runs inside:
 
 ```bash
 git ls-files -- . \
-  ':(exclude).agent-pipeline/**' \
+  ':(exclude).tdd-pipeline/**' \
   ':(exclude)*.md' \
   ':(exclude).gitignore' \
   ':(exclude)LICENSE*'
