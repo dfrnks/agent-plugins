@@ -71,12 +71,39 @@ Claude Code's own plugin flow instead:
 
 ```bash
 claude plugin marketplace add deepcloud-dev/agent-plugins
-claude plugin install tdd-pipeline@agent-plugins
+claude plugin install tdd-pipeline@deepcloud
 ```
 
-The plugin is `tdd-pipeline`; the marketplace it comes from is `agent-plugins`,
-the repository itself. The `@` form names both, so the install works the same
-way whether or not another marketplace also offers a plugin by that name.
+The plugin is `tdd-pipeline`; the marketplace it comes from is `deepcloud`.
+The two lines name different things on purpose, and the mismatch is not a
+typo: `marketplace add` takes a **GitHub path**, because that is where the
+marketplace is fetched from, while `install` takes the **marketplace's own
+name**, declared in `.claude-plugin/marketplace.json`, which is what it is
+called once added. A marketplace name is independent of the repository that
+carries it.
+
+The `@` form names both plugin and marketplace, so the install works the same
+way whether or not another marketplace also offers a plugin by that name —
+which is why the name is `deepcloud` rather than something descriptive. Its
+job is to be unique among the marketplaces a user has added and to say whose
+plugin this is; a generic name would collide with the very other marketplaces
+the `@` form exists to disambiguate against.
+
+If you added this marketplace before it was named `deepcloud`, it is still
+registered under the old name — the name is the key Claude Code stores it
+under, so a rename in this repository does not reach an installation that
+already exists. Remove and re-add it:
+
+```bash
+claude plugin uninstall tdd-pipeline
+claude plugin marketplace remove agent-plugins
+claude plugin marketplace add deepcloud-dev/agent-plugins
+claude plugin install tdd-pipeline@deepcloud
+```
+
+Then restart Claude Code. Removing the marketplace before re-adding it is the
+part that matters: adding the same repository again while the old entry is
+still registered leaves you with two marketplaces serving one plugin.
 
 The adapter reaches `core/` through `${CLAUDE_PLUGIN_ROOT}`, a variable Claude
 Code sets only when it loads the adapter through its plugin system. Symlinking
@@ -84,7 +111,7 @@ the adapter into a project's `.claude/` directory would produce files that look
 installed but whose every `core/` pointer dangles, which is why the installer
 refuses rather than producing that layout.
 
-Verified by a clean install: `claude plugin details tdd-pipeline@agent-plugins`
+Verified by a clean install: `claude plugin details tdd-pipeline@deepcloud`
 reports `Skills (8)` and `Agents (5)` — every command and every subagent
 loads. The five agent files live at this repository's own `agents/`
 directory (the plugin root, not under `adapters/claude-code/`) — see
