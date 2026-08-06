@@ -36,12 +36,15 @@ because matching files happen to exist under a project's .claude/ directory.
 
 Install it instead via Claude Code's plugin flow:
   claude plugin marketplace add deepcloud-dev/agent-plugins
-  claude plugin install tdd-pipeline@agent-plugins
+  claude plugin install tdd-pipeline@deepcloud
 
-The plugin is "tdd-pipeline"; the marketplace it comes from is
-"agent-plugins", the repository itself. The "@" form names both, so the
-install works the same way whether or not another marketplace also offers a
-plugin by that name.
+The plugin is "tdd-pipeline"; the marketplace it comes from is "deepcloud".
+The two lines name different things on purpose: the first takes a GitHub
+path, because that is where the marketplace is fetched from, and the second
+takes the marketplace's own name, which is what it is called once added.
+The "@" form names both plugin and marketplace, so the install works the
+same way whether or not another marketplace also offers a plugin by that
+name.
 EOF
   exit 2
 fi

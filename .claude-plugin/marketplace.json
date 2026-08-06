@@ -1,5 +1,6 @@
 {
-  "name": "agent-plugins",
+  "name": "deepcloud",
+  "description": "Agent tooling from deepcloud: harness-neutral pipelines for spec-driven, test-first development.",
   "owner": { "name": "deepcloud-dev" },
   "plugins": [
     {
