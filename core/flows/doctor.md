@@ -143,6 +143,39 @@ project-specific until this file holds real rules. Run the conventions
 flow to derive them from the codebase.
 ```
 
+#### The one exception: a greenfield project
+
+Before counting anything, run the greenfield test defined in
+`core/contracts/project-requirements.md`'s `## Greenfield projects` section —
+the `git ls-files` command written there, verbatim, exclusions included. Do
+not substitute a different test, and do not decide the question by looking at
+the repository and forming an impression of it.
+
+If that command's output is empty, report this row **`n/a`**, with the reason
+attached rather than a bare result, and count no rules at all:
+
+```
+paths.conventions (<path>) — n/a: no source files are tracked in this
+repository, so no rule can carry a file:line citation yet. The file exists
+with its seven headings and is committed. This row becomes a real check on
+the first commit that tracks a source file; run the conventions flow then.
+```
+
+State the reason inline like that on every greenfield run. A row reading
+`n/a` on its own is indistinguishable from the optional rows below it, and
+this one is not optional — it is deferred, and the report is the only place
+that distinction is ever visible.
+
+If the command prints even one path, this exception does not apply: count the
+rules and report `pass` or `fail` exactly as above. The exception is the empty
+set and nothing else — never a repository that looks new, holds only
+scaffolding, or tracks a handful of files that seem too small to have
+conventions. That contract's `### Why the test is empty-or-nothing` explains
+why this direction is held rigidly: reporting `n/a` here waives the one check
+standing between the project and silent non-enforcement, so an over-generous
+greenfield verdict reintroduces exactly the failure this threshold exists to
+prevent, while an over-strict one merely prints a `fail` somebody can read.
+
 ## Output
 
 Report a table, one row per check, in the requirements table's own order,
@@ -152,11 +185,40 @@ Follow the table with a one-line summary: the count of passes, fails, and
 n/a results, and an overall verdict — `ready` if every non-`n/a` check
 passed, `not ready` otherwise.
 
+A greenfield `paths.conventions` row is `n/a`, so it does not block `ready`.
+That verdict is correct and not a loophole: the pipeline genuinely can run:
+the configuration, directories, and branch are all in place, and the file the
+execute and code-review phases read exists and is committed. What it holds is
+nothing, which is the honest state of a project that has established no
+conventions yet, rather than a project that has them and lost them.
+
+Say so explicitly when it happens. A `ready` verdict on a greenfield project
+carries one extra line, immediately after the summary:
+
+```
+Greenfield: no conventions are derived yet, and none can be until this
+repository tracks source code. Run the conventions flow after the first
+code lands.
+```
+
+Never report `ready` on a greenfield project without that line. `ready` on
+its own tells a reader the conventions file passed, and it did not — it was
+never checked, and this line is the only thing that says which happened.
+
 Follow that, on `not ready`, with the exact command to fix the first
 failure in table order — naming the flow to run (`init`, `conventions`, or
 a direct edit to `.agent-pipeline/config.yaml`) rather than a generic
 instruction to "resolve the issue." A person acting on this report should
 never have to translate a `fail` row into a next action themselves.
+
+Name a fix only where running it can actually change the row. This is not a
+formatting preference: pairing a `fail` with a flow that provably cannot
+clear it is worse than naming no fix at all, because the reader spends a run
+finding out, and then has no way to tell whether the flow failed or their
+project is unfixable. Check the fix against the row before writing it —
+never emit the standing remedy text for a row on the assumption it applies.
+The conventions row is where this goes wrong in practice, and the greenfield
+`n/a` above is precisely what keeps that pairing from being generated.
 
 ## Repair mode
 
@@ -170,7 +232,11 @@ For each:
   init flow (`core/flows/init.md`) to regenerate or complete it.
 - An empty, missing, or under-threshold `paths.conventions` file — offer to
   delegate to the conventions flow (`core/flows/conventions.md`) to derive
-  real rules.
+  real rules. A greenfield project never reaches this offer: that row reports
+  `n/a` rather than `fail`, and repair mode only offers to fix failing rows.
+  Do not add a repair for it — there is nothing to repair, and delegating to
+  the conventions flow against a repository with no source would spend a full
+  exploration pass to rediscover that it has nothing to explore.
 - A missing tracker authentication — this flow does not authenticate on the
   user's behalf; report the exact command the relevant tracker file names
   (`gh auth login` for `github` mode, the equivalent for `linear` mode) and
