@@ -15,7 +15,7 @@ Takes no required argument; run standalone, or dispatched from `init`'s
 Step 5 against the `paths.conventions` file that flow just confirmed. Reads
 `paths.review_checklist` from the configuration, if this is a re-run, and
 `paths.conventions` in every case — resolve both from
-`.agent-pipeline/config.yaml` before Step 1, following the same fail-fast
+`.tdd-pipeline/config.yaml` before Step 1, following the same fail-fast
 protocol every other flow uses (`core/contracts/pipeline-config.md`): stop
 and name the exact missing key rather than guessing a path.
 

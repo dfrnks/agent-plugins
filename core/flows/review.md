@@ -30,7 +30,7 @@ would let a phase call this task finished while real gaps remain?
 
 ## Step 0 — Load configuration
 
-Read `.agent-pipeline/config.yaml` before anything else. Follow the
+Read `.tdd-pipeline/config.yaml` before anything else. Follow the
 fail-fast protocol in `core/contracts/pipeline-config.md` — which governs
 every flow and phase "without exception", this one included: stop and name
 the exact missing key if the file or a key this flow needs is absent. This

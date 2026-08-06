@@ -18,7 +18,7 @@ given, derive it from the current branch name.
 
 ## Step 0 — Load configuration
 
-Read `.agent-pipeline/config.yaml`. Follow the fail-fast protocol in
+Read `.tdd-pipeline/config.yaml`. Follow the fail-fast protocol in
 `core/contracts/pipeline-config.md`: stop and name the exact missing key
 if the file or a key this phase needs is absent. This phase needs
 `commands.lint`, `commands.test_all`, `paths.conventions`, `paths.specs`,
@@ -123,7 +123,7 @@ defines, since not everything durable belongs in the same place:
 
 - A project fact — `paths.conventions`.
 - A phase-workflow learning, meaningful only to how a phase runs and not
-  to a human reading the codebase — `.agent-pipeline/memory/<phase>/`.
+  to a human reading the codebase — `.tdd-pipeline/memory/<phase>/`.
 - A detail specific only to this task, with no reuse value beyond it —
   stays in the handoff log, untouched.
 
@@ -134,7 +134,7 @@ code-review phases each append their own (`core/contracts/handoff-log.md`,
 "Writing"). Record in it:
 
 - Each finding escalated to `paths.conventions` or to
-  `.agent-pipeline/memory/<phase>/`, in the contract's escalation form — or
+  `.tdd-pipeline/memory/<phase>/`, in the contract's escalation form — or
   an explicit line stating nothing durable was found this task.
 - The lint result from Step 2, including a skip and its reason.
 - That this phase ran, and how far it got.
@@ -201,7 +201,7 @@ to Step 5 as if the commit had happened, rather than failing this phase or
 fabricating a commit to have something to point to.
 
 Stage whatever Step 2's lint fixes left in this task's own diff, any edit
-Step 3 made to `paths.conventions` or `.agent-pipeline/memory/<phase>/`,
+Step 3 made to `paths.conventions` or `.tdd-pipeline/memory/<phase>/`,
 and the spec file's updated handoff log, then commit:
 
 ```bash

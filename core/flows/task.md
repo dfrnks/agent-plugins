@@ -17,7 +17,7 @@ work should this start, an identifier or a description.
 
 ## Step 0 — Load configuration
 
-Read `.agent-pipeline/config.yaml`. Follow the fail-fast protocol in
+Read `.tdd-pipeline/config.yaml`. Follow the fail-fast protocol in
 `core/contracts/pipeline-config.md`: stop and name the exact missing key if
 the file or a key this flow needs is absent. This flow needs `tracker.type`,
 `tracker.prefix`, `paths.specs`, `paths.worktrees`, `paths.conventions`, and
@@ -156,7 +156,7 @@ that were never pushed, and they are the user's own work. Branching from the
 remote there does not merely lose a convenience — it produces a worktree
 missing whatever those commits added, which routinely includes the pipeline's
 own scaffolding: a project configured but not yet pushed has its
-`.agent-pipeline/config.yaml` only on the local branch, so every phase fails
+`.tdd-pipeline/config.yaml` only on the local branch, so every phase fails
 at its Step 0 in a project where `doctor` reports ready. This is the failure
 that the obvious version of this step causes, and it is worse than the
 staleness it was written to prevent, because stale code at least runs.

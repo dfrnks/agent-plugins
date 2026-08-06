@@ -17,7 +17,7 @@ describes below.
 Run one check per row of `core/contracts/project-requirements.md`'s
 requirements table, each reporting `pass`, `fail`, or `n/a`:
 
-- **`.agent-pipeline/config.yaml` with every key the configured mode
+- **`.tdd-pipeline/config.yaml` with every key the configured mode
   uses, tracked in git** — the file exists, parses, and holds every
   always-mandatory key from `core/contracts/pipeline-config.md`'s "Required
   keys by mode" table, plus whichever conditional keys `tracker.type`'s
@@ -26,7 +26,7 @@ requirements table, each reporting `pass`, `fail`, or `n/a`:
   mechanically:
 
   ```bash
-  git ls-files --error-unmatch .agent-pipeline/config.yaml
+  git ls-files --error-unmatch .tdd-pipeline/config.yaml
   ```
 
   A non-zero exit is a `fail` on this row, with the message naming the file
@@ -52,7 +52,7 @@ requirements table, each reporting `pass`, `fail`, or `n/a`:
   check as the configuration row above, and for the same reason: a
   conventions file the phases cannot see from inside a worktree enforces
   exactly as much as an empty one.
-- **`.agent-pipeline/memory/` directory** — exists. The requirements table
+- **`.tdd-pipeline/memory/` directory** — exists. The requirements table
   marks this row "no" under "Required," but that column tracks whether the
   pipeline can run at all without it, not whether this check applies —
   `init` always creates this directory, so check it plainly: `pass` if
@@ -207,7 +207,7 @@ never checked, and this line is the only thing that says which happened.
 
 Follow that, on `not ready`, with the exact command to fix the first
 failure in table order — naming the flow to run (`init`, `conventions`, or
-a direct edit to `.agent-pipeline/config.yaml`) rather than a generic
+a direct edit to `.tdd-pipeline/config.yaml`) rather than a generic
 instruction to "resolve the issue." A person acting on this report should
 never have to translate a `fail` row into a next action themselves.
 
@@ -226,7 +226,7 @@ With the `repair` argument, after printing the same report `## Output`
 describes, offer to fix each failing row, one at a time, in table order.
 For each:
 
-- A missing or incomplete `.agent-pipeline/config.yaml`, a missing
+- A missing or incomplete `.tdd-pipeline/config.yaml`, a missing
   `paths.specs` or `paths.worktrees` directory, an un-ignored worktree
   path, or a missing `git.worktree_setup` script — offer to delegate to the
   init flow (`core/flows/init.md`) to regenerate or complete it.

@@ -16,7 +16,7 @@ Step 2, from the handoff log rather than from a guess.
 
 ## Phase selection
 
-Read `.agent-pipeline/config.yaml` first. Follow the fail-fast protocol in
+Read `.tdd-pipeline/config.yaml` first. Follow the fail-fast protocol in
 `core/contracts/pipeline-config.md`: stop and name the exact missing key if
 the file or a key this flow needs is absent. This flow needs `paths.specs`,
 `paths.worktrees`, and `git.base_branch`.

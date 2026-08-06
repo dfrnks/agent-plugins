@@ -50,7 +50,7 @@ resurfaces later wearing a different stack trace.
 
 ## Step 0 — Load configuration
 
-Read `.agent-pipeline/config.yaml`. Follow the fail-fast protocol in
+Read `.tdd-pipeline/config.yaml`. Follow the fail-fast protocol in
 `core/contracts/pipeline-config.md`: stop and name the exact missing key if
 the file or a key this flow needs is absent. This flow needs `commands.test`,
 `commands.test_all`, `commands.lint`, `paths.tests`, `paths.worktrees`,
@@ -115,7 +115,7 @@ git worktree add "<paths.worktrees>/<branch>" -b "<branch>" "<git.base_branch>"
 
 A local base branch ahead of the remote is not an edge case here: a project
 whose pipeline configuration has been committed but not yet pushed has
-`.agent-pipeline/config.yaml` on the local branch only, so a worktree cut
+`.tdd-pipeline/config.yaml` on the local branch only, so a worktree cut
 from the remote lacks it and every step below fails on a project `doctor`
 calls ready.
 
