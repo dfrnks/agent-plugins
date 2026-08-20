@@ -35,10 +35,10 @@ when Claude Code loads the adapter through its own plugin system, not
 because matching files happen to exist under a project's .claude/ directory.
 
 Install it instead via Claude Code's plugin flow:
-  claude plugin marketplace add deepcloud-dev/agent-plugins
-  claude plugin install tdd-pipeline@deepcloud
+  claude plugin marketplace add dfrnks/agent-plugins
+  claude plugin install tdd-pipeline@dfrnks
 
-The plugin is "tdd-pipeline"; the marketplace it comes from is "deepcloud".
+The plugin is "tdd-pipeline"; the marketplace it comes from is "dfrnks".
 The two lines name different things on purpose: the first takes a GitHub
 path, because that is where the marketplace is fetched from, and the second
 takes the marketplace's own name, which is what it is called once added.

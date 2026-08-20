@@ -54,7 +54,7 @@ Behind `task` sit four phases — **test** (write the failing suite), **execute*
 project's `.cursor/` directory:
 
 ```bash
-git clone https://github.com/deepcloud-dev/agent-plugins.git ~/src/agent-plugins
+git clone https://github.com/dfrnks/agent-plugins.git ~/src/agent-plugins
 cd ~/src/agent-plugins
 ./install.sh --harness cursor --project /path/to/your/project
 ```
@@ -70,11 +70,11 @@ The Claude Code adapter ships as a plugin, not as project-local symlinks, so
 Claude Code's own plugin flow instead:
 
 ```bash
-claude plugin marketplace add deepcloud-dev/agent-plugins
-claude plugin install tdd-pipeline@deepcloud
+claude plugin marketplace add dfrnks/agent-plugins
+claude plugin install tdd-pipeline@dfrnks
 ```
 
-The plugin is `tdd-pipeline`; the marketplace it comes from is `deepcloud`.
+The plugin is `tdd-pipeline`; the marketplace it comes from is `dfrnks`.
 The two lines name different things on purpose, and the mismatch is not a
 typo: `marketplace add` takes a **GitHub path**, because that is where the
 marketplace is fetched from, while `install` takes the **marketplace's own
@@ -84,21 +84,22 @@ carries it.
 
 The `@` form names both plugin and marketplace, so the install works the same
 way whether or not another marketplace also offers a plugin by that name —
-which is why the name is `deepcloud` rather than something descriptive. Its
+which is why the name is `dfrnks` rather than something descriptive. Its
 job is to be unique among the marketplaces a user has added and to say whose
 plugin this is; a generic name would collide with the very other marketplaces
 the `@` form exists to disambiguate against.
 
-If you added this marketplace before it was named `deepcloud`, it is still
-registered under the old name — the name is the key Claude Code stores it
-under, so a rename in this repository does not reach an installation that
-already exists. Remove and re-add it:
+If you added this marketplace under an earlier name — it was `agent-plugins`,
+then `deepcloud` — it is still registered under that name. The name is the key
+Claude Code stores it under, so a rename in this repository does not reach an
+installation that already exists. Remove and re-add it, substituting whichever
+old name you have for `deepcloud` below:
 
 ```bash
 claude plugin uninstall tdd-pipeline
-claude plugin marketplace remove agent-plugins
-claude plugin marketplace add deepcloud-dev/agent-plugins
-claude plugin install tdd-pipeline@deepcloud
+claude plugin marketplace remove deepcloud
+claude plugin marketplace add dfrnks/agent-plugins
+claude plugin install tdd-pipeline@dfrnks
 ```
 
 Then restart Claude Code. Removing the marketplace before re-adding it is the
@@ -111,7 +112,7 @@ the adapter into a project's `.claude/` directory would produce files that look
 installed but whose every `core/` pointer dangles, which is why the installer
 refuses rather than producing that layout.
 
-Verified by a clean install: `claude plugin details tdd-pipeline@deepcloud`
+Verified by a clean install: `claude plugin details tdd-pipeline@dfrnks`
 reports `Skills (8)` and `Agents (5)` — every command and every subagent
 loads. The five agent files live at this repository's own `agents/`
 directory (the plugin root, not under `adapters/claude-code/`) — see

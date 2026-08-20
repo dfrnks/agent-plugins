@@ -1,7 +1,7 @@
 {
-  "name": "deepcloud",
-  "description": "Agent tooling from deepcloud: harness-neutral pipelines for spec-driven, test-first development.",
-  "owner": { "name": "deepcloud-dev" },
+  "name": "dfrnks",
+  "description": "Agent tooling from dfrnks: harness-neutral pipelines for spec-driven, test-first development.",
+  "owner": { "name": "dfrnks" },
   "plugins": [
     {
       "name": "tdd-pipeline",
