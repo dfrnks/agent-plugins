@@ -95,8 +95,19 @@ Step 4 — do not summarize them away.
 
 ## Step 4 — Gate
 
-Present the reviewed spec in full and the review findings from Step 3, then
-ask whether to proceed to implementation.
+First re-read `paths.specs/<task-id>.md` and confirm its `## Agent Handoff
+Log` carries a `review` entry, matched the way `core/phases/pipeline.md`
+Step 2 matches it. Step 3 having reported success is not evidence — a review
+that stops before its own Step 5 fixes the spec without recording that it
+did, and this flow cannot tell that apart from one that finished.
+
+If the entry is absent, run `core/flows/review.md` against this spec once
+more and read the file again. Still absent: stop here, name the spec path,
+and direct the user to run the review flow against this task ID. No gate, no
+worktree, no offer to proceed anyway. Twice is the bound.
+
+Then present the reviewed spec in full and the review findings from Step 3,
+and ask whether to proceed to implementation.
 
 **This is a hard stop, not a suggestion.** An answer other than proceeding —
 however it is phrased — means stop here. Nothing past this point runs: no
@@ -204,10 +215,13 @@ Return, in order:
 
 - The task ID resolved in Step 1, and the tracker's `start` status result.
 - The spec path, and whether it was freshly written or already existed.
-- The review outcome from Step 3, in brief.
-- Whether the gate in Step 4 was passed or stopped here — and if stopped,
-  that the spec is reviewed, committed, and ready for a future run of this
-  flow (or of `resume`) to pick up where this one left off.
+- The review outcome from Step 3, in brief, and whether Step 4 had to re-run
+  the review to obtain a handoff log entry.
+- How Step 4 ended: gate passed, user declined, or gate never presented for
+  want of a `review` entry. Name which — "stopped at the gate" alone reads as
+  the user's decision, and the third case is not that. On either stop, the
+  spec is reviewed and committed, ready for a future run of this flow (or of
+  `resume`) to pick up where this one left off.
 - On a stop, nothing further to report.
 - Past the gate: the worktree path from Step 5, and the pipeline's own
   report from Step 6 in full — result, branch, pull request URL if any, and
