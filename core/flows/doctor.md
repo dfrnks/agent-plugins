@@ -71,6 +71,39 @@ Run one check per row of the requirements table, each reporting `pass`,
   `core/trackers/github.md` — and report `pass` or `fail`, naming what
   failed.
 
+### When a "tracked in git" row fails
+
+Three rows check that a file is tracked: the configuration, the conventions
+file, and `paths.review_checklist` when set. All three fail identically in two
+situations that call for opposite fixes, so distinguish them before naming
+one — with `test -e`, not by inference:
+
+- **The file is absent.** The flow that writes it never ran, or did not get
+  far enough. Name that flow; running it can clear the row.
+- **The file exists but is untracked.** The write succeeded and the commit did
+  not. Something in the surrounding environment is denying git — a permission
+  rule, a policy, a sandbox. Say that plainly, and do **not** name a flow as
+  the fix: `init` and the conventions flow both already wrote this file and
+  both already failed to commit it, so re-running either writes the same file
+  and fails the same way, and the reader spends a run finding that out. This
+  is the case the `## Output` rule against naming an unusable fix exists for.
+
+Report the second case as what it is:
+
+```
+<path> exists but is not tracked in git. The flow that wrote it could not
+commit it, so every phase — which reads this file from inside a worktree
+holding only committed files — cannot see it. This is an environment
+permission, not a pipeline defect: confirm that git add and git commit are
+permitted here, then commit the file directly.
+```
+
+A pipeline whose flows report success while their commits are silently
+dropped fails later, in a worktree, with an error that names a missing file
+in a project where the file is plainly on disk. These three rows are the only
+place that gets caught early, and only if the report says which of the two
+cases happened.
+
 ### The conventions check, specifically
 
 The execute and code-review phases carry no inline rules for anything

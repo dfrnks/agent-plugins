@@ -124,13 +124,20 @@ never anything to pause and gather.
 Dispatch the test phase. It returns at most 300 characters:
 
 ```
-Tests: <path>. <N> tests written. Status: <fail (red)|pass (green)>. Committed: <yes|no>.
+Tests: <path>. <N> tests written. Status: <fail (red)|pass (green)|unverified>. Committed: <yes|no>.
 ```
 
-Read `Status:`. If it does not report a failing suite, stop the pipeline and
-return `BLOCKED`. A red phase that is already green means the tests describe
-no new behavior: execute would have nothing to make pass, and code-review
-would find an implementation nobody asked for. Do not dispatch execute.
+Read `Status:`. Only `fail (red)` continues; the other two stop the pipeline
+and return `BLOCKED`, carrying which one into Step 5's reason. Do not
+dispatch execute in either case.
+
+- `pass (green)` — the tests describe no new behavior, so execute would have
+  nothing to make pass and code-review would find an implementation nobody
+  asked for.
+- `unverified` — the suite was never run, so nothing is known about it.
+  Treat this as an environment or permission failure to report, not as a
+  test-design problem: the fix is to make `commands.test` runnable, which is
+  what the test phase's own line names.
 
 ### 4.2 — execute
 
@@ -206,8 +213,8 @@ Return, in this order:
     escalated instead of returning its completed shape (4.2), Step 1's guard
     or Step 3's setup failed, or the end phase stopped partway through one of
     its own steps.
-  - `BLOCKED` — the test phase reported no failing tests, or Step 2 found no
-    review entry in the handoff log.
+  - `BLOCKED` — the test phase reported `pass (green)` or `unverified`, or
+    Step 2 found no review entry in the handoff log.
 - **Branch** — the task ID confirmed in Step 1.
 - **Pull request URL** — from the end phase's report when `SHIPPED`;
   otherwise absent.
@@ -215,7 +222,8 @@ Return, in this order:
 - On any result other than `SHIPPED`, a one-line reason so the operator knows
   where to resume: the blocker list, the guard or setup failure message,
   execute's own stop, the step and error end reported, the missing-review
-  instruction, or the confirmation that the suite came back green.
+  instruction, the confirmation that the suite came back green, or what
+  stopped it from being run at all.
 
 Keep this report short, but note the leaf phases' character caps do not apply
 here: a cap exists when the reader is another phase running in a fresh

@@ -162,8 +162,12 @@ dialog, or set it directly:
 { "projects": { "/path/to/your/project": { "hasTrustDialogAccepted": true } } }
 ```
 
-If `doctor` reports a config or conventions file as untracked right after a
-flow that says it committed one, check this before suspecting the pipeline.
+`doctor` names this case rather than leaving you to infer it. A row reading
+"exists but is not tracked in git" means the write succeeded and the commit
+did not, and that row deliberately offers **no flow to re-run** — neither
+`init` nor `conventions` can clear it, since both already wrote the file and
+both already failed to commit it. Accept the trust dialog, confirm `git add`
+and `git commit` are permitted, then commit the file directly.
 
 ## Configuration
 

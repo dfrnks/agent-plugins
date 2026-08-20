@@ -126,6 +126,14 @@ deleting the one test standing between this task and a silent regression.
 Then run `commands.test_all` to confirm the new tests broke nothing already
 passing.
 
+If `commands.test` cannot be run at all — the command is missing, the
+environment was never built, a permission denies it — this phase has not
+observed red and must not claim it. Report `Status: unverified` in Step 8,
+naming what failed and what was tried, and commit nothing. Red is a
+observation, not an inference from having written tests that ought to fail:
+a phase that reports red it never saw hands execute a contract nobody
+confirmed was unmet.
+
 ### Proving the contract is satisfiable
 
 Red is not the same as correct. A suite failing because the module it imports
@@ -212,18 +220,23 @@ it rather than adding an empty line.
 Return a report of at most 300 characters, in exactly this shape:
 
 ```
-Tests: <path>. <N> tests written. Status: <fail (red)|pass (green)>. Committed: <yes|no>.
+Tests: <path>. <N> tests written. Status: <fail (red)|pass (green)|unverified>. Committed: <yes|no>.
 ```
 
-`Status:` is a real field with two values, not a fixed string. Report
-`fail (red)` when at least one new test describing behavior this task adds
-fails for the reason it asserts. Report `pass (green)` when none did — every
-new test passed against pre-implementation code and Step 5 established that
-none was a regression guard. That outcome is reachable, and the orchestrator
-branches on it (`core/phases/pipeline.md` Step 4.1, which stops the pipeline
-rather than handing execute nothing to make pass). Never write `fail (red)`
+`Status:` is a real field with three values, not a fixed string:
+
+- `fail (red)` — at least one new test describing behavior this task adds
+  fails for the reason it asserts. The expected outcome.
+- `pass (green)` — every new test passed against pre-implementation code, and
+  Step 5 established that none was a regression guard.
+- `unverified` — Step 5 could not run the suite, so neither of the above was
+  observed. Name what failed on the same line.
+
+The orchestrator branches on this field (`core/phases/pipeline.md` Step 4.1),
+and only `fail (red)` continues the pipeline. Never write `fail (red)`
 because the shape shows it: a hardcoded status makes the orchestrator's only
-stop unreachable and hands a green suite forward as though it were red.
+stop unreachable and hands a green — or unrun — suite forward as though it
+were red.
 
 Everything else — the test plan's reasoning, the conventions gap, mock
 patterns, deviations — belongs in the Step 6 handoff log. The next phase runs
