@@ -121,83 +121,54 @@ Only an explicit answer to proceed continues to Step 5.
 
 ## Step 5 — Create the worktree
 
-First bring `git.base_branch` up to date, if this project has a remote at
-all. A worktree branches from whatever the base branch points at locally,
-and a local base branch is only as current as the last time someone
-fetched — so on a machine that has not fetched in a week, every phase below
-runs against week-old code. That failure is expensive precisely because it
-is invisible: the tests pass, the review approves, and the conflict surfaces
-in the pull request, long after the point where it could have been avoided.
+Bring `git.base_branch` up to date first, if this project has a remote. A
+worktree is only as current as the last fetch, and stale code fails in the
+pull request — long after the point where it was cheap to prevent.
 
-Resolve the remote the way the end phase does — the name the repository
-actually reports, preferring `origin` when several exist, never an assumed
-one:
+Resolve the remote the way the end phase does, preferring `origin` when
+several exist, never an assumed name:
 
 ```bash
 REMOTE=$(git remote | head -n 1)
 ```
 
-If that names no remote, go straight to creating the worktree below: a
-project with no remote is a fully supported configuration here, and there is
-nothing for it to be out of date with.
+With no remote, skip to the second worktree command below. A project without
+one is fully supported, and has nothing to be out of date with.
 
-With a remote, fetch the base branch — and then decide which of the two refs
-to branch from, because the fetch answers that question and does not settle
-it:
+Otherwise fetch, then ask which of the two refs to branch from:
 
 ```bash
 git fetch "$REMOTE" "<git.base_branch>"
 git rev-list --left-right --count "$REMOTE/<git.base_branch>...<git.base_branch>"
 ```
 
-That prints two numbers: how many commits the remote has that the local
-branch does not, and how many the local branch has that the remote does not.
-Branch from the remote-tracking ref **only when the second number is zero** —
-when the local base branch holds nothing the remote lacks:
+The second number counts commits the local base branch has that the remote
+lacks. Branch from the remote-tracking ref **only when it is zero**:
 
 ```bash
 git worktree add "<paths.worktrees>/<task-id>" -b "<task-id>" "$REMOTE/<git.base_branch>"
 ```
 
-Otherwise branch from the local base branch, using the command below, and
-say so in Step 7's report.
-
-The second number being non-zero means the local base branch has commits
-that were never pushed, and they are the user's own work. Branching from the
-remote there does not merely lose a convenience — it produces a worktree
-missing whatever those commits added, which routinely includes the pipeline's
-own scaffolding: a project configured but not yet pushed has its
-`.tdd-pipeline/config.yaml` only on the local branch, so every phase fails
-at its Step 0 in a project where `doctor` reports ready. This is the failure
-that the obvious version of this step causes, and it is worse than the
-staleness it was written to prevent, because stale code at least runs.
-
-Branching, rather than resetting the local base branch to match the remote,
-is deliberate in either direction: it leaves the user's checkout exactly as
-they left it. A flow that hard-resets a branch the user has local commits on
-destroys work that was never this flow's to touch.
-
-If the fetch fails — no network, or an authentication prompt with nobody
-there to answer it — do not stop. Create the worktree from the local base
-branch, and say so in Step 7's report. Working offline is legitimate;
-working from silently stale code is not, and the only difference between the
-two is whether the report names it.
-
-Without a remote, when the local branch is ahead of or diverged from it, or
-after a failed fetch, branch from the local base branch:
+In every other case — no remote, a non-zero second number, or a fetch that
+failed, which is not a reason to stop — branch from the local base branch,
+and name which case applied in Step 7's report:
 
 ```bash
 git worktree add "<paths.worktrees>/<task-id>" -b "<task-id>" "<git.base_branch>"
 ```
 
-If a worktree already exists at that path, reuse it rather than recreating
-it. If it holds uncommitted work this flow did not just create, stop and
-ask the user before touching anything further — it may belong to another
-task started in parallel.
+Those unpushed commits are the user's own work, and routinely include
+`.tdd-pipeline/config.yaml` itself: branching from the remote there yields a
+worktree where every phase fails at its Step 0, in a project `doctor` calls
+ready. Never reset the base branch to match the remote — leave the user's
+checkout as they left it.
 
-If `git.worktree_setup` is configured, this step does not run it — that is
-the pipeline's own Step 3, run inside the worktree in Step 6 below, since it
-depends on the worktree existing first.
+If a worktree already exists at that path, reuse it. If it holds uncommitted
+work this flow did not just create, stop and ask the user before touching
+anything further — it may belong to a task started in parallel.
+
+`git.worktree_setup` does not run here. It is the pipeline's own Step 3, run
+inside the worktree in Step 6 below.
 
 ## Step 6 — Run the pipeline
 
