@@ -1,209 +1,170 @@
 # Phase: test
 
 Write the failing test suite for one task before any implementation exists.
-This is the red phase of test-driven development: the tests define the
-contract the execute phase must satisfy, and they must fail before that
-phase starts, or there is nothing proving the contract was unmet.
+This is the red phase: the tests define the contract execute must satisfy,
+and they must fail first, or nothing proves the contract was unmet.
 
-The argument to this phase is a task ID (for example `TASK-1`). If none is
-given, derive it from the current branch name.
+The argument is a task ID (for example `TASK-1`). If none is given, derive it
+from the current branch name.
 
 ## Step 0 — Load configuration
 
 Read `.tdd-pipeline/config.yaml`. Follow the fail-fast protocol in
-`core/contracts/pipeline-config.md`: stop and name the exact missing key
-if the file or a key this phase needs is absent. This phase needs
+`core/contracts/pipeline-config.md`: stop and name the exact missing key if
+the file or a key this phase needs is absent. This phase needs
 `commands.test`, `commands.test_all`, `paths.tests`, `paths.specs`,
 `paths.conventions`, and `git.commit_trailer`.
 
 ## Step 1 — Load the spec
 
-Read `paths.specs/<task-id>.md`, the task spec described in
-`core/contracts/spec-template.md`. Read the whole file, not only
-`## Definition of Done` — `## Approach` and `## Files to Modify` name the
-files, functions, and data this phase must exercise, and `## Out of Scope`
-rules out cases that would otherwise look like missing coverage.
+Read `paths.specs/<task-id>.md` in full, per
+`core/contracts/spec-template.md` — not only `## Definition of Done`.
+`## Approach` and `## Files to Modify` name the files, functions, and data
+this phase must exercise, and `## Out of Scope` rules out cases that would
+otherwise look like missing coverage.
 
-Also read the `## Agent Handoff Log` section in full, per
-`core/contracts/handoff-log.md`. A planning conversation or an earlier
-phase may have already left constraints, resolved ambiguities, or fixture
-patterns there; skipping this step means re-deriving something already
-settled.
+Read `## Agent Handoff Log` in full too, per
+`core/contracts/handoff-log.md`. A planning conversation or an earlier phase
+may already have left constraints, resolved ambiguities, or fixture patterns
+there.
 
 ## Step 2 — Study existing test patterns
 
-Before writing anything, read a representative sample of the tests already
-in `paths.tests` — a list, so check every directory it names (a project
-that separates unit and integration tests, for example, names both).
-Match the project's existing style: file naming, how a
-test is structured, how setup and teardown are handled, how dependencies
-outside the code under test are isolated. A test suite where every file
-looks hand-written by a different author, because each phase run invented
-its own conventions, is harder for a human to maintain than one where every
-file looks like the others.
+Before writing anything, read a representative sample of the tests already in
+`paths.tests` — a list, so check every directory it names (a project that
+separates unit and integration tests names both). Match the project's file
+naming, test structure, setup and teardown, and how dependencies outside the
+code under test are isolated.
 
-Then read the file at `paths.conventions` and follow its testing section.
-That file is the project's own record of how it wants tests written —
-naming, fixture layout, isolation strategy, anything specific to this
-codebase — and it takes precedence over a pattern merely inferred from
-`paths.tests`, since a convention was written down for a reason.
+Then read `paths.conventions` and follow its testing section. It takes
+precedence over a pattern merely inferred from `paths.tests`, since a
+convention was written down for a reason.
 
-If `paths.conventions` has no testing section, do not proceed as though
-nothing was expected. Record the gap: this phase found no testing
-conventions on file. That absence goes in the handoff log (Step 6) exactly
-as concretely as any other finding — reporting "no rule existed here" is
-the required output in this case, not a shortcoming to hide, because it is
-what lets the conventions flow later know a gap remains. A phase that
-silently finds nothing and moves on erases the one signal that flow needs.
+If `paths.conventions` has no testing section, record the gap: this phase
+found no testing conventions on file. That absence goes in the handoff log
+(Step 6) as concretely as any other finding. It is the required output in
+this case, not a shortcoming to hide — it is what lets the conventions flow
+know a gap remains, and a phase that silently moves on erases that signal.
 
 ## Step 3 — Design the test plan
 
-Before writing any test, enumerate what the suite needs to cover. Do not
-write tests as they occur to you — decide the plan first, then implement
-it, so coverage is a deliberate choice rather than whatever came to mind
-first. Work through every dimension that applies to this task:
+Enumerate what the suite needs to cover before writing any test, so coverage
+is a deliberate choice rather than whatever came to mind first. Work through
+every dimension that applies:
 
 - **Happy path** — the behavior the task exists to deliver, under normal
   input.
-- **Validation errors** — malformed, missing, or out-of-range input
-  rejected the way the spec (or the project's existing error-handling
-  convention) says it should be.
+- **Validation errors** — malformed, missing, or out-of-range input rejected
+  the way the spec or the project's error-handling convention says.
 - **Not-found** — a reference to something that does not exist, handled
   distinctly from a validation error.
-- **Authorization** — an actor who lacks permission for this action,
-  denied rather than silently succeeding or silently scoping to less data
-  than expected.
+- **Authorization** — an actor lacking permission, denied rather than
+  silently succeeding or silently scoping to less data than expected.
 - **Edge cases** — boundary values, empty collections, the largest or
-  smallest input the code accepts.
-- **Side effects** — anything the change under test writes, sends, or
-  triggers elsewhere, verified to happen (or, for a negative case, verified
-  not to happen).
-- **Isolation between accounts or tenants** — when the codebase has any
-  notion of separate owners of data, a test proving one owner's action
-  cannot read or affect another owner's data.
+  smallest accepted input.
+- **Side effects** — anything the change writes, sends, or triggers
+  elsewhere, verified to happen (or, for a negative case, not to).
+- **Isolation between accounts or tenants** — where the codebase has separate
+  owners of data, a test proving one owner cannot read or affect another's.
 
-Not every dimension applies to every task; the spec's `## Out of Scope`
-section and the task's own nature decide which do. Skipping a dimension
-that clearly applies because it was inconvenient to test is a gap the next
-phase inherits silently.
+The spec's `## Out of Scope` and the task's nature decide which apply.
+Skipping one that clearly applies because it was inconvenient is a gap the
+next phase inherits silently.
 
 ## Step 4 — Write the tests
 
-Write the suite into whichever directory named in `paths.tests` matches
-this task — the entry that pairs with the code under test, if more than
-one is listed — following the patterns identified in Step 2. Hold every
-test to these standards:
+Write the suite into whichever `paths.tests` directory pairs with the code
+under test, following Step 2's patterns. Hold every test to these standards:
 
-- **Descriptive names.** A test's name states the behavior and the
-  condition, so a failure is legible from the test runner's output alone,
-  without opening the file.
-- **Independence.** Any test can run alone, or in any order relative to
-  the others, and produce the same result. A test that only passes because
-  an earlier test left behind state is not independent.
-- **External dependencies mocked or faked.** Anything outside the code
-  under test — a network call, another service, the system clock, a
-  source of randomness — is replaced with a controlled substitute, so a
-  failure indicates a defect in the code under test, not in something the
-  test doesn't own.
-- **No superficial assertions.** A test that only checks "no exception was
-  thrown" or "a response object exists" without checking its actual
-  content or effect passes on a broken implementation exactly as
-  reliably as a correct one. Assert the real value.
+- **Descriptive names.** The name states the behavior and the condition, so a
+  failure is legible from the runner's output without opening the file.
+- **Independence.** Any test runs alone, or in any order, with the same
+  result. One that passes only because an earlier test left state is not
+  independent.
+- **External dependencies mocked or faked.** A network call, another service,
+  the clock, a source of randomness — replaced with a controlled substitute,
+  so a failure indicates a defect in the code under test.
+- **No superficial assertions.** "No exception was thrown" or "a response
+  object exists" passes on a broken implementation as reliably as on a
+  correct one. Assert the real value.
 - **No testing of internals.** Assert on observable behavior — inputs and
-  outcomes — not on private state or implementation detail that the
-  execute phase is free to change without breaking the contract.
+  outcomes — not on private state the execute phase may change freely.
 
-Write the tests as the actual contract for this task: specific enough that
-an implementation satisfying every test has satisfied the spec, and no test
-merely restates the implementation the author already had in mind.
+Write the tests as the actual contract: specific enough that an
+implementation satisfying every one has satisfied the spec, and no test
+merely restating the implementation the author already had in mind.
 
 ## Step 5 — Verify the tests fail
 
-Run `commands.test`, with `{target}` substituted for the module or file
-this task's tests live in. Confirm every new test that describes behavior
-not yet implemented fails, and that each one fails for the reason the test
-asserts — not from a typo, an import error, or a broken fixture, all of
-which produce a failure that looks red but proves nothing about the
-contract. A regression guard is the deliberate exception to "every new test
-fails" — see below.
+Run `commands.test`, with `{target}` substituted for the module or file this
+task's tests live in. Confirm every new test describing unimplemented
+behavior fails, and fails **for the reason it asserts** — not from a typo, an
+import error, or a broken fixture, all of which look red and prove nothing.
+Regression guards are the deliberate exception, below.
 
-If a new test unexpectedly passes against the current, pre-implementation
-code, do not assume it is a defect — first find out *why* it passed, since
-two different situations produce the same green result and call for
-opposite responses:
+If a new test unexpectedly passes against pre-implementation code, find out
+*why* before assuming a defect. Two situations produce the same green and
+call for opposite responses:
 
-- **It passed because the behavior it checks already exists**, unrelated
-  to what this task adds — a regression guard, proving a preservation
-  criterion in the spec's `## Definition of Done` still holds ("`add`
-  still returns the correct sum for `int` and `float` operands" is
-  something the implementation before this task already does). A test
-  like this is *supposed* to be green before this task starts; that is the
-  entire point of writing it now, alongside the new tests, rather than
-  after. Keep it, and note in Step 6's handoff log that it is a regression
-  guard passing by design, not new-behavior coverage — so the execute
-  phase and code-review both know not to expect it to flip red.
-- **It passed because it does not actually exercise the new behavior** —
-  a typo, an import error, a broken fixture, an assertion too weak to
-  distinguish the old code path from the new one, or a case the
-  pre-implementation code already happened to handle by coincidence. This
-  is the defect Step 5 exists to catch: figure out why it passed, and
-  rewrite the test so it genuinely fails against the pre-implementation
-  code for the reason it claims to.
+- **The behavior it checks already exists**, unrelated to what this task
+  adds — a regression guard proving a preservation criterion in
+  `## Definition of Done` still holds. It is *supposed* to be green now;
+  that is why it was written alongside the new tests rather than after. Keep
+  it, and note in Step 6 that it is a regression guard passing by design, so
+  execute and code-review do not expect it to flip red.
+- **It does not actually exercise the new behavior** — a typo, an import
+  error, a broken fixture, an assertion too weak to distinguish the old code
+  path from the new, or a case the old code handled by coincidence. This is
+  the defect this step exists to catch: rewrite the test so it genuinely
+  fails for the reason it claims.
 
-The distinction is not the pass itself — it is whether the spec asked this
-test to guard something that must keep working (keep it) or to describe
-something new that does not exist yet (fix it). When it is unclear which
-case applies, re-read the spec's `## Definition of Done` before deciding;
-guessing risks deleting the one test standing between this task and a
-silent regression.
+The distinction is whether the spec asked this test to guard something that
+must keep working (keep it) or to describe something new (fix it). When
+unclear, re-read `## Definition of Done` before deciding — guessing risks
+deleting the one test standing between this task and a silent regression.
 
-Then run `commands.test_all` to confirm the new tests did not break any
-existing, previously-passing test in the suite.
+Then run `commands.test_all` to confirm the new tests broke nothing already
+passing.
 
 ### Proving the contract is satisfiable
 
-Red is not the same as correct. A suite that fails because the module it
-imports does not exist yet has proved exactly one thing: the module does not
-exist. It has proved nothing about whether the expectations inside those
-tests can be met at all.
+Red is not the same as correct. A suite failing because the module it imports
+does not exist has proved only that the module does not exist — nothing about
+whether the expectations inside those tests can be met at all.
 
 That gap matters whenever the tests carry **expected values the author
-computed rather than observed** — a financial calculation, a rounding rule,
-a normalization, a parser: any deliverable whose assertions are dense with
-literal numbers or strings. If one of those literals is wrong, the execute
-phase cannot tell whether the test or its own implementation is at fault,
-and the test-protection contract it runs under tells it the tests are the
-contract. So it will bend the implementation until it matches a wrong
-number — and every gate downstream will agree, because the suite is green
-and nothing there has an independent source to check the number against.
+computed rather than observed**: a financial calculation, a rounding rule, a
+normalization, a parser — anything whose assertions are dense with literal
+numbers or strings. If one literal is wrong, execute cannot tell whether the
+test or its own implementation is at fault, and its test-protection contract
+says the tests are the contract. So it bends the implementation to match a
+wrong number, and every downstream gate agrees, because the suite is green
+and nothing there has an independent source to check against.
 
-When this task's tests are of that kind, prove the contract is satisfiable
-before committing them:
+When this task's tests are of that kind, prove the contract satisfiable
+before committing:
 
 1. Confirm the suite is red for the right reason, per the checks above.
-2. Write a throwaway reference implementation **outside the repository** —
-   a scratch location, never a path under version control.
+2. Write a throwaway reference implementation **outside the repository** — a
+   scratch location, never a path under version control.
 3. Put it in place, run this task's tests, and confirm they go green **with
-   no errors and no warnings**, not merely that the failure count reached
-   zero.
+   no errors and no warnings**, not merely that the failure count hit zero.
 4. Remove it, and verify the removal mechanically with `git status` — the
    only files that may remain untracked are the test files themselves.
 5. Re-run the tests, confirming red again, before Step 7 commits anything.
 
-The reference implementation must never be committed, and it must not be
-where the expected values came from. It proves the assertions are mutually
-**consistent** — that one implementation can satisfy all of them at once.
-It cannot prove they are **right**: an implementation written from the same
-misunderstanding that produced the tests will satisfy them perfectly.
-Anchor the expected values in something outside this codebase — the
-specification, a provider's documentation, a worked example the spec cites
-— and verify them against that source first. Without the anchor, step 3 is
-circular: it only shows the tests agree with an implementation written by
-the same reasoning that wrote the tests.
+The reference implementation must never be committed, and must not be where
+the expected values came from. It proves the assertions are mutually
+**consistent** — that one implementation can satisfy all of them at once. It
+cannot prove they are **right**: an implementation written from the same
+misunderstanding that produced the tests will satisfy them perfectly. Anchor
+the expected values in something outside this codebase — the specification, a
+provider's documentation, a worked example the spec cites — and verify them
+against that source first. Without the anchor, step 3 is circular.
 
 Skip this whole check when the tests are dominated by mocks and I/O — a
 route, a handler, a service whose assertions check status codes and call
-shapes rather than computed values. There, an import error is the whole of
+shapes rather than computed values. There an import error is the whole of
 what red can mean, and a reference implementation would only restate the
 mocks.
 
@@ -213,43 +174,38 @@ Append a dated subsection to `## Agent Handoff Log` in the spec file,
 following `core/contracts/handoff-log.md`. Include:
 
 - The path to the test file(s) written and a count of tests added.
-- Confirmation that the suite is red, and why (each failure traced to
-  missing behavior, not a broken test) — and, separately, which tests (if
-  any) were kept green on purpose as regression guards, per Step 5.
-- Whether the contract was verified satisfiable, per Step 5's check, and
-  what the expected values were anchored against — or that the check did
-  not apply here, and why. State this as its own line, separate from the
-  red confirmation above: they answer different questions, and a reader who
-  sees only "red for the right reason" cannot tell which of the two was
-  actually established.
-- Any mock or fixture pattern established here that the execute phase
-  should reuse rather than reinvent.
+- Confirmation that the suite is red and why, each failure traced to missing
+  behavior rather than a broken test — and, separately, which tests were kept
+  green on purpose as regression guards.
+- Whether the contract was verified satisfiable per Step 5, and what the
+  expected values were anchored against — or that the check did not apply,
+  and why. State this on its own line, separate from the red confirmation:
+  they answer different questions, and a reader who sees only "red for the
+  right reason" cannot tell which was established.
+- Any mock or fixture pattern established here that execute should reuse.
 - Whether `paths.conventions` held a testing section (Step 2). If it held
-  none, say so explicitly here, so the conventions flow can close the gap
-  — this is a required entry, not only a note to add when something was
-  found.
-- Any deviation from the spec's test expectations, and the reasoning.
+  none, say so explicitly — a required entry, not only a note to add when
+  something was found.
+- Any deviation from the spec's test expectations, and why.
 
 Apply the escalation routing table in `core/contracts/handoff-log.md`: a
-finding that is a durable fact about this codebase (a project convention)
-belongs in `paths.conventions` — appended inside its discoveries span
-(`core/contracts/conventions-template.md`), never inside the managed section,
-which the conventions flow regenerates wholesale on its next run — not
-buried here as a task-only detail.
+finding that is a durable fact about this codebase belongs in
+`paths.conventions`, appended inside its discoveries span
+(`core/contracts/conventions-template.md`) and never inside the managed
+section, which the conventions flow regenerates wholesale.
 
 ## Step 7 — Commit
 
-Stage only the test files written in Step 4 and the spec file's updated
-handoff log, then commit:
+Stage only the test files from Step 4 and the spec file's updated handoff
+log, then commit:
 
 ```bash
 git add <test files> <spec file>
 git commit -m "<task-id>: add failing tests"
 ```
 
-If `git.commit_trailer` is non-empty, append it as a trailer on the commit
-message. If it is empty, omit it entirely — do not add an empty trailer
-line.
+If `git.commit_trailer` is non-empty, append it as a trailer; if empty, omit
+it rather than adding an empty line.
 
 ## Step 8 — Report
 
@@ -259,22 +215,18 @@ Return a report of at most 300 characters, in exactly this shape:
 Tests: <path>. <N> tests written. Status: <fail (red)|pass (green)>. Committed: <yes|no>.
 ```
 
-`Status:` is a real field with two possible values, not a fixed string.
-Report `fail (red)` when at least one new test describing behavior this task
-adds fails for the reason it asserts — the expected outcome of this phase.
-Report `pass (green)` when no such test failed: every new test passed
-against the pre-implementation code, and Step 5 established that none of
-them was a regression guard covering a preservation criterion. That is a
-real outcome this phase can reach, and the orchestrator branches on it (see
-`core/phases/pipeline.md` Step 4.1, which stops the pipeline rather than
-handing the execute phase nothing to make pass). Never write `fail (red)`
-into this line because the shape shows it — a hardcoded status makes the
-orchestrator's only stop unreachable and hands a green suite forward as
-though it were red.
+`Status:` is a real field with two values, not a fixed string. Report
+`fail (red)` when at least one new test describing behavior this task adds
+fails for the reason it asserts. Report `pass (green)` when none did — every
+new test passed against pre-implementation code and Step 5 established that
+none was a regression guard. That outcome is reachable, and the orchestrator
+branches on it (`core/phases/pipeline.md` Step 4.1, which stops the pipeline
+rather than handing execute nothing to make pass). Never write `fail (red)`
+because the shape shows it: a hardcoded status makes the orchestrator's only
+stop unreachable and hands a green suite forward as though it were red.
 
 Everything else — the test plan's reasoning, the conventions gap, mock
-patterns, deviations — belongs in the handoff log written in Step 6, never
-in this report. The next phase runs in a fresh context with no memory of
-this one; the handoff log is the only place it can read what happened
-here, and the short report is what makes it possible to resume this
-pipeline from any harness, not only the one that ran this phase.
+patterns, deviations — belongs in the Step 6 handoff log. The next phase runs
+in a fresh context with no memory of this one; that log is the only place it
+can read what happened, and the short report is what makes this pipeline
+resumable from any harness.
