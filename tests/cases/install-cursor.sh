@@ -7,6 +7,6 @@ git -C "$TMP" init -q
 ./install.sh --harness cursor --project "$TMP" >/dev/null
 [ -L "$TMP/.cursor/agents/task-test.md" ]
 [ -L "$TMP/.cursor/commands/task.md" ]
-[ -d "$TMP/.cursor/tdd-pipeline/core" ]
+[ -d "$TMP/.cursor/tdd/core" ]
 ./install.sh --harness cursor --project "$TMP" >/dev/null   # idempotent
 [ -L "$TMP/.cursor/agents/task-test.md" ]

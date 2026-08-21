@@ -1,6 +1,6 @@
 # agent-plugins
 
-A plugin marketplace holding one plugin today, **`tdd-pipeline`**.
+A plugin marketplace holding one plugin today, **`tdd`**.
 
 It is a harness-neutral, test-driven development pipeline for coding agents: it
 turns a one-line request into a reviewed spec, a failing test suite, an
@@ -17,17 +17,17 @@ differently**, because the two install by different mechanisms:
 
 | What it does | Claude Code | Cursor |
 |---|---|---|
-| Bootstraps a project: detects the stack, proposes `.tdd-pipeline/config.yaml` for confirmation, creates the directories, commits them, and hands off to conventions. Run once per project. | `/tdd-pipeline:init` | `/init` |
-| Explores the codebase and derives its actual rules — one per list item, each carrying a `file:line` citation — into the project's conventions file, and commits it. This is what the execute and code-review phases enforce. | `/tdd-pipeline:conventions` | `/conventions` |
-| Checks the project against every requirement the pipeline needs, one row per requirement, and reports `pass` / `fail` / `n/a`. Takes an optional `repair` argument. | `/tdd-pipeline:doctor` | `/doctor` |
-| The single entry point for work. Resolves the item, writes a spec, reviews it, stops at a confirmation gate, then creates a worktree and runs the four phases against it. | `/tdd-pipeline:task` | `/task` |
-| Designs a change and **stops** — explores, settles the open questions with you, writes a spec, runs nothing. For work whose shape has to be decided before it is scheduled. | `/tdd-pipeline:plan` | `/plan` |
-| Fixes a defect test-first: reproduces it with a failing test, names the root cause, makes the minimal change, verifies. Stops before pushing, because nothing reviewed it. | `/tdd-pipeline:fix-bug` | `/fix-bug` |
-| Critiques an existing spec against the real codebase and fixes it in place. Runs standalone, or inline as `task`'s own step 3. | `/tdd-pipeline:review` | `/review` |
-| Re-enters an interrupted pipeline at exactly one phase, runs that phase alone, and stops. A recovery tool, not a retry loop. | `/tdd-pipeline:resume` | `/resume` |
+| Bootstraps a project: detects the stack, proposes `.tdd-pipeline/config.yaml` for confirmation, creates the directories, commits them, and hands off to conventions. Run once per project. | `/tdd:init` | `/init` |
+| Explores the codebase and derives its actual rules — one per list item, each carrying a `file:line` citation — into the project's conventions file, and commits it. This is what the execute and code-review phases enforce. | `/tdd:conventions` | `/conventions` |
+| Checks the project against every requirement the pipeline needs, one row per requirement, and reports `pass` / `fail` / `n/a`. Takes an optional `repair` argument. | `/tdd:doctor` | `/doctor` |
+| The single entry point for work. Resolves the item, writes a spec, reviews it, stops at a confirmation gate, then creates a worktree and runs the four phases against it. | `/tdd:task` | `/task` |
+| Designs a change and **stops** — explores, settles the open questions with you, writes a spec, runs nothing. For work whose shape has to be decided before it is scheduled. | `/tdd:plan` | `/plan` |
+| Fixes a defect test-first: reproduces it with a failing test, names the root cause, makes the minimal change, verifies. Stops before pushing, because nothing reviewed it. | `/tdd:fix-bug` | `/fix-bug` |
+| Critiques an existing spec against the real codebase and fixes it in place. Runs standalone, or inline as `task`'s own step 3. | `/tdd:review` | `/review` |
+| Re-enters an interrupted pipeline at exactly one phase, runs that phase alone, and stops. A recovery tool, not a retry loop. | `/tdd:resume` | `/resume` |
 
 On Claude Code the commands are namespaced under the plugin name, which is
-what keeps `/tdd-pipeline:init` and `/tdd-pipeline:review` distinct from the
+what keeps `/tdd:init` and `/tdd:review` distinct from the
 built-in `/init` and `/review`.
 
 On Cursor, `install.sh` links the command files into `.cursor/commands/`,
@@ -71,10 +71,10 @@ Claude Code's own plugin flow instead:
 
 ```bash
 claude plugin marketplace add dfrnks/agent-plugins
-claude plugin install tdd-pipeline@dfrnks
+claude plugin install tdd@dfrnks
 ```
 
-The plugin is `tdd-pipeline`; the marketplace it comes from is `dfrnks`.
+The plugin is `tdd`; the marketplace it comes from is `dfrnks`.
 The two lines name different things on purpose, and the mismatch is not a
 typo: `marketplace add` takes a **GitHub path**, because that is where the
 marketplace is fetched from, while `install` takes the **marketplace's own
@@ -89,17 +89,19 @@ job is to be unique among the marketplaces a user has added and to say whose
 plugin this is; a generic name would collide with the very other marketplaces
 the `@` form exists to disambiguate against.
 
-If you added this marketplace under an earlier name — it was `agent-plugins`,
-then `deepcloud` — it is still registered under that name. The name is the key
-Claude Code stores it under, so a rename in this repository does not reach an
-installation that already exists. Remove and re-add it, substituting whichever
-old name you have for `deepcloud` below:
+If you installed this before, you have it under an older name. The plugin was
+`tdd-pipeline`, so its commands read `/tdd-pipeline:task`; it is now `tdd` and
+they read `/tdd:task`. The marketplace was `agent-plugins`, then `deepcloud`.
+Both names are keys Claude Code stores locally, so renaming them in this
+repository does not reach an installation that already exists — you have to
+remove and re-add. Substitute whichever old marketplace name you have for
+`deepcloud` below:
 
 ```bash
 claude plugin uninstall tdd-pipeline
 claude plugin marketplace remove deepcloud
 claude plugin marketplace add dfrnks/agent-plugins
-claude plugin install tdd-pipeline@dfrnks
+claude plugin install tdd@dfrnks
 ```
 
 Then restart Claude Code. Removing the marketplace before re-adding it is the
@@ -112,7 +114,7 @@ the adapter into a project's `.claude/` directory would produce files that look
 installed but whose every `core/` pointer dangles, which is why the installer
 refuses rather than producing that layout.
 
-Verified by a clean install: `claude plugin details tdd-pipeline@dfrnks`
+Verified by a clean install: `claude plugin details tdd@dfrnks`
 reports `Skills (8)` and `Agents (5)` — every command and every subagent
 loads. The five agent files live at this repository's own `agents/`
 directory (the plugin root, not under `adapters/claude-code/`) — see
@@ -286,6 +288,12 @@ git pull
 
 Re-run `install.sh` only when a release adds a new command or agent file,
 which needs a new link. It is idempotent, so re-running it costs nothing.
+
+If you installed before the plugin was renamed, re-running it also moves the
+link to `core/` from `.cursor/tdd-pipeline/` to `.cursor/tdd/`, which is where
+the adapters now look. The old directory is left behind rather than deleted —
+this installer only ever writes the links it makes — so remove
+`.cursor/tdd-pipeline/` yourself once the re-run succeeds.
 
 **Claude Code** depends on how you added the marketplace, and the difference
 is worth knowing because it decides whether editing your clone changes what

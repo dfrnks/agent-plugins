@@ -36,9 +36,9 @@ because matching files happen to exist under a project's .claude/ directory.
 
 Install it instead via Claude Code's plugin flow:
   claude plugin marketplace add dfrnks/agent-plugins
-  claude plugin install tdd-pipeline@dfrnks
+  claude plugin install tdd@dfrnks
 
-The plugin is "tdd-pipeline"; the marketplace it comes from is "dfrnks".
+The plugin is "tdd"; the marketplace it comes from is "dfrnks".
 The two lines name different things on purpose: the first takes a GitHub
 path, because that is where the marketplace is fetched from, and the second
 takes the marketplace's own name, which is what it is called once added.
@@ -79,7 +79,7 @@ check_link() { # <target> <linkname>
 # one destination aborts before any destination is changed — never a
 # half-installed tree.
 TARGETS=("$SRC/core")
-LINKS=("$DEST/tdd-pipeline/core")
+LINKS=("$DEST/tdd/core")
 for f in "$SRC/adapters/$HARNESS/agents/"*.md; do
   TARGETS+=("$f"); LINKS+=("$DEST/agents/$(basename "$f")")
 done
@@ -100,7 +100,7 @@ fi
 # check above would leave three directories behind on a refusal, making the
 # "no changes were made" message false — the message is what tells the user
 # it is safe to re-run after resolving the conflict.
-mkdir -p "$DEST/agents" "$DEST/commands" "$DEST/tdd-pipeline"
+mkdir -p "$DEST/agents" "$DEST/commands" "$DEST/tdd"
 
 for i in "${!LINKS[@]}"; do
   ln -sfn "${TARGETS[$i]}" "${LINKS[$i]}"

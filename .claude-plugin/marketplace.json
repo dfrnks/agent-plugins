@@ -4,7 +4,7 @@
   "owner": { "name": "dfrnks" },
   "plugins": [
     {
-      "name": "tdd-pipeline",
+      "name": "tdd",
       "source": ".",
       "description": "Agent-driven TDD pipeline: spec, red, green, review, ship."
     }

@@ -3,6 +3,12 @@
 **Date:** 2026-08-03
 **Status:** approved, ready for implementation planning
 
+> **Renamed 2026-08-21.** The plugin shipped as `tdd-pipeline` and is now
+> `tdd`, so every command this document writes as `/tdd-pipeline:x` is typed
+> `/tdd:x` today, and the Cursor install root is `.cursor/tdd/`. The document
+> is left in its original wording as the record of what was approved; the
+> project configuration directory, `.tdd-pipeline/`, did not change.
+
 ## Problem
 
 A mature agent-driven development pipeline already exists and works end to end:
