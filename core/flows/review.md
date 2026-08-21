@@ -90,6 +90,14 @@ assumption, or an unverified claim in place, backed by what Step 2 and Step 3
 confirmed. If the spec is too broad for one pass, propose splitting it per
 `core/contracts/spec-template.md`'s subtask structure.
 
+Write the correction, not the case for it. The body gets the instruction as
+it should now read; the finding, the draft it replaces, and the evidence
+that settled it go in Step 5's entry — see `## What a spec leaves out` in
+`core/contracts/spec-template.md`. Writing both in both places puts one of
+them where it cannot be used: `## Approach` is read as the instructions, so
+a paragraph on why the old rule failed is a paragraph the executing phase
+has to rule out before it can start.
+
 A spec this step leaves unchanged because nothing needed fixing is a valid
 outcome — say so plainly in Step 5 rather than fixing something to have
 something to report.

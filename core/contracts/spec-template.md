@@ -39,6 +39,31 @@ is not "implied" by context elsewhere in the file — a phase that needs
 `## Out of Scope` and finds it absent has no way to tell "empty" from
 "omitted by accident."
 
+## What a spec leaves out
+
+A spec is written to a phase that has no history. It never saw the planning
+conversation, the review that corrected the spec, or the draft being
+corrected. So the body states what to build, in the present tense, and stops
+there. What the spec used to say, why it was wrong, and what proved it wrong
+are the record of a decision rather than instructions, and their place is
+`## Agent Handoff Log`, which every phase reads alongside the body.
+
+The cost of putting them in `## Approach` instead is that reasoning there
+reads exactly like a requirement, because it sits where the requirements
+are. A phase handed "the previous draft said `and`, which made three of its
+own criteria unreachable" has to work out that no part of that sentence is
+something to do. Multiply that by every finding a review makes and the
+instructions become the minority of their own section. Evidence goes the
+same way: "verified — this dies with `Error: Method name must be a string`"
+belongs to the reviewer's handoff entry, while the body carries only what
+that evidence settled, in a form a phase can implement.
+
+None of this licenses a thin spec. The completeness rules below say what a
+phase needs in order to do the work and they hold in full; this section says
+where the reasoning behind it lives. A spec that drops a field name, a path,
+or a resolution chain in the name of brevity has broken a completeness rule,
+not followed this one.
+
 ## Completeness rules
 
 A spec is reviewed against these rules before any phase starts work. Most
