@@ -4,7 +4,7 @@
 # stays usable regardless of which package manager, test runner, linter, or
 # framework the consuming project happens to run underneath it.
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 ROOT="${1:-core}"
 [ -d "$ROOT" ] || exit 0
 

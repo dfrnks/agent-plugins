@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Every core/…md path mentioned anywhere must exist.
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 
 targets=("$@")
 if [ ${#targets[@]} -eq 0 ]; then mapfile -t targets < <(git ls-files '*.md'); fi

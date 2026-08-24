@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Test runner. No dependencies beyond coreutils and git.
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 
 PASS=0; FAIL=0
 

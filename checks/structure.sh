@@ -2,7 +2,7 @@
 # Verifies every file listed in the manifest exists and has its required headings.
 # Manifest format, one record per line:  <path>|<heading>;<heading>;…
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 MANIFEST="${1:-checks/manifest.txt}"
 rc=0
 

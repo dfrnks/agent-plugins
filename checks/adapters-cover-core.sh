@@ -10,7 +10,7 @@
 # test suite to exercise a fixture without a real adapters/<harness> tree);
 # production callers pass only the harness name.
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 HARNESS="${1:?usage: adapters-cover-core.sh <harness> [adapter-dir]}"
 if [ -n "${2:-}" ]; then
   DIRS=("$2")

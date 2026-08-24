@@ -2,7 +2,7 @@
 # Rejects real-world identifiers. Structural patterns are built in; literal
 # names come from $AGENT_PIPELINE_DENYLIST (one lowercase literal per line).
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 
 targets=("$@")
 if [ ${#targets[@]} -eq 0 ]; then
@@ -45,6 +45,7 @@ allowlist_usernames=(
 # Not matched by either structural pattern above (no regex here targets
 # literal project names) — kept for parity with the documented minimum list
 # in case a future pattern references one.
+# shellcheck disable=SC2034  # deliberately unused today; see the note above.
 allowlist_literals=(
   'my-app'
 )
