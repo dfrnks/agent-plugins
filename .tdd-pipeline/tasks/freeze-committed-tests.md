@@ -196,7 +196,7 @@ files under `core/phases/` and `core/flows/`.
 
 ## Out of Scope
 
-- The spec-adoption seam, specified in `adopt-existing-spec.md`. The two
+- The spec-adoption seam, specified in `TASK-9.md`. The two
   tasks share `checks/manifest.txt`, editing different rows, and `README.md`,
   editing different sections. That task lands first; this one rebases onto it
   and re-derives its own line citations.
