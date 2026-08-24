@@ -134,6 +134,35 @@ observation, not an inference from having written tests that ought to fail:
 a phase that reports red it never saw hands execute a contract nobody
 confirmed was unmet.
 
+### When nothing in the task is testable
+
+Some changes have no observable behaviour to assert: prose a reader consumes,
+a comment, a document, a rename with no runtime effect. For those there is no
+red to observe, and the two wrong answers are fabricating a test that fails
+for a manufactured reason, and reporting `unverified`, which says the suite
+could not run when in truth there was nothing to run.
+
+Report `Status: n/a (nothing testable)` instead, and earn it. Walk
+`## Definition of Done` item by item and state, one line each in Step 6, what
+`commands.test` would have to observe for that item and why nothing can. An
+item that names a file's contents, an exit code, a rendered string, or any
+value a command can read is testable — write the test. This path is for the
+case where every item fails that question, not for the case where finding the
+assertion is hard.
+
+Two rules keep this from becoming the easy exit:
+
+- **Never reach for it before Step 3 has produced a test plan.** The plan is
+  what makes the claim checkable; without one this is an assertion that
+  testing was impossible, made by the party who would otherwise have to do
+  it.
+- **A single testable item disqualifies the whole task.** Write the tests for
+  that item and report red as usual, noting the untestable remainder in
+  Step 6. Mixed tasks are red tasks.
+
+The code-review phase adjudicates the claim against the same spec, so an
+`n/a` reported to avoid the work is a finding there rather than a shortcut.
+
 ### Proving the contract is satisfiable
 
 Red is not the same as correct. A suite failing because the module it imports
@@ -220,10 +249,10 @@ it rather than adding an empty line.
 Return a report of at most 300 characters, in exactly this shape:
 
 ```
-Tests: <path>. <N> tests written. Status: <fail (red)|pass (green)|unverified>. Committed: <yes|no>.
+Tests: <path>. <N> tests written. Status: <fail (red)|pass (green)|unverified|n/a (nothing testable)>. Committed: <yes|no>.
 ```
 
-`Status:` is a real field with three values, not a fixed string:
+`Status:` is a real field with four values, not a fixed string:
 
 - `fail (red)` — at least one new test describing behavior this task adds
   fails for the reason it asserts. The expected outcome.
@@ -231,12 +260,16 @@ Tests: <path>. <N> tests written. Status: <fail (red)|pass (green)|unverified>. 
   Step 5 established that none was a regression guard.
 - `unverified` — Step 5 could not run the suite, so neither of the above was
   observed. Name what failed on the same line.
+- `n/a (nothing testable)` — every `## Definition of Done` item describes a
+  change with no observable behaviour to assert, per Step 5's own section.
+  Distinct from `unverified`: the suite could have run, and there was nothing
+  for it to run.
 
-The orchestrator branches on this field (`core/phases/pipeline.md` Step 4.1),
-and only `fail (red)` continues the pipeline. Never write `fail (red)`
-because the shape shows it: a hardcoded status makes the orchestrator's only
-stop unreachable and hands a green — or unrun — suite forward as though it
-were red.
+The orchestrator branches on this field (`core/phases/pipeline.md` Step 4.1):
+`fail (red)` and `n/a (nothing testable)` continue, the other two stop. Never
+write a status because the report's shape shows it — a hardcoded value makes
+the orchestrator's stops unreachable and hands a green, unrun, or untested
+suite forward as though it were red.
 
 Everything else — the test plan's reasoning, the conventions gap, mock
 patterns, deviations — belongs in the Step 6 handoff log. The next phase runs

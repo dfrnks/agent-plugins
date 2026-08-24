@@ -124,12 +124,12 @@ never anything to pause and gather.
 Dispatch the test phase. It returns at most 300 characters:
 
 ```
-Tests: <path>. <N> tests written. Status: <fail (red)|pass (green)|unverified>. Committed: <yes|no>.
+Tests: <path>. <N> tests written. Status: <fail (red)|pass (green)|unverified|n/a (nothing testable)>. Committed: <yes|no>.
 ```
 
-Read `Status:`. Only `fail (red)` continues; the other two stop the pipeline
-and return `BLOCKED`, carrying which one into Step 5's reason. Do not
-dispatch execute in either case.
+Read `Status:`. `fail (red)` and `n/a (nothing testable)` continue; the other
+two stop the pipeline and return `BLOCKED`, carrying which one into Step 5's
+reason. Do not dispatch execute on a stop.
 
 - `pass (green)` — the tests describe no new behavior, so execute would have
   nothing to make pass and code-review would find an implementation nobody
@@ -138,6 +138,17 @@ dispatch execute in either case.
   Treat this as an environment or permission failure to report, not as a
   test-design problem: the fix is to make `commands.test` runnable, which is
   what the test phase's own line names.
+- `n/a (nothing testable)` — the task changes nothing a command can observe,
+  so there is no red to wait for. Continue, and carry the status into
+  Step 5's report so the run is never described as having gone red. The
+  claim is not taken on trust: code-review adjudicates it against the same
+  spec, and a task that had a testable item ships as a finding rather than
+  silently.
+
+A pipeline with no path for an untestable change does not enforce testing —
+it converts every documentation fix into a `BLOCKED` run, and the way around
+a gate that cannot be satisfied is a fabricated test, which is worse than the
+change it was guarding.
 
 ### 4.2 — execute
 

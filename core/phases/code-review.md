@@ -127,6 +127,16 @@ its merits against the spec: agreeing with a documented, reasoned claim is
 not waving through a silent rewrite, and disagreeing with it is not an
 automatic blocker either.
 
+When the test phase reported `n/a (nothing testable)`, this dimension
+adjudicates that claim instead. The handoff log carries one line per
+`## Definition of Done` item saying why nothing could observe it. Take the
+spec's items, not the log's list, and ask of each whether any command could
+read a value it changes — a file's contents, an exit code, a rendered
+string. **One item that could have been tested makes the claim a blocker**,
+because the run shipped without the guard the pipeline exists to place. This
+is the only phase positioned to catch it: every later reader sees a task
+that passed.
+
 ### 5. Test quality
 
 Distinct from integrity: integrity asks whether the tests were weakened after
