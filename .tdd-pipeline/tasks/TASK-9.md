@@ -288,6 +288,77 @@ files under `core/phases/` and `core/flows/`, none of which are added.
 ## Agent Handoff Log
 <!-- Phases append findings here — see handoff-log.md -->
 
+### review (2026-08-24, second pass)
+
+Run inline as this flow's Step 3, against the body rewritten after the first
+review. The rewrite had never been read by anyone. Verdict: **the spec is not
+ready to implement, and the recommendation at the gate is to decline.**
+
+- **Three claimed fixes did not land.** The citation said to be corrected to
+  `core/phases/code-review.md:75` moved one line onto the same wrong rule —
+  `:75` is the first prose line of the Conventions-Applied rule, which is the
+  reverse direction the first review flagged. `core/trackers/github.md:22` is
+  an input declaration, not the issue-creation call at `:27`. The quoted
+  promise attributed to `core/flows/task.md:113` is at `:115`.
+- **The same defect returned for a third time, on a third mechanism.**
+  `git ls-files` reports the index, not `git.base_branch`. A spec staged and
+  not committed reads as adoptable and is invisible from the worktree — this
+  spec's own Context defect 3. The same axis produced the uncommitted
+  `git mv` in the first draft and the staged-set gate in the sibling spec. A
+  base-branch instrument such as `git cat-file -e <base_branch>:<path>` is
+  what the property actually needs.
+- **The second command is not empty-or-nothing.** `--error-unmatch` echoes
+  the path on success, carries its verdict in the exit code and its message
+  on stderr, and returns the same exit 1 for untracked, absent and
+  mistyped. The section's framing sentence and the DoD item it generates are
+  both false for half the contract.
+- **The interception has no trigger and breaks the free-text branch.**
+  Nothing classifies the argument as a path before the test runs, so a
+  free-text invocation stops and tells the user to commit a file.
+- **Passing a spec already at the task-ID path mints a new ID and renames the
+  file away**, because nothing branches on a basename that is already
+  `<prefix>-<number>.md`.
+- **`core/flows/task.md:34` is falsified and unlisted** — "this flow does not
+  re-implement that logic, only calls it". Classifying the argument in the
+  flow is re-implementing it. Third unexamined promise; the rewrite fixed two
+  and added one.
+- **Item 2 consumes an input format the spec defers.** It reads the spec's
+  title line, and the undefined title line for a spec with no task ID is in
+  Out of Scope. The headline use case is exactly that spec.
+- **"Report four states" lists three**, and the DoD says three.
+- **Item 8 is unimplementable and undefined.** The enumeration case at
+  `core/flows/review.md:13` has no owner once the directory-listing command
+  was removed, so "the single owner of locating a spec" is not achieved.
+  Three filesystem-based locators survive, including `core/trackers/none.md:39`,
+  which item 5 preserves deliberately.
+- **The Definition of Done does not hold up under execution.** Every item
+  naming a command was run against the repository. Two of eighteen flip from
+  fail to pass because of this task. Five are already green. Ten are not
+  commands. One — the commit-ordering check — runs but cannot decide what it
+  claims, because `git log --oneline` carries no file attribution and renders
+  a one-commit and a two-commit history identically.
+- **`git diff --name-only main...HEAD` is vacuous on the base branch.**
+  `main...HEAD` resolves to HEAD against itself and is empty however the six
+  pinned files are changed. It is also blind to uncommitted work, which is
+  the state a phase is in when it would run the check.
+- **A defect in this repository, not in the spec.** `checks/structure.sh`
+  exits 0 when its manifest argument does not exist: `set -uo pipefail`
+  without `-e`, the redirect at `checks/structure.sh:22` fails, the loop never
+  runs and `rc` stays 0. A checker that passes because it could not run is
+  the failure mode `checks/core-is-neutral.sh:43` argues against at length
+  and that `CLAUDE.md:40` states as a rule. It also invalidates this spec's
+  red step, which asserts exit 1 from a manifest that does not exist yet.
+- **`core/flows/task.md:25` is 81 columns of plain prose**, violating
+  `CLAUDE.md:118` in a file this task edits, at a line it does not touch.
+- **Recommendation.** Not a rewrite. The mechanism has grown a dependency
+  chain — argument classification, title derivation, ID minting, rename —
+  and each link breaks a promise elsewhere in `core/flows/task.md`. The
+  manual path exercised while running this flow suggests a far smaller
+  design: the adopt branch at `core/flows/task.md:51` already works, and what
+  it needs is a committed-state test and documentation, not a new argument
+  form. That is a planning decision, not a review fix.
+
+
 ### review (2026-08-24)
 
 - **Blocking defect, confirmed by two independent readers: the change had no
