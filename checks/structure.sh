@@ -4,6 +4,12 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 MANIFEST="${1:-checks/manifest.txt}"
+# Without this guard the redirect below fails, the loop body never runs, and
+# rc stays 0 — a checker reporting a pass it never earned.
+if [ ! -f "$MANIFEST" ] || [ ! -r "$MANIFEST" ]; then
+  printf 'cannot read manifest: %s\n' "$MANIFEST" >&2
+  exit 2
+fi
 rc=0
 
 while IFS='|' read -r path headings; do
