@@ -76,6 +76,8 @@ assert_exit 1 "structure checker rejects a record with an empty path" \
   checks/structure.sh tests/fixtures/manifest-empty-path.txt
 assert_exit 1 "structure checker rejects a headings field that names none" \
   checks/structure.sh tests/fixtures/manifest-empty-headings.txt
+assert_exit 1 "structure checker rejects a heading named only in prose" \
+  checks/structure.sh tests/fixtures/manifest-heading-lookalike.txt
 assert_exit 0 "structure checker passes the real manifest against the repository" \
   checks/structure.sh
 assert_exit 0 "every core phase and flow has a Claude Code adapter" \

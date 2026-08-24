@@ -1,0 +1,2 @@
+# The required heading appears only inside a sentence, never as a heading.
+tests/fixtures/structure-heading-lookalike.md|## Required Heading
