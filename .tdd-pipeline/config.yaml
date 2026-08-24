@@ -1,0 +1,30 @@
+version: 1
+project: agent-plugins
+
+tracker:
+  type: github
+  prefix: TASK
+
+commands:
+  # The runner takes no target filter, so {target} is deliberately absent:
+  # substituting it would be ignored silently. The whole suite runs in
+  # milliseconds, so nothing is lost by running all of it.
+  test: "./tests/run.sh"
+  test_all: "./tests/run.sh"
+  lint: "git ls-files '*.sh' | xargs -r shellcheck && checks/no-leakage.sh && checks/core-is-neutral.sh && checks/references-resolve.sh && checks/structure.sh"
+
+paths:
+  # checks/ holds source, not tests — tests/run.sh is what tests it. Listing
+  # checks/ here would freeze the checkers under the test protection
+  # contract, blocking the very changes that add a new check.
+  tests: [tests]
+  specs: .tdd-pipeline/tasks
+  worktrees: .tdd-pipeline/worktrees
+  conventions: CLAUDE.md
+
+git:
+  base_branch: main
+  commit_trailer: ""
+
+pr:
+  enabled: true
