@@ -40,7 +40,9 @@ while IFS= read -r line || [ -n "$line" ]; do
   for h in "${required[@]}"; do
     [ -z "$h" ] && continue
     named=$((named + 1))
-    if ! grep -qF "$h" "$path"; then
+    # -x anchors the match to a whole line. Without it a sentence naming the
+    # heading satisfies the row, and the section it demanded need not exist.
+    if ! grep -qxF "$h" "$path"; then
       printf 'missing heading in %s: %s\n' "$path" "$h"; rc=1
     fi
   done
