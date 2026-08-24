@@ -114,7 +114,42 @@ read this spec later cannot, and `review` would only send it back.
 Every step in `## Approach` must be actionable. "Handle the error case" is
 not a design; it is a note that a design is still owed.
 
-## Step 5 — Confirm with the user
+## Step 5 — Refute the draft
+
+Dispatch a subagent to argue the draft is wrong, before any person sees it.
+Not to improve it, not to review it kindly — to make the strongest case
+against it that the codebase supports. Give it the drafted spec and let it
+read whatever it needs.
+
+Four failure classes are worth naming, because a design conversation
+produces them and its own author cannot see them:
+
+- **A mechanism with no precedent here.** A design that introduces an
+  operation this codebase has never performed is not automatically wrong,
+  but it owes an argument, and a draft that introduces one in a single
+  clause has not made it.
+- **A claim its own citation does not support.** Every statement about
+  existing behaviour cites a `file:line`; the refuter reads each cited line
+  and reports the ones that say something else, or nothing.
+- **A promise elsewhere that the design falsifies.** Flows and phases make
+  standing promises about what they write and what they leave behind. A
+  design that breaks one and does not amend it has produced a document that
+  contradicts the file next to it.
+- **A step no input can reach.** Trace the entry point's accepted arguments
+  through to the new behaviour. A mechanism that nothing can trigger reads
+  as complete and changes nothing.
+
+Apply what survives to the spec before Step 6, correcting the draft rather
+than annotating it. A draft that survives unchanged is a valid outcome — say
+so in Step 8 rather than editing something to have edited something.
+
+This runs here, and not only in the review flow, because the order matters.
+By the time `review` runs, a person has been shown the draft and may have
+agreed with it, and a design is hardest to abandon once someone has approved
+it. A refutation before the gate costs one subagent; the same finding after
+it costs a rewrite of work already blessed.
+
+## Step 6 — Confirm with the user
 
 Show what was written and ask for corrections. Iterate until the person
 agrees, editing the file rather than defending the draft.
@@ -123,7 +158,7 @@ This is the last gate, and unlike `task`'s it opens onto nothing — agreement
 means the spec is finished, not that anything is about to run. Say that
 plainly, so nobody approves expecting work to start.
 
-## Step 6 — Commit
+## Step 7 — Commit
 
 ```bash
 git add <spec file>
@@ -141,7 +176,7 @@ missing spec in a project where the spec is plainly on disk.
 
 Stage only the spec file. This flow wrote nothing else.
 
-## Step 7 — Report
+## Step 8 — Report
 
 Return, in order:
 

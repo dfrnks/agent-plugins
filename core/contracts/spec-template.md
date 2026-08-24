@@ -129,6 +129,19 @@ that make a spec unapprovable regardless of how well everything else reads.
   values as terminal, places that translate an external system's value into
   this one, and places that render it for a user to see or filter by.
 
+- **A spec longer than a person will actually read is a split, not a
+  thorough spec.** Two signals, either one sufficient: `## Approach` names
+  more than five distinct changes, or `## Definition of Done` carries more
+  than ten items. Both mean the task is several tasks, and both defeat the
+  mechanisms that depend on the document being read end to end — the `task`
+  flow's gate asks a person to approve what they have read, and the execute
+  phase follows the Definition of Done literally, item by item. An approval
+  nobody finished reading is not a gate, and a checklist too long to verify
+  is not a contract. Split it per `## Subtask structure` below rather than
+  trimming detail to fit: the completeness rules above are not negotiable
+  against length, so a spec that is too long is carrying too much work, not
+  too many words.
+
 ## Subtask structure
 
 When a task is split, each subtask gets its own spec file (for example
