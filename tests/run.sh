@@ -62,6 +62,10 @@ assert_exit 1 "structure checker rejects a missing file" \
   checks/structure.sh tests/fixtures/manifest-missing-file.txt
 assert_exit 1 "structure checker rejects a file missing a required heading" \
   checks/structure.sh tests/fixtures/manifest-missing-heading.txt
+assert_exit 2 "structure checker rejects a manifest path that does not exist" \
+  checks/structure.sh tests/fixtures/manifest-does-not-exist.txt
+assert_exit 2 "structure checker rejects a manifest path that is a directory" \
+  checks/structure.sh tests/fixtures
 assert_exit 0 "structure checker passes the real manifest against the repository" \
   checks/structure.sh
 assert_exit 0 "every core phase and flow has a Claude Code adapter" \
