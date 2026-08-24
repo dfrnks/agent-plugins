@@ -92,7 +92,7 @@ code rather than trusted on its own.
 - Stage named paths; never `git add .` or `git add -A`
   (core/flows/conventions.md:128, core/phases/end.md:165).
 - Pass state between phases only through the handoff log in the spec, never
-  through session context (core/phases/execute.md:257).
+  through session context (core/phases/execute.md:302).
 
 ## Testing
 

@@ -13,8 +13,8 @@ Read `.tdd-pipeline/config.yaml`. Follow the fail-fast protocol in
 `core/contracts/pipeline-config.md`: stop and name the exact missing key if
 the file or a key this phase needs is absent. This phase needs
 `commands.test`, `commands.test_all`, `commands.lint`, `paths.specs`,
-`paths.conventions`, and `git.commit_trailer` — plus `commands.typecheck`, if
-the project sets it.
+`paths.tests`, `paths.conventions`, and `git.commit_trailer` — plus
+`commands.typecheck`, if the project sets it.
 
 ## Step 1 — Read the handoff log
 
@@ -55,6 +55,12 @@ surface:
 - If the task turns out to require touching infrastructure or deployment
   configuration beyond its own scope, stop and ask rather than expanding
   scope unilaterally.
+- If this phase cannot proceed without modifying a test file the test phase
+  committed — the suite cannot execute at all because of a defect in one, or
+  the lint gate reports a violation inside one that restoring does not clear
+  — write the Step 9 entry naming the file, the defect, and the outcome of
+  Step 4's tie-breaker, then stop without committing. The next phase decides
+  whether the edit was a scaffolding fix; this one does not.
 
 ## Step 2 — Plan before editing
 
@@ -119,9 +125,13 @@ moment the phase making tests pass may also rewrite what "pass" means.
   count or arguments. A weakened test still looks green.
 - **You may add new tests** for scenarios discovered during implementation
   that the test phase did not cover.
-- **You may fix genuine infrastructure bugs in test code** — a broken import,
-  a wrong fixture path, a typo in a helper. These are defects in the
-  scaffolding, not changes to the contract.
+- **A genuine infrastructure bug in test code** — a broken import, a wrong
+  fixture path, a typo in a helper — is a defect in the scaffolding rather
+  than a change to the contract. Fixing it still modifies a file the test
+  phase committed, which Step 10 stops, so route it through the
+  stop-and-escalate condition for that case instead of editing and carrying
+  on. The exception is one a reviewer grants, not one this phase grants
+  itself.
 - **Tie-breaker, applied without judgment: if a scaffolding fix would change
   any assertion's effective expected value, it is not a scaffolding fix.** A
   fixture can be wrong in a way that also supplies the value an assertion
@@ -230,10 +240,45 @@ section, which the conventions flow regenerates wholesale. Note any such
 escalation here too, so a later reader knows it was acted on rather than
 dropped.
 
-## Step 10 — Commit
+## Step 10 — Test protection gate
 
-Stage the implementation files from Step 5 and the spec file's updated
-handoff log, then commit:
+Before committing, confirm this phase honoured Step 4. From the worktree
+root, with every directory `paths.tests` names as a pathspec:
+
+```bash
+git diff --name-only --diff-filter=MD HEAD -- <paths.tests>
+```
+
+Empty output means every test file the test phase committed is intact, and
+this phase may commit. `--diff-filter=MD` reports modifications and deletions
+only, so a test added under Step 4's grant never appears — a new file is
+untracked and absent from this diff entirely.
+
+Any output names a file this phase was not allowed to change. Two cases, and
+the difference is whether the change was deliberate:
+
+- **Not deliberate** — most often the Step 8 lint gate's formatter reaching a
+  file outside the implementation. Restore it and run the gate again:
+
+  ```bash
+  git checkout HEAD -- <the named file>
+  ```
+
+  Discarding the edit is legitimate precisely because this phase was never
+  allowed to make it.
+- **Deliberate** — a Step 4 violation. Stop, per the condition in
+  `### Stop-and-escalate conditions`, without committing.
+
+Compare against the working tree, not the index. The suite runs against the
+working tree, so a weakened test that is simply never staged still turns the
+verification loop green, while a check on the index sees nothing — and the
+commit then carries an implementation whose committed tests fail on a fresh
+checkout. A gate the phase can pass by withholding a file is not a gate.
+
+## Step 11 — Commit
+
+Stage the implementation files from Step 5, any test file added under
+Step 4's grant, and the spec file's updated handoff log, then commit:
 
 ```bash
 git add <implementation files> <spec file>
@@ -244,7 +289,7 @@ Stage specific files — never `git add .` or `git add -A`. If
 `git.commit_trailer` is non-empty, append it as a trailer; if empty, omit it
 rather than adding an empty line.
 
-## Step 11 — Report
+## Step 12 — Report
 
 Return a report of at most 300 characters, in exactly this shape:
 
