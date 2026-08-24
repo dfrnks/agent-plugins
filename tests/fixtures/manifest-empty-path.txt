@@ -1,0 +1,3 @@
+# The path field is empty while headings are named: a malformed record, not a
+# blank line.
+|## Example Heading

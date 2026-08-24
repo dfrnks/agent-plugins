@@ -1,0 +1,2 @@
+# The record is missing its "|", so the headings it meant to require vanish.
+tests/fixtures/structure-ok.md

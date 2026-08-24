@@ -66,6 +66,16 @@ assert_exit 2 "structure checker rejects a manifest path that does not exist" \
   checks/structure.sh tests/fixtures/manifest-does-not-exist.txt
 assert_exit 2 "structure checker rejects a manifest path that is a directory" \
   checks/structure.sh tests/fixtures
+assert_exit 2 "structure checker rejects a manifest declaring no records" \
+  checks/structure.sh tests/fixtures/manifest-comments-only.txt
+assert_exit 1 "structure checker enforces a last record with no trailing newline" \
+  checks/structure.sh tests/fixtures/manifest-unterminated.txt
+assert_exit 1 "structure checker rejects a record missing its separator" \
+  checks/structure.sh tests/fixtures/manifest-no-separator.txt
+assert_exit 1 "structure checker rejects a record with an empty path" \
+  checks/structure.sh tests/fixtures/manifest-empty-path.txt
+assert_exit 1 "structure checker rejects a headings field that names none" \
+  checks/structure.sh tests/fixtures/manifest-empty-headings.txt
 assert_exit 0 "structure checker passes the real manifest against the repository" \
   checks/structure.sh
 assert_exit 0 "every core phase and flow has a Claude Code adapter" \

@@ -1,0 +1,2 @@
+# The last record has no trailing newline and must still be enforced.
+tests/fixtures/structure-ok.md|## Absent Heading

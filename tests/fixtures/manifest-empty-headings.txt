@@ -1,0 +1,2 @@
+# The headings field is present but names nothing, so nothing is required.
+tests/fixtures/structure-ok.md|;;
