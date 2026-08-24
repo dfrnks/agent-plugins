@@ -133,3 +133,23 @@ code rather than trusted on its own.
   (docs/specs/2026-08-03-tdd-pipeline-plugin-design.md:43).
 
 <!-- pipeline:conventions:end -->
+
+<!-- pipeline:discoveries:start -->
+
+## Testing
+
+- `checks/structure.sh:18` matches a required heading with `grep -qF`, an
+  unanchored fixed string, so a heading merely mentioned in prose — inside a
+  fence, in a cross-reference — satisfies the check. A manifest row proves
+  the string is present, never that the section exists
+  (`checks/structure.sh:18`).
+- A change that touches only Markdown prose has no red-green purchase, and
+  the pipeline has no `n/a` path for it: the test phase must report
+  `unverified` when it cannot observe a failing suite
+  (`core/phases/test.md:129`), and the orchestrator converts that to
+  `BLOCKED` (`core/phases/pipeline.md:130`). The way through is a fixture
+  under `paths.tests` that a checker rejects until the prose change lands —
+  the pattern `tests/fixtures/manifest-good.txt` already establishes
+  (`tests/run.sh:59`).
+
+<!-- pipeline:discoveries:end -->
