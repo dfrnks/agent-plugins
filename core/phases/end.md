@@ -65,11 +65,19 @@ a merge.
 
 ## Step 3 — Persist durable discoveries
 
-Nothing else in the pipeline ever reads a spec file or handoff log again
-after this task closes. The only document a future session reads is
+No *unrelated* session ever reads this spec file or handoff log again after
+this task closes. The only document one of those reads is
 `paths.conventions`. Any durable fact discovered while working this task is
 lost unless it lands there now — and the cost does not disappear, it moves to
 whichever session hits the same problem next.
+
+The one exception is a task built directly on this one — a branch cut from
+this branch, shipping as a stacked pull request. Its phases do read this log,
+because it is the only record of what this task actually built: the shape of
+the interface they are about to call, and the decisions a reviewer needed.
+That is not a reason to route a durable fact here instead of to
+`paths.conventions`; the two carry different things, and a fact that outlives
+this pair of tasks belongs in conventions regardless.
 
 Read every subsection the test, execute, and code-review phases appended to
 `## Agent Handoff Log` in `paths.specs/<task-id>.md` (see
