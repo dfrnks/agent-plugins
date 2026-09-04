@@ -74,8 +74,24 @@ So copy back, from the worktree to `$MAIN`:
 For the spec the worktree copy wins outright: during a run, phases are its
 only writers. For the conventions document that is not safe — a user may
 have edited it in the main checkout while the run was in flight, and phases
-write only inside the managed markers. Copy back the managed section, not
-the whole file, and leave everything outside the markers as `$MAIN` has it.
+write only inside the managed markers. Copy back the managed spans, not the
+whole file, and leave everything outside them as `$MAIN` has it.
+
+**Spans, plural: there are two, they are not adjacent, and copying back only
+the first silently loses the second.** `core/contracts/conventions-template.md`
+defines `pipeline:conventions:start` / `:end` *and*
+`pipeline:discoveries:start` / `:end`, with hand-written prose permitted
+between them. The end phase writes durable facts to the discoveries span, so
+an agent that reads "the managed section" as one region copies conventions
+back, drops discoveries, and the run's most valuable output — the findings
+meant to outlive the task — dies with the worktree. Nothing errors. Enumerate
+both spans by name and copy each one.
+
+A repair counts as a write, and must come back too. An unterminated span — a
+`start` with no matching `end` — is a stop condition, and a phase that repairs
+it in a mirrored worktree has fixed only the copy. The next run finds the file
+broken again and pays the same cost, which reads as the repair having failed
+rather than never having been persisted.
 
 ## Never staged
 
