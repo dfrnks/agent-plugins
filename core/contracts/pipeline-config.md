@@ -54,6 +54,15 @@ pr:
   enabled: true
 ```
 
+`git.commit_trailer` is the **only** trailer any flow may add to a commit.
+When it is empty, commits carry no trailer at all. In particular, never append
+agent attribution — `Co-authored-by:` naming a tool or model, `Generated-by:`,
+or any equivalent — on your own initiative. Harnesses add such a line
+reflexively, and many projects forbid it outright; a phase that adds one to an
+unpushed commit costs a rewrite, and to a pushed one costs a force-push.
+Whether a project *wants* attribution is exactly what setting this key to a
+non-empty value says, so an empty value is an instruction, not an omission.
+
 `paths.conventions` has no default. Every project must set it explicitly, to
 whatever document already holds its rules — commonly the same file its agent
 tooling already reads. `CONVENTIONS.md` above is only an illustrative example
