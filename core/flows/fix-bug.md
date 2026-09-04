@@ -119,6 +119,11 @@ ready.
 If a worktree already exists at that path, reuse it. If it holds uncommitted
 work this flow did not just create, stop and ask before touching anything.
 
+Mirror any untracked scaffolding into the worktree now, per
+`core/contracts/untracked-scaffolding.md` — including
+`git.worktree_setup` itself when it is untracked, since the next paragraph
+runs it by path and would otherwise find nothing there.
+
 Then, if `git.worktree_setup` is configured, run it from the worktree root,
 directly, by its own path:
 

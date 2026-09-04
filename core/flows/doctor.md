@@ -25,24 +25,29 @@ Run one check per row of the requirements table, each reporting `pass`,
   git ls-files --error-unmatch .tdd-pipeline/config.yaml
   ```
 
-  A non-zero exit is a `fail`, with a message saying why an untracked
-  configuration is fatal rather than untidy: every phase runs inside a
-  worktree created fresh from `git.base_branch`, which contains only
-  committed files, so an untracked configuration is invisible at every
-  phase's Step 0 and the pipeline stops at its first step.
+  A non-zero exit is a `pass` **carrying a note**, not a `fail` — see
+  "Untracked scaffolding" below for why, and say in the note that the run
+  will mirror the file into each worktree.
 - **Git repository with `git.base_branch` present** — the current directory
   is a git repository and that branch exists. `fail` otherwise; never `n/a`.
-- **`paths.specs` directory** — exists. `fail` if absent.
+- **`paths.specs` directory, with every spec in it tracked in git** — the
+  directory exists, and no file under it is untracked:
+
+  ```bash
+  git ls-files --others --exclude-standard -- <paths.specs>
+  ```
+
+  `fail` only if the directory is absent. If the command prints files, that
+  is a `pass` carrying a note naming them, per "Untracked scaffolding" below.
 - **`paths.worktrees` directory, git-ignored** — exists, and is covered by an
   entry in `.gitignore`. `fail` if either half is missing; a worktree
   directory that exists but is not ignored is a `fail`, not a partial pass,
   since committing a worktree's contents duplicates them under version
   control.
-- **`paths.conventions` file, non-empty, with derived stack rules, tracked in
-  git** — detailed on its own below. It carries the same
-  `git ls-files --error-unmatch` check, for the same reason: a conventions
-  file the phases cannot see from inside a worktree enforces as much as an
-  empty one.
+- **`paths.conventions` file, non-empty, with derived stack rules** — detailed
+  on its own below. It carries the same `git ls-files --error-unmatch` check,
+  resolved the same way as the configuration's: untracked is a `pass` with a
+  note, per "Untracked scaffolding" below, since the run mirrors it.
 - **`.tdd-pipeline/memory/` directory** — exists. The requirements table
   marks this row "no" under "Required," but that column tracks whether the
   pipeline can run without it, not whether this check applies. `init` always
@@ -50,9 +55,9 @@ Run one check per row of the requirements table, each reporting `pass`,
   something removed it.
 - **`paths.review_checklist`** — `n/a` when the configuration does not set
   the key. When set, check that the file exists **and is tracked in git**;
-  `fail` if set but missing or untracked. A configured-but-absent path is a
-  broken reference, and an untracked one is absent from every worktree
-  code-review reads it in.
+  `fail` if set but missing, since a configured-but-absent path is a broken
+  reference. Untracked is a `pass` with a note, per "Untracked scaffolding"
+  below — the run mirrors it into the worktree code-review reads it in.
 - **`git.worktree_setup` script, if dependencies are git-ignored** — `n/a`
   when no dependency directory in this project is git-ignored, per the same
   detection `init`'s Step 4 performs. When one is, `fail` if
@@ -71,38 +76,48 @@ Run one check per row of the requirements table, each reporting `pass`,
   `core/trackers/github.md` — and report `pass` or `fail`, naming what
   failed.
 
-### When a "tracked in git" row fails
+### Untracked scaffolding
 
-Three rows check that a file is tracked: the configuration, the conventions
-file, and `paths.review_checklist` when set. All three fail identically in two
-situations that call for opposite fixes, so distinguish them before naming
-one — with `test -e`, not by inference:
+Four rows look at whether a pipeline file is tracked: the configuration, the
+specs, the conventions file, and `paths.review_checklist` when set. An
+untracked one is not by itself a `fail` — `core/contracts/untracked-scaffolding.md`
+mirrors it into each worktree — but the three situations behind it call for
+different reports, so distinguish them before writing one. Use `test -e` and
+`git check-ignore`, not inference:
 
 - **The file is absent.** The flow that writes it never ran, or did not get
-  far enough. Name that flow; running it can clear the row.
-- **The file exists but is untracked.** The write succeeded and the commit did
-  not. Something in the surrounding environment is denying git — a permission
-  rule, a policy, a sandbox. Say that plainly, and do **not** name a flow as
-  the fix: `init` and the conventions flow both already wrote this file and
-  both already failed to commit it, so re-running either writes the same file
-  and fails the same way, and the reader spends a run finding that out. This
-  is the case the `## Output` rule against naming an unusable fix exists for.
+  far enough. This is the `fail`. Name that flow; running it can clear the
+  row.
+- **The file exists and is deliberately ignored** — `git check-ignore -q`
+  succeeds, or it sits under a path the project ignores. The project has
+  chosen to keep its pipeline files out of its history. `pass`, with a note
+  saying the run will mirror it and that no phase may stage it.
+- **The file exists, is untracked, and is not ignored.** Ambiguous, and worth
+  saying so rather than guessing: either nobody ever added it, or a flow
+  wrote it and its commit was silently dropped by something in the
+  surrounding environment — a permission rule, a policy, a sandbox. `pass`
+  with a note naming both, because mirroring carries the run either way. Do
+  **not** name a flow as the fix for the second one: `init` and the
+  conventions flow both already wrote the file and both already failed to
+  commit it, so re-running either writes the same file and fails the same
+  way. This is the case the `## Output` rule against naming an unusable fix
+  exists for.
 
-Report the second case as what it is:
+Report the third case as what it is:
 
 ```
-<path> exists but is not tracked in git. The flow that wrote it could not
-commit it, so every phase — which reads this file from inside a worktree
-holding only committed files — cannot see it. This is an environment
-permission, not a pipeline defect: confirm that git add and git commit are
-permitted here, then commit the file directly.
+<path> exists but is not tracked in git, and nothing ignores it. The run will
+mirror it into each worktree, so this does not block the pipeline. If you
+meant to track it, commit it directly — and if a flow already tried and the
+commit did not happen, check that git add and git commit are permitted here
+before re-running anything.
 ```
 
-A pipeline whose flows report success while their commits are silently
-dropped fails later, in a worktree, with an error that names a missing file
-in a project where the file is plainly on disk. These three rows are the only
-place that gets caught early, and only if the report says which of the two
-cases happened.
+Mirroring keeps an untracked project working, and it is bookkeeping, not a
+free lunch: it copies files in, copies the spec back after every phase, and
+every commit along the way has to stay clear of the mirrored paths. Saying
+which rows are mirrored is what lets a reader decide to commit the
+scaffolding instead and skip all of it.
 
 ### The conventions check, specifically
 

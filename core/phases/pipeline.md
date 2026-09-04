@@ -15,6 +15,18 @@ Read `.tdd-pipeline/config.yaml`. Follow the fail-fast protocol in
 the file or a key this phase needs is absent. This phase needs
 `paths.worktrees`, `paths.specs`, and, when present, `git.worktree_setup`.
 
+If that file is not in the worktree at all, do not fail yet: the project may
+keep it out of git, in which case a fresh worktree cannot contain it. Mirror
+it per `core/contracts/untracked-scaffolding.md` and read it again. Its path
+is fixed, which is what makes this possible — the configured paths cannot be
+mirrored until the configuration naming them has been read, so the
+configuration has to come first, by its own known path. Once it is loaded,
+mirror whichever of the configured paths are untracked, before Step 2 reads
+the spec. Report which paths were mirrored in Step 5, or that none were.
+
+Reaching this step with the file already absent *and* tracked is the ordinary
+fail-fast case, and stops the run as before.
+
 ## Step 1 — Verify the working directory
 
 This phase must never run against the main repository. The portable check
@@ -100,6 +112,14 @@ working directory, the worktree verified in Step 1; none creates a worktree
 of its own. Do not nest worktrees.
 
 Pass the task ID to each dispatched phase.
+
+When Step 0 mirrored anything, copy the spec back to the main checkout as
+each phase returns — every phase, including one that stops the run, and
+before deciding what to do about its result. Phases append their handoff-log
+entries to the spec they can see, which in a mirrored worktree is the copy;
+the copy dies with the worktree. `core/contracts/untracked-scaffolding.md`
+governs this, including the conventions document and the memory directory,
+which the end phase writes.
 
 **Run the four phases in a single pass, and do not hand control back in the
 middle of it.** Dispatch each phase and **wait for it to return** before

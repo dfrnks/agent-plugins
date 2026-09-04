@@ -99,6 +99,13 @@ equals the task ID. Three cases follow:
   its branch was deleted. "No remote configured" is never by itself a reason
   to report nothing to resume.
 
+Whether the worktree was confirmed or recreated, mirror any untracked
+scaffolding into it before dispatching, per
+`core/contracts/untracked-scaffolding.md`. A recreated worktree is as bare as
+a new one, and a project that keeps its specs out of git has none there — the
+phase would stop at its first step, or worse, read a spec with no handoff log
+and mistake a resumed task for a fresh one.
+
 ## Execution
 
 Dispatch the single phase selected above — `core/phases/test.md`,
@@ -108,7 +115,11 @@ confirmed or recreated above, passing the task ID. Do not dispatch
 `core/phases/pipeline.md` in its place: that phase runs the full sequence,
 reintroducing exactly the chaining this flow exists to avoid.
 
-Stop once the dispatched phase returns. Report its result exactly as it came
+Stop once the dispatched phase returns. When anything was mirrored in, copy
+the spec back to the main checkout first — the phase's handoff-log entry is
+the record the next resume reads, and it was written to the copy.
+
+Report its result exactly as it came
 back — the leaf phases' fixed-shape report or verdict line, unchanged — and
 the worktree path this ran against. Do not dispatch the next phase, and do
 not offer to. If the operator wants to continue, running this flow again is

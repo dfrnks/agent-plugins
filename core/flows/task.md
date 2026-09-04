@@ -174,6 +174,13 @@ If a worktree already exists at that path, reuse it. If it holds uncommitted
 work this flow did not just create, stop and ask the user before touching
 anything further — it may belong to a task started in parallel.
 
+Then mirror any untracked scaffolding into the worktree, following
+`core/contracts/untracked-scaffolding.md`. A project that keeps its
+configuration or its specs out of git has none of them in a fresh worktree,
+and every phase would stop at its first step; the contract also governs
+copying the spec back as each phase writes to it. Name in Step 7's report
+which paths were mirrored, or that none were.
+
 `git.worktree_setup` does not run here. It is the pipeline's own Step 3, run
 inside the worktree in Step 6 below.
 
