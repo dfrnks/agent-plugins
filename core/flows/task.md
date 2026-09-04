@@ -146,8 +146,15 @@ The second number counts commits the local base branch has that the remote
 lacks. Branch from the remote-tracking ref **only when it is zero**:
 
 ```bash
-git worktree add "<paths.worktrees>/<task-id>" -b "<task-id>" "$REMOTE/<git.base_branch>"
+git worktree add --no-track "<paths.worktrees>/<task-id>" -b "<task-id>" "$REMOTE/<git.base_branch>"
 ```
+
+`--no-track` is load-bearing. Branching from a remote-tracking ref without it
+sets the task branch's upstream to the *base* branch, and git then answers a
+bare `git push` by suggesting `git push origin HEAD:<git.base_branch>` —
+pushing the task's commits straight onto the base branch, no pull request and
+no review. With it, the branch has no upstream and git suggests
+`git push --set-upstream origin <task-id>`, which is what `end` wants.
 
 In every other case — no remote, a non-zero second number, or a fetch that
 failed, which is not a reason to stop — branch from the local base branch,

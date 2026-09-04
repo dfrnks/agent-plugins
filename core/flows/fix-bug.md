@@ -94,8 +94,13 @@ git rev-list --left-right --count "$REMOTE/<git.base_branch>...<git.base_branch>
 Branch from the remote-tracking ref only when the second count is zero:
 
 ```bash
-git worktree add "<paths.worktrees>/<branch>" -b "<branch>" "$REMOTE/<git.base_branch>"
+git worktree add --no-track "<paths.worktrees>/<branch>" -b "<branch>" "$REMOTE/<git.base_branch>"
 ```
+
+`--no-track` is load-bearing: without it the branch inherits the base branch as
+its upstream, and git answers a bare `git push` by suggesting
+`git push origin HEAD:<git.base_branch>` — straight onto the base branch, with
+no pull request. With it, git suggests `git push --set-upstream origin <branch>`.
 
 With no remote, with a local base branch ahead or diverged, or after a failed
 fetch, branch from the local base branch and say which case applied in
