@@ -1,0 +1,7 @@
+{
+  "name": "tdd",
+  "version": "0.1.0",
+  "description": "Agent-driven TDD pipeline: spec, red, green, review, ship.",
+  "commands": "./adapters/cursor/commands",
+  "agents": "./adapters/cursor/agents"
+}

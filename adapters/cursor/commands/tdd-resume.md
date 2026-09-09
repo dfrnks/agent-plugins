@@ -1,7 +1,5 @@
----
-name: task-end
-description: Ships a task the code-review phase already approved — lints what changed, persists durable discoveries to project conventions, commits and pushes, opens the pull request, and updates the tracker status.
----
+Re-enter an interrupted pipeline at one phase, run that phase alone, and stop without chaining into the phases that follow.
+
 Resolve the pipeline root before reading anything. This file's pointers must
 work from three places that do not share one root: the project root, a task
 worktree (where no `.cursor/` directory of its own exists — the phases run with
@@ -36,10 +34,15 @@ repository reach that fallback instead of failing here.
 Stop and report that the pipeline is not installed if `$PIPELINE_ROOT/core`
 does not exist, rather than reading on with pointers that cannot resolve.
 
-Follow `$PIPELINE_ROOT/core/phases/end.md` exactly.
+Follow `$PIPELINE_ROOT/core/flows/resume.md`.
 
 Every bare `core/…` path inside that file — and inside every file it points
 at — is relative to the pipeline root: read each one as
 `$PIPELINE_ROOT/core/…`.
 
-Dispatch subagents with the `Task` tool.
+Dispatch the selected phase as the corresponding `task-test`, `task-execute`,
+`task-code-review`, or `task-end` subagent via the `Task` tool, with the
+confirmed worktree as its working directory.
+
+Any text following the command invocation is input to the flow above; how
+Cursor delivers that text to this file is not confirmed on this machine.
