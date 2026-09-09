@@ -30,6 +30,14 @@ Run one check per row of the requirements table, each reporting `pass`,
   will mirror the file into each worktree.
 - **Git repository with `git.base_branch` present** — the current directory
   is a git repository and that branch exists. `fail` otherwise; never `n/a`.
+- **`policy.full_suite` set explicitly** — the key exists and holds one of the
+  five contract values. An absent key is a `pass` **carrying a note**, never a
+  `fail`: the pipeline works without it, at `every_phase`. But say the effective
+  value out loud, say it is the slowest one, and say `init` can set it. A
+  project paying an hour per task for a default it never chose should learn that
+  from this report rather than from a stopwatch. A key present but holding a
+  value outside the five is a `fail`, naming the value read and listing the
+  five.
 - **`paths.specs` directory, with every spec in it tracked in git** — the
   directory exists, and no file under it is untracked:
 

@@ -182,9 +182,17 @@ For each Definition of Done item and its check from Step 1:
    the test, per Step 4 — then re-run.
 3. Do not mark an item complete until its check passes.
 
-Repeat until every item is verified. Then run `commands.test_all` once more,
-in full, to confirm nothing this task touched broke a previously passing test
-elsewhere.
+Repeat until every item is verified. Then, **unless `policy.full_suite` is
+`on_end` or `never`**, run `commands.test_all` once more, in full, to confirm
+nothing this task touched broke a previously passing test elsewhere. This is the
+broad run most policies keep, because it is the earliest point where the
+implementation exists and a failure is still cheap to fix in place.
+
+Under `on_end` the broad run moves to that phase, which sees the later state;
+under `never` it does not happen here at all and CI is the regression gate. In
+both cases the targeted `commands.test` still gates every Definition of Done
+item above — what changes is the breadth of the final sweep, never whether the
+task's own tests passed.
 
 ## Step 8 — Lint gate
 

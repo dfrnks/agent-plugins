@@ -58,7 +58,10 @@ removed "unused" import can drop a needed side effect; a reordered
 declaration can change initialization order; a rewritten expression can
 change what it evaluates to at the margins. If any fix applied here could
 plausibly have changed behavior, re-run `commands.test_all` before Step 4's
-commit. Either way say which in Step 7's report — that a re-run happened and
+commit — and under `policy.full_suite: on_end`, run it whether or not a fix
+could have, because that value puts the one broad run here deliberately, as the
+last gate before the pull request. Under `never`, run `commands.test` instead
+and say so. Either way say which in Step 7's report — that a re-run happened and
 passed, or that nothing here could have changed behavior. Code-review
 approved the pre-lint state, so this is the last gate between an autofix and
 a merge.
