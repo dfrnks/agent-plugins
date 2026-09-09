@@ -1,7 +1,5 @@
----
-name: task-end
-description: Ships a task the code-review phase already approved — lints what changed, persists durable discoveries to project conventions, commits and pushes, opens the pull request, and updates the tracker status.
----
+Critique a task spec against the actual codebase, fix it in place, and record the review in its handoff log.
+
 Resolve the pipeline root before reading anything. This file's pointers must
 work from three places that do not share one root: the project root, a task
 worktree (where no `.cursor/` directory of its own exists — the phases run with
@@ -36,10 +34,13 @@ repository reach that fallback instead of failing here.
 Stop and report that the pipeline is not installed if `$PIPELINE_ROOT/core`
 does not exist, rather than reading on with pointers that cannot resolve.
 
-Follow `$PIPELINE_ROOT/core/phases/end.md` exactly.
+Follow `$PIPELINE_ROOT/core/flows/review.md`.
 
 Every bare `core/…` path inside that file — and inside every file it points
 at — is relative to the pipeline root: read each one as
 `$PIPELINE_ROOT/core/…`.
 
-Dispatch subagents with the `Task` tool.
+Dispatch exploration subagents with the `Task` tool.
+
+Any text following the command invocation is input to the flow above; how
+Cursor delivers that text to this file is not confirmed on this machine.

@@ -16,7 +16,7 @@ code rather than trusted on its own.
   (adapters/claude-code/commands/task.md:4).
 - Keep every adapter file a frontmatter shell plus a single
   `Follow .../core/<dir>/<file>.md` pointer, with no behaviour of its own
-  (adapters/cursor/commands/task.md:17).
+  (adapters/cursor/commands/tdd-task.md:37).
 - Name the subagent-dispatch tool only in an adapter; core says "dispatch
   subagents" (core/flows/conventions.md:53).
 - Reference a core file by its full `core/<dir>/<file>.md` path, never by a

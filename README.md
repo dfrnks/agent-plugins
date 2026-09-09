@@ -17,26 +17,29 @@ differently**, because the two install by different mechanisms:
 
 | What it does | Claude Code | Cursor |
 |---|---|---|
-| Bootstraps a project: detects the stack, proposes `.tdd-pipeline/config.yaml` for confirmation, creates the directories, commits them, and hands off to conventions. Run once per project. | `/tdd:init` | `/init` |
-| Explores the codebase and derives its actual rules — one per list item, each carrying a `file:line` citation — into the project's conventions file, and commits it. This is what the execute and code-review phases enforce. | `/tdd:conventions` | `/conventions` |
-| Checks the project against every requirement the pipeline needs, one row per requirement, and reports `pass` / `fail` / `n/a`. Takes an optional `repair` argument. | `/tdd:doctor` | `/doctor` |
-| The single entry point for work. Resolves the item, writes a spec, reviews it, stops at a confirmation gate, then creates a worktree and runs the four phases against it. | `/tdd:task` | `/task` |
-| Designs a change and **stops** — explores, settles the open questions with you, writes a spec, runs nothing. For work whose shape has to be decided before it is scheduled. | `/tdd:plan` | `/plan` |
-| Fixes a defect test-first: reproduces it with a failing test, names the root cause, makes the minimal change, verifies. Stops before pushing, because nothing reviewed it. | `/tdd:fix-bug` | `/fix-bug` |
-| Critiques an existing spec against the real codebase and fixes it in place. Runs standalone, or inline as `task`'s own step 3. | `/tdd:review` | `/review` |
-| Re-enters an interrupted pipeline at exactly one phase, runs that phase alone, and stops. A recovery tool, not a retry loop. | `/tdd:resume` | `/resume` |
+| Bootstraps a project: detects the stack, proposes `.tdd-pipeline/config.yaml` for confirmation, creates the directories, commits them, and hands off to conventions. Run once per project. | `/tdd:init` | `/tdd-init` |
+| Explores the codebase and derives its actual rules — one per list item, each carrying a `file:line` citation — into the project's conventions file, and commits it. This is what the execute and code-review phases enforce. | `/tdd:conventions` | `/tdd-conventions` |
+| Checks the project against every requirement the pipeline needs, one row per requirement, and reports `pass` / `fail` / `n/a`. Takes an optional `repair` argument. | `/tdd:doctor` | `/tdd-doctor` |
+| The single entry point for work. Resolves the item, writes a spec, reviews it, stops at a confirmation gate, then creates a worktree and runs the four phases against it. | `/tdd:task` | `/tdd-task` |
+| Designs a change and **stops** — explores, settles the open questions with you, writes a spec, runs nothing. For work whose shape has to be decided before it is scheduled. | `/tdd:plan` | `/tdd-plan` |
+| Fixes a defect test-first: reproduces it with a failing test, names the root cause, makes the minimal change, verifies. Stops before pushing, because nothing reviewed it. | `/tdd:fix-bug` | `/tdd-fix-bug` |
+| Critiques an existing spec against the real codebase and fixes it in place. Runs standalone, or inline as `task`'s own step 3. | `/tdd:review` | `/tdd-review` |
+| Re-enters an interrupted pipeline at exactly one phase, runs that phase alone, and stops. A recovery tool, not a retry loop. | `/tdd:resume` | `/tdd-resume` |
 
 On Claude Code the commands are namespaced under the plugin name, which is
 what keeps `/tdd:init` and `/tdd:review` distinct from the
 built-in `/init` and `/review`.
 
-On Cursor, `install.sh` links the command files into `.cursor/commands/`,
-where they take their bare filenames — so **`/init`, `/review`, `/doctor`
-and `/plan` are the pipeline's, and they will shadow or be shadowed by
-anything else claiming those names** in that project. If you already use
-commands by those
-names, rename the links after installing; nothing in the pipeline depends on
-what its command files are called, only on what they point at.
+Cursor does no such namespacing: it derives the slash name from the filename
+and adds no plugin prefix, and its command identifiers cannot contain a colon
+in any case. So the Cursor command files carry the prefix in their own names,
+which is why the column above reads `/tdd-init` rather than `/init`. Without
+it, four of the eight would land on `/init`, `/review`, `/plan` and `/doctor`
+and shadow, or be shadowed by, Cursor's own — and a user-level install would
+spread that collision to every folder you open rather than to one project.
+
+Nothing in the pipeline depends on what its command files are called, only on
+what they point at, so rename them if you would rather type something else.
 
 Throughout the rest of this README the commands are written bare — `init`,
 `task`, `doctor` — meaning "whichever of the two forms above your harness
@@ -49,6 +52,46 @@ Behind `task` sit four phases — **test** (write the failing suite), **execute*
 ## Installation
 
 ### Cursor
+
+There are two installations and the choice between them is one of scope. A
+**user-level plugin** makes the commands and agents available in every folder
+you open; **`install.sh`** prepares one project at a time. They coexist: an
+adapter prefers a project's own copy of `core/` whenever it finds one, so a
+project can pin a revision that differs from the user-level install without
+either one knowing about the other.
+
+#### User-level, for every folder
+
+Cursor loads plugins from `~/.cursor/plugins/local`, and a symlink there is
+enough — the manifest it reads is this repository's
+`.cursor-plugin/plugin.json`:
+
+```bash
+git clone https://github.com/dfrnks/agent-plugins.git ~/src/agent-plugins
+ln -s ~/src/agent-plugins ~/.cursor/plugins/local/tdd
+```
+
+Restart Cursor, or run **Developer: Reload Window**, and the eight commands and
+five agents load everywhere.
+
+That manifest names `adapters/cursor/` explicitly for both components, which is
+not cosmetic. This repository also carries an `agents/` directory at its root
+holding the *Claude Code* agents, and a root `agents/` is exactly what Cursor
+discovers by default — so leaving the path implicit would load files whose
+`${CLAUDE_PLUGIN_ROOT}` pointers cannot resolve outside Claude Code.
+
+The link is named `tdd` because that is the directory the adapters fall back to
+— `$HOME/.cursor/plugins/local/tdd` — when a project has no copy of its own.
+Install it under another name, or from a marketplace, and export
+`TDD_PIPELINE_ROOT` naming that directory instead; the adapters honour it ahead
+of everything else, which is what keeps them independent of any one install
+layout.
+
+A user-level install still leaves one thing to do per project: `init` has to
+write `.tdd-pipeline/config.yaml`, because a test command and a tracker are
+properties of a project rather than of a machine.
+
+#### Per project
 
 `install.sh` links this repository's `core/` and the Cursor adapter into a
 project's `.cursor/` directory:
@@ -277,17 +320,21 @@ stops. State lives in files, not in a session.
 The two harnesses update differently, because only one of them reads the
 package from your clone.
 
-**Cursor** reads from your clone, through the symlinks `install.sh` created.
-A `git pull` is the whole update, and every project you installed into picks
-it up at once:
+**Cursor** reads from your clone, through the symlink that points at it —
+whether that is the one in `~/.cursor/plugins/local` or the ones `install.sh`
+created. A `git pull` is the whole update, and every project picks it up at
+once:
 
 ```bash
 cd ~/src/agent-plugins
 git pull
 ```
 
-Re-run `install.sh` only when a release adds a new command or agent file,
-which needs a new link. It is idempotent, so re-running it costs nothing.
+A user-level install needs nothing further, since the link is to the clone
+itself and new files appear inside it; reload the window to pick up a command
+or agent that did not exist before. Re-run `install.sh` only for a project
+installation, and only when a release adds a new command or agent file, which
+needs a new link. It is idempotent, so re-running it costs nothing.
 
 If you installed before the plugin was renamed, re-running it also moves the
 link to `core/` from `.cursor/tdd-pipeline/` to `.cursor/tdd/`, which is where
@@ -356,6 +403,9 @@ adapters/      thin per-harness pointers into core/
 checks/        the five gates that keep core/ neutral and the tree leak-free
 tests/         the test suite covering the checkers
 install.sh     links core/ and the Cursor adapter into a project
+.claude-plugin/  manifest Claude Code loads this repository through
+.cursor-plugin/  manifest Cursor loads it through, naming adapters/cursor/
+                 explicitly so the root agents/ above is not picked up instead
 ```
 
 `core/` never names a **harness** — not Claude Code, not Cursor, not a
