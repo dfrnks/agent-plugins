@@ -14,9 +14,11 @@ from the current branch name.
 Read `.tdd-pipeline/config.yaml`. Follow the fail-fast protocol in
 `core/contracts/pipeline-config.md`: stop and name the exact missing key if
 the file or a key this phase needs is absent. This phase needs
-`commands.test_all`, `paths.specs`, `paths.conventions`, `paths.tests`,
-`git.base_branch`, and `git.commit_trailer` — plus `paths.review_checklist`,
-if the project sets it.
+`paths.specs`, `paths.conventions`, `paths.tests`, `git.base_branch`, and
+`git.commit_trailer` — plus `paths.review_checklist`, if the project sets it.
+It does **not** need `commands.test_all`: this phase reads the diff and the
+handoff log and never invokes the suite, so requiring the key only made a
+project without one fail this phase for a reason that does not exist.
 
 ## Step 1 — Load context
 

@@ -90,6 +90,39 @@ Step 6:
 - `git.commit_trailer` — mandatory as a key, commonly empty as a value. Write
   it explicitly, empty string included, so no phase has to decide whether an
   absent key means "none" or "not configured yet".
+- `policy.full_suite` — **ask, and ask with the cost on the table.** This one
+  key decides how much wall-clock every pipeline in this project spends, and the
+  right answer depends on how coupled the codebase is, which the person being
+  asked knows and this flow does not. Do not propose a value silently.
+
+  Before asking, measure rather than guess: run `commands.test` against one
+  small module and `commands.test_all`, and put both numbers in the question.
+  A project whose broad run costs six seconds does not need this decision; one
+  whose broad run costs fifteen minutes is choosing between roughly one hour and
+  roughly fifteen minutes per task, and deserves to know that before answering.
+
+  Offer the five values from the contract, each with what it buys:
+
+  - `every_phase` — test, execute and end. Most verification, most time. The
+    right answer for a monolith whose modules import each other freely, where a
+    change anywhere can break anything.
+  - `on_execute_and_end` — the pair. Recommend this one absent a reason: it
+    keeps the run that fails early and the run that sees the post-autofix state,
+    and drops only the test-phase run, which happens before any implementation
+    exists and is the weakest of the three.
+  - `on_execute` — one run, failing earliest, while a fix is still cheap.
+  - `on_end` — one run, later but broader: the only single-run value that sees
+    what lint autofix did after code-review approved.
+  - `never` — only the targeted run; CI is the regression gate. Say plainly what
+    this trades: a break outside the changed scope is found by CI after the pull
+    request exists, which costs a human noticing and the pipeline being
+    dispatched again. Reasonable when someone watches CI; expensive when the
+    pipeline runs unattended.
+
+  If the person has no opinion, write `on_execute_and_end` and say that is what
+  was written. Never leave the key out to mean "decide later": an absent key is
+  `every_phase`, the slowest value, and a project should arrive there by choosing
+  it rather than by omission.
 
 Present the whole draft and ask for confirmation before writing anything.
 Edit any line the person changes, and only once every key is settled, write

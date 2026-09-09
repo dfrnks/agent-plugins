@@ -123,8 +123,13 @@ must keep working (keep it) or to describe something new (fix it). When
 unclear, re-read `## Definition of Done` before deciding — guessing risks
 deleting the one test standing between this task and a silent regression.
 
-Then run `commands.test_all` to confirm the new tests broke nothing already
-passing.
+Then, **if `policy.full_suite` is `every_phase`**, run `commands.test_all` to
+confirm the new tests broke nothing already passing. Under any other value skip
+it: at this point no implementation exists, so the only regression a new test
+file can cause in another is through shared state — a fixture, a global mock, a
+database left dirty — and the execute phase's own broad run catches that later,
+with the code in place. This is the least load-bearing of the broad runs and the
+first one a project trades away.
 
 If `commands.test` cannot be run at all — the command is missing, the
 environment was never built, a permission denies it — this phase has not

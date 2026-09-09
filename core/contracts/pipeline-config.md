@@ -52,6 +52,9 @@ git:
 
 pr:
   enabled: true
+
+# policy:
+#   full_suite: every_phase   # every_phase | on_execute_and_end | on_execute | on_end | never
 ```
 
 `git.commit_trailer` is the **only** trailer any flow may add to a commit.
@@ -75,6 +78,49 @@ an assumption about which harness a project uses into a file that must stay
 harness-neutral. A design document aimed at developers configuring a specific
 harness may name concrete files for that harness as examples; this contract,
 which the pipeline itself reads at runtime across every harness, does not.
+
+`policy.full_suite` decides **which phases run `commands.test_all`**, the broad
+run, as opposed to `commands.test`, the targeted one. It exists because the
+broad run is usually the single largest cost in a pipeline, and how much it buys
+varies by project in a way this contract cannot guess. In a monolith whose
+modules import each other freely, a change anywhere can break anything, and
+running everything at every phase is the point. In a repository of independent
+packages, most of that run exercises code the change provably cannot reach.
+
+| Value | Runs the broad suite |
+|---|---|
+| `every_phase` | test, execute, and end |
+| `on_execute_and_end` | execute, and end |
+| `on_execute` | execute only |
+| `on_end` | end only, unconditionally, as the last gate before the pull request |
+| `never` | nowhere — only `commands.test` runs, and CI is the regression gate |
+
+When the key is absent the value is `every_phase`. That default preserves the
+behavior of every project configured before this key existed: a pipeline that
+silently starts verifying less after a plugin upgrade is a worse failure than a
+slow one. `doctor` reports the effective value and says the key is unset, so a
+project keeps the old behavior until it chooses otherwise rather than by never
+having heard of the choice.
+
+Two properties of the scale are worth stating, because the ordering is not by
+strength alone. `on_execute` fails **earlier**, while the implementation is
+still the thing being worked on and a fix is cheap and local. `on_end` fails
+**later** but covers **more**: it is the only single-run value that sees the
+state after lint autofix, which `end` applies after code-review has already
+approved. `on_execute_and_end` is the pair, and is what a project that wants one
+value without studying the trade-off should pick.
+
+`never` is not reckless on its own terms — it is a statement that CI is the
+regression gate and the project accepts a round trip when a break lands outside
+the changed scope. It costs the most when the pipeline runs unattended, because
+the broad run is then the last thing standing between a broken pull request and
+a human noticing.
+
+Whatever the policy, what `commands.test_all` *means* stays the project's to
+define. A monorepo whose packages are independent may legitimately define it to
+cover the packages a change touches rather than every test in the repository;
+that is a narrower `all`, decided by the project that can prove the
+independence, not by this contract.
 
 `worktree_setup` covers dependencies excluded from version control (virtual
 environments, installed packages, local `.env` files) that do not exist in a
@@ -104,6 +150,7 @@ before any phase; when absent, it proceeds directly.
 | `git.commit_trailer` | yes | | | |
 | `git.worktree_setup` | | | | yes |
 | `pr.enabled` | yes | | | |
+| `policy.full_suite` | | | | yes |
 
 `tracker.type: github` needs nothing beyond the always-mandatory keys to
 function: it authenticates through `gh` and can label using nothing but the
