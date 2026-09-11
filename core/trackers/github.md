@@ -19,8 +19,8 @@ and no one is told.
 
 ## resolve_or_create
 
-Input: the argument passed to the task flow — either a tracker identifier
-or a free-text description.
+Input: the argument passed to the task or plan flow — either a tracker
+identifier or a free-text description.
 
 1. If the argument is `#123`, `123`, or `<prefix>-123`, extract the number
    and resolve it with `gh issue view <n> --json number,title,body`.

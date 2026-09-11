@@ -49,8 +49,9 @@ past a stop with tracker state left stale.
 ## Step 2 — Write the spec
 
 If a spec already exists at `paths.specs/<task-id>.md`, read it, summarize it
-briefly, and skip to Step 3 — the item was already designed in an earlier
-run of this flow, and Step 2 does not run twice against the same task.
+briefly, and skip to Step 3 — the item was already designed, by an earlier
+run of this flow or by `core/flows/plan.md`, which writes to the same path,
+and Step 2 does not run twice against the same task.
 
 Otherwise, explore before asking anything: dispatch subagents in parallel to
 investigate the areas this item touches — what already exists in this area
