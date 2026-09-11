@@ -1,0 +1,1393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>[hidden]{display:none!important}</style>
+<title>tdd Pipeline Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=JetBrains+Mono:wght@400;600&family=Public+Sans:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+:root{
+  --backdrop:#DCE2DF; --paper:#F6F8F7; --panel:#E8EDEA; --ink:#14201B; --muted:#56655F; --rule:#C6D0CB;
+  --red:#B93A27; --red-soft:#F5DCD5; --green:#2A7145; --green-soft:#D5EADB;
+  --amber:#8F5D10; --amber-soft:#F2E3C4; --blue:#24427C; --blue-soft:#DBE2F0;
+  --code-bg:#18221E; --code-ink:#DCE6E1; --code-dim:#7C9188;
+  --code-red:#F07B66; --code-green:#6FCB94; --code-amber:#E8B65C; --code-blue:#9DB8EE;
+  --shadow:rgba(20,32,27,.28); --dot:#D3DBD7;
+  --c-intro:#6246D6; --c-background:#2356C4; --c-setup:#0B7A7E; --c-run-a-task:#9E5C00;
+  --c-the-pipeline:#B02E74; --c-recovery:#BD4A26; --c-wrap-up:#23784A;
+  --k-key:#82AAFF; --k-str:#ECC48D; --k-cmd:#C792EA; --k-flag:#F78C6C; --k-id:#FF9CAC; --k-bin:#7FDBCA; --k-com:#6E8A80;
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"Public Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --backdrop:#090D0B; --paper:#111916; --panel:#19231F; --ink:#E1E9E5; --muted:#93A39C; --rule:#2B3733;
+    --red:#EE6B55; --red-soft:#3B201A; --green:#62C28A; --green-soft:#15301F;
+    --amber:#E2AA4C; --amber-soft:#33280F; --blue:#93B1EA; --blue-soft:#1B2640;
+    --code-bg:#0A100E; --shadow:rgba(0,0,0,.6); --dot:#1D2824;
+    --c-intro:#B4A0FF; --c-background:#86A9F8; --c-setup:#4CCBC5; --c-run-a-task:#F0B350; --c-the-pipeline:#F28DC2; --c-recovery:#F5906E; --c-wrap-up:#62D196;
+  }
+}
+:root[data-theme="dark"]{
+  --backdrop:#090D0B; --paper:#111916; --panel:#19231F; --ink:#E1E9E5; --muted:#93A39C; --rule:#2B3733;
+  --red:#EE6B55; --red-soft:#3B201A; --green:#62C28A; --green-soft:#15301F;
+  --amber:#E2AA4C; --amber-soft:#33280F; --blue:#93B1EA; --blue-soft:#1B2640;
+  --code-bg:#0A100E; --shadow:rgba(0,0,0,.6); --dot:#1D2824;
+  --c-intro:#B4A0FF; --c-background:#86A9F8; --c-setup:#4CCBC5; --c-run-a-task:#F0B350; --c-the-pipeline:#F28DC2; --c-recovery:#F5906E; --c-wrap-up:#62D196;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--backdrop);color:var(--ink);font:400 16px/1.5 var(--body)}
+a{color:var(--blue)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+/* ---------- stacked (narrow) mode: the default ---------- */
+.viewport{padding-block:20px 40px;padding-inline:16px}
+.stage{display:flex;flex-direction:column;gap:18px;max-width:1000px;margin:0 auto}
+.slide{
+  --fs:15.5px;font-size:var(--fs);
+  background-color:var(--paper);
+  background-image:radial-gradient(circle,var(--dot) 1px,transparent 1.4px);
+  background-size:26px 26px;background-position:13px 13px;
+  border:1px solid var(--rule);border-radius:6px;
+  padding:26px 20px 30px;display:flex;flex-direction:column;gap:1.1em;position:relative;min-width:0
+}
+.bar,.notes-panel{display:none}
+.slide .notes{display:none}
+
+/* ---------- deck mode ---------- */
+html.deck body{overflow:hidden}
+html.deck .viewport{position:fixed;inset:0 0 52px 0;padding:0}
+html.deck .stage{
+  position:absolute;left:50%;top:50%;width:1280px;height:720px;max-width:none;margin:0;display:block;
+  transform:translate(-50%,-50%) scale(var(--s,1));transform-origin:center
+}
+html.deck .slide{
+  --fs:21px;position:absolute;inset:0;padding:50px 72px 46px;border-radius:4px;gap:1.05em;
+  box-shadow:0 30px 60px -36px var(--shadow)
+}
+html.deck .slide:not(.is-active){display:none}
+html.deck .bar{
+  display:flex;position:fixed;left:0;right:0;bottom:0;height:52px;align-items:center;gap:14px;
+  padding-inline:16px;background:var(--backdrop);border-top:1px solid var(--rule);font:500 12px/1 var(--mono);color:var(--muted)
+}
+html.deck .notes-panel:not([hidden]){
+  display:block;position:fixed;left:50%;bottom:64px;transform:translateX(-50%);width:min(760px,calc(100% - 32px));
+  background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:14px 18px;
+  font:400 15px/1.55 var(--body);color:var(--ink);box-shadow:0 18px 40px -20px var(--shadow);z-index:5
+}
+.notes-panel b{font:600 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
+
+.bar button{
+  font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:4px;
+  height:32px;min-width:36px;padding-inline:10px;cursor:pointer
+}
+.bar button:hover{border-color:var(--muted)}
+.bar button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.bar .count{font-variant-numeric:tabular-nums;color:var(--ink);min-width:62px;text-align:center}
+.chapters{display:flex;gap:4px;flex:1;min-width:0}
+.chapters button{
+  flex:1;min-width:0;height:32px;border:0;background:transparent;padding:0;display:flex;flex-direction:column;justify-content:center;gap:5px;
+  text-align:left;color:var(--muted);font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer
+}
+.chapters button span.track{display:block;height:3px;border-radius:2px;background:var(--rule);overflow:hidden}
+.chapters button span.track i{display:block;height:100%;width:0;background:var(--ink)}
+.chapters button.current{color:var(--ink)}
+.chapters button span.lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .hint{white-space:nowrap}
+@media (max-width:980px){.bar .hint{display:none}}
+
+
+/* ---------- slide type ---------- */
+.eyebrow{margin:0;font:600 .6em/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;gap:.8em;align-items:center}
+.eyebrow::before{content:"";width:.75em;height:.75em;background:var(--ink);border-radius:1px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.015em}
+h1{font-size:3.9em;line-height:.96;font-weight:760;letter-spacing:-.03em}
+h2{font-size:2.15em;line-height:1.04;font-weight:720;letter-spacing:-.025em;max-width:25ch}
+h3{font-size:1.02em;line-height:1.2;font-weight:680;letter-spacing:-.005em}
+p{margin:0}
+.lede{font-size:1.08em;line-height:1.45;color:var(--muted);max-width:52ch}
+.small{font-size:.8em;color:var(--muted);line-height:1.45}
+.fill{flex:1;min-height:0}
+code{font-family:var(--mono);font-size:.84em;background:var(--panel);padding:.08em .32em;border-radius:3px;overflow-wrap:anywhere}
+pre code{background:none;padding:0;font-size:1em;overflow-wrap:normal}
+.folio{position:absolute;right:1.4em;bottom:1em;font:500 .55em/1 var(--mono);color:var(--muted);letter-spacing:.08em;font-variant-numeric:tabular-nums}
+html:not(.deck) .folio{right:20px;top:26px;bottom:auto}
+html.deck .folio{top:50px;right:72px;bottom:auto;font-size:.6em}
+
+pre.code{
+  margin:0;background:var(--code-bg);color:var(--code-ink);font:400 .72em/1.6 var(--mono);
+  padding:1em 1.25em;border-radius:8px;overflow-x:auto;white-space:pre;tab-size:2
+}
+pre.code[data-title]::before{
+  content:attr(data-title);display:block;margin:-1em -1.25em .85em;padding:.62em 1.25em;
+  border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);color:var(--code-dim);
+  font-size:.9em;letter-spacing:.02em
+}
+.tbl-wrap{background:var(--paper)}
+pre.code.compact{font-size:.64em;line-height:1.5}
+pre.code .d{color:var(--code-dim)} pre.code .r{color:var(--code-red)} pre.code .g{color:var(--code-green)}
+pre.code .a{color:var(--code-amber)} pre.code .b{color:var(--code-blue)} pre.code .w{color:#fff;font-weight:600}
+.cap{font:600 .56em/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.6em}
+
+/* ---------- layout helpers ---------- */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:1.6em;align-items:start}
+.cols.w-6-5{grid-template-columns:6fr 5fr}
+.cols.w-5-6{grid-template-columns:5fr 6fr}
+.cols.w-4-7{grid-template-columns:4fr 7fr}
+.cols.three{grid-template-columns:repeat(3,1fr)}
+.cols.four{grid-template-columns:repeat(4,1fr);gap:1em}
+.stack{display:flex;flex-direction:column;gap:.9em;min-width:0}
+@media (max-width:759px){
+  .cols,.cols.w-6-5,.cols.w-5-6,.cols.w-4-7,.cols.three,.cols.four{grid-template-columns:1fr}
+  h1{font-size:2.8em} h2{font-size:1.7em}
+}
+
+ul.plain{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.55em}
+ul.plain li{padding-left:1.1em;position:relative;line-height:1.4}
+ul.plain li::before{content:"";position:absolute;left:0;top:.6em;width:.42em;height:.42em;background:var(--muted);border-radius:1px}
+ul.plain.tight{gap:.35em}
+ul.plain.x li::before{content:"×";background:none;top:0;width:auto;height:auto;color:var(--red);font:700 1em/1.4 var(--mono)}
+ul.plain.ok li::before{content:"+";background:none;top:0;width:auto;height:auto;color:var(--green);font:700 1em/1.4 var(--mono)}
+
+.chip{display:inline-block;font:600 .68em/1.3 var(--mono);padding:.22em .55em;border-radius:3px;white-space:nowrap;background:var(--panel);color:var(--ink);letter-spacing:.02em;vertical-align:.1em}
+.chip.red{background:var(--red-soft);color:var(--red)}
+.chip.green{background:var(--green-soft);color:var(--green)}
+.chip.amber{background:var(--amber-soft);color:var(--amber)}
+.chip.blue{background:var(--blue-soft);color:var(--blue)}
+
+.tbl-wrap{overflow-x:auto;min-width:0}
+table.tbl{width:100%;border-collapse:collapse;font-size:.76em;line-height:1.38}
+.tbl th{font:600 .78em/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:.5em .7em .6em;border-bottom:1.5px solid var(--ink)}
+.tbl td{padding:.5em .7em;border-bottom:1px solid var(--rule);vertical-align:top}
+.tbl td.m{font-family:var(--mono);font-size:.92em;white-space:nowrap}
+.tbl tr.group td{font:600 .72em/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding-top:.9em;border-bottom:0}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+
+.box{border:1px solid transparent;border-radius:8px;padding:.95em 1.15em;background:var(--panel);display:flex;flex-direction:column;gap:.5em;min-width:0}
+.box.fillp{background:var(--paper);border-color:var(--rule)}
+.box p{font-size:.86em;line-height:1.42}
+.callout{border-left:3px solid var(--amber);background:var(--amber-soft);padding:.85em 1.1em;border-radius:0 8px 8px 0;font-size:.86em;line-height:1.45}
+.callout.red{border-color:var(--red);background:var(--red-soft)}
+.callout strong{color:var(--ink)}
+
+/* ---------- title slide ---------- */
+.title-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:2.2em;align-items:end;flex:1}
+.title-grid h1 span{display:block}
+.title-grid h1 .r{color:var(--red)} .title-grid h1 .g{color:var(--green)}
+.meta-row{display:flex;flex-wrap:wrap;gap:.5em 1.4em;font:500 .62em/1.3 var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+@media (max-width:759px){.title-grid{grid-template-columns:1fr}}
+
+/* ---------- architecture ---------- */
+.arch{
+  display:grid;grid-template-columns:1fr 5.2em 1.22fr;grid-template-areas:"a1 l1 core" "a2 l2 core";
+  gap:1.1em 0;align-items:center
+}
+.arch .a1{grid-area:a1} .arch .a2{grid-area:a2} .arch .l1{grid-area:l1} .arch .l2{grid-area:l2}
+.arch .core{grid-area:core;align-self:stretch}
+.adapter{background:var(--panel);border-radius:8px;padding:1em 1.15em 1.05em;display:flex;flex-direction:column;gap:.5em;min-width:0}
+.adapter-head{display:flex;justify-content:space-between;align-items:center;gap:.6em}
+.adapter-head h3{font-size:1.15em}
+.adapter .path{font:500 .58em/1.3 var(--mono);color:var(--muted);letter-spacing:.02em;overflow-wrap:anywhere}
+.adapter .ptr{
+  margin:0;background:var(--code-bg);color:var(--code-ink);font:400 .64em/1.5 var(--mono);
+  padding:.75em .95em;border-radius:5px;white-space:pre-wrap;overflow-wrap:anywhere
+}
+.adapter .ptr .d{color:var(--code-dim)}
+.adapter .ptr b{color:var(--code-green);font-weight:600}
+.adapter .note{font-size:.74em;line-height:1.42;color:var(--muted)}
+.link{position:relative;height:2.2em}
+.link::before{content:"";position:absolute;left:.5em;right:.9em;top:62%;border-top:1.5px dashed var(--muted)}
+.link::after{
+  content:"";position:absolute;right:.4em;top:62%;transform:translateY(-50%);
+  border-top:.34em solid transparent;border-bottom:.34em solid transparent;border-left:.55em solid var(--muted)
+}
+.link span{position:absolute;left:0;right:0;top:0;text-align:center;font:600 .46em/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.core{
+  background:var(--paper);border:1.5px solid var(--ink);border-radius:10px;padding:1.15em 1.35em 1.2em;
+  display:flex;flex-direction:column;gap:.8em;min-width:0;box-shadow:0 18px 40px -30px var(--shadow)
+}
+.core-head{display:flex;align-items:baseline;justify-content:space-between;gap:1em;flex-wrap:wrap}
+.core-name{font:700 1.7em/1 var(--mono);letter-spacing:-.02em}
+.core-tag{font:600 .52em/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tree{list-style:none;margin:0;padding:0;font-size:.8em;flex:1;display:flex;flex-direction:column;justify-content:space-around}
+.tree li{display:grid;grid-template-columns:1.6em 6.6em 1.9em 1fr;gap:.45em;align-items:baseline;padding:.62em .5em;border-radius:6px}
+.tree li + li{border-top:1px solid var(--rule)}
+.tree li.hl{background:var(--green-soft);border-top-color:transparent}
+.tree li.hl + li{border-top-color:transparent}
+.tree .glyph{font-family:var(--mono);color:var(--muted)}
+.tree code{background:none;padding:0;font-size:1em;font-weight:600;color:var(--ink)}
+.tree .cnt{font:600 .78em/1 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+.tree .desc{line-height:1.38}
+.tree .hl .desc b{color:var(--green)}
+.core-foot{display:flex;gap:.7em;align-items:baseline;font-size:.7em;line-height:1.45;color:var(--muted);border-top:1px solid var(--rule);padding-top:.85em}
+@media (max-width:759px){
+  .arch{grid-template-columns:1fr;grid-template-areas:"a1" "a2" "core"}
+  .arch .link{display:none}
+  .tree li{grid-template-columns:1.4em 6em 1.6em 1fr}
+}
+
+/* ---------- step lists ---------- */
+ol.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.1em;counter-reset:s}
+ol.steps li{display:grid;grid-template-columns:2.6em 1fr;gap:.6em;padding:.5em 0;border-top:1px solid var(--rule);font-size:.86em;line-height:1.38}
+ol.steps li:first-child{border-top:0}
+ol.steps li .n{font:600 .82em/1.6 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+ol.steps li strong{font-weight:600}
+ol.steps.dense li{padding:.36em 0}
+
+.gateflow{display:grid;grid-template-columns:1fr 7.5em 1fr;gap:1.2em;align-items:stretch}
+.gate{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5em;text-align:center;
+  background:repeating-linear-gradient(-45deg,var(--amber-soft) 0 10px,transparent 10px 20px);
+  border:1.5px solid var(--amber);border-radius:4px;padding:1em .6em;color:var(--amber);
+  font:700 .7em/1.25 var(--mono);letter-spacing:.1em;text-transform:uppercase
+}
+.gate span{font-size:1.9em;letter-spacing:.04em}
+@media (max-width:759px){.gateflow{grid-template-columns:1fr}}
+
+/* ---------- what it is: swimlanes ---------- */
+.lanes-wrap{overflow-x:auto;min-width:0;flex-shrink:0}
+.lanes{display:grid;grid-template-columns:5.2em repeat(5,minmax(0,1fr));gap:.55em;font-size:.74em;line-height:1.38;min-width:680px}
+.lanes .stage-h{font:600 .74em/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:.2em .1em .6em;border-bottom:1.5px solid var(--ink)}
+.lanes .stage-h.gate-h{color:var(--amber);border-color:var(--amber)}
+.lanes .who{font:700 1.15em/1.1 var(--display);align-self:center;letter-spacing:-.01em}
+.lanes .cell{background:var(--panel);border-radius:8px;padding:.8em .9em;border:1.5px solid transparent}
+.lanes .cell.you{background:var(--blue-soft)}
+.lanes .cell.gatecell{background:var(--amber-soft);border-color:var(--amber)}
+.lanes .cell.idle{background:transparent;border:1.5px dashed var(--rule);color:var(--muted);display:flex;align-items:center}
+.lanes code{font-size:.9em}
+ol.steps.origin li{padding:.75em 0;font-size:.84em}
+
+/* ---------- phases ---------- */
+.phase{display:flex;flex-direction:column;gap:.6em;min-width:0;padding-top:.8em;border-top:4px solid var(--ink)}
+.phase.p-red{border-color:var(--red)} .phase.p-green{border-color:var(--green)} .phase.p-blue{border-color:var(--blue)}
+.phase h3{font-size:1.3em}
+.phase .kv{display:grid;grid-template-columns:auto 1fr;gap:.25em .8em;font-size:.72em;line-height:1.35}
+.phase .kv dt{font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:.9em;padding-top:.1em}
+.phase .kv dd{margin:0}
+.phase p{font-size:.84em;line-height:1.42}
+.orchestrator{display:flex;align-items:center;gap:1em;flex-wrap:wrap;font-size:.8em;color:var(--muted);border:1px dashed var(--rule);border-radius:4px;padding:.65em 1em}
+.orchestrator strong{color:var(--ink);font-family:var(--mono);font-weight:600}
+
+.big-state{font:700 1.05em/1 var(--mono);letter-spacing:.02em}
+.big-state.red{color:var(--red)} .big-state.green{color:var(--green)} .big-state.amber{color:var(--amber)}
+
+.tbl.matrix td,.tbl.matrix th{text-align:center}
+.tbl.matrix td:first-child,.tbl.matrix th:first-child{text-align:left}
+.tbl.matrix b.on{color:var(--green);font-size:1.15em}
+.tbl.matrix b.off{color:var(--muted);font-weight:400}
+.tbl.matrix tr.rec td{background:var(--green-soft)}
+.cmd-line{font:500 .78em/1.4 var(--mono);color:var(--muted)}
+.cmd-line b{color:var(--ink);font-weight:600}
+
+/* ---------- chapter accents ---------- */
+.slide{--accent:var(--ink)}
+.slide[data-chapter="Intro"]{--accent:var(--c-intro)}
+.slide[data-chapter="Background"]{--accent:var(--c-background)}
+.slide[data-chapter="Setup"]{--accent:var(--c-setup)}
+.slide[data-chapter="Run a task"]{--accent:var(--c-run-a-task)}
+.slide[data-chapter="The pipeline"]{--accent:var(--c-the-pipeline)}
+.slide[data-chapter="Recovery"]{--accent:var(--c-recovery)}
+.slide[data-chapter="Wrap-up"]{--accent:var(--c-wrap-up)}
+.slide[data-accent="red"]{--accent:var(--red)}
+.slide[data-accent="green"]{--accent:var(--green)}
+.slide[data-accent="blue"]{--accent:var(--blue)}
+.slide{
+  --accent-soft:color-mix(in srgb,var(--accent) 10%,var(--panel));
+  --accent-ink:color-mix(in srgb,var(--accent) 78%,var(--ink));
+  background-image:
+    radial-gradient(70% 60% at 100% 0%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 70%),
+    radial-gradient(50% 50% at 0% 100%,color-mix(in srgb,var(--accent) 9%,transparent),transparent 70%),
+    radial-gradient(circle,var(--dot) 1px,transparent 1.4px);
+  background-size:auto,auto,26px 26px;
+  background-position:0 0,0 0,13px 13px;
+}
+.slide.title-slide{
+  background-image:
+    radial-gradient(60% 70% at 0% 0%,color-mix(in srgb,var(--red) 16%,transparent),transparent 70%),
+    radial-gradient(60% 70% at 100% 100%,color-mix(in srgb,var(--green) 18%,transparent),transparent 70%),
+    radial-gradient(circle,var(--dot) 1px,transparent 1.4px);
+}
+.eyebrow{color:var(--accent-ink)}
+.eyebrow::before{background:var(--accent)}
+.folio{color:var(--accent-ink)}
+.cap{color:var(--accent-ink)}
+ul.plain li::before{background:var(--accent)}
+ol.steps li .n{color:var(--accent);font-weight:700}
+.tbl th{color:var(--accent-ink);border-bottom-color:var(--accent)}
+.box{background:var(--accent-soft)}
+.box h3{color:var(--accent-ink)}
+.box.fillp{background:var(--paper);border-color:color-mix(in srgb,var(--accent) 30%,var(--rule))}
+code{background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
+pre code{background:none}
+.cmd-line b{color:var(--accent-ink)}
+.chapters button span.track i{background:var(--accent,var(--ink))}
+.chapters button.current{color:var(--accent,var(--ink))}
+.adapter{background:var(--accent-soft)}
+.core{border-color:var(--accent)}
+pre.code[data-title]::before{border-bottom-color:color-mix(in srgb,var(--accent) 45%,transparent);color:color-mix(in srgb,var(--accent) 55%,var(--code-ink))}
+/* syntax */
+pre.code .k-key{color:var(--k-key)} pre.code .k-str{color:var(--k-str)} pre.code .k-cmd{color:var(--k-cmd);font-weight:600}
+pre.code .k-flag{color:var(--k-flag)} pre.code .k-id{color:var(--k-id)} pre.code .k-bin{color:var(--k-bin)} pre.code .k-com{color:var(--k-com)}
+.tbl-wrap{background:transparent}
+</style>
+</head>
+<body>
+
+<main class="viewport" id="viewport">
+<div class="stage" id="stage">
+
+<!-- 1 -->
+<section class="slide title-slide" data-chapter="Intro">
+  <p class="eyebrow">agent-plugins · the tdd plugin</p>
+  <div class="title-grid">
+    <div class="stack" style="gap:1.2em">
+      <h1><span class="r">Red first.</span><span class="g">Then green.</span><span>Then a pull request.</span></h1>
+      <p class="lede">How to use the tdd pipeline to take a one-line request to a reviewed spec, a failing test suite, an implementation, an adjudicated review and a shipped branch, on Claude Code or Cursor.</p>
+    </div>
+    <div class="stack">
+      <p class="cap">Example run · abridged</p>
+<pre class="code" data-title="terminal · my-app"><span class="d">&gt;</span> <span class="w">/tdd:task "validate input types on add"</span>
+
+<span class="d">TASK-1   spec written · review recorded</span>
+<span class="a">gate</span>     <span class="d">you answered:</span> proceed
+<span class="d">worktree .tdd-pipeline/worktrees/TASK-1</span>
+
+test         Status: <span class="r">fail (red)</span>  4 tests
+execute      Tests: <span class="g">pass (4)</span>  Lint: clean
+code-review  Verdict: <span class="g">APPROVED</span>
+end          End phase: completed
+
+Result: <span class="g">SHIPPED</span>   <span class="d">PR opened against main</span></pre>
+    </div>
+  </div>
+  <div class="meta-row"><span>Technical walkthrough</span><span>8 commands · 5 agents · 4 phases</span><span>Use ← → to navigate, N for notes</span></div>
+  <aside class="notes">Open with the example run. Every line in it is a real report shape from the pipeline; the rest of the talk explains where each line comes from.</aside>
+</section>
+
+<!-- what it is -->
+<section class="slide" data-chapter="Intro">
+  <p class="eyebrow">What it is</p>
+  <h2>A plugin that runs your coding agent as a test-first pipeline</h2>
+  <p class="lede" style="color:var(--ink);max-width:70ch">tdd adds eight slash commands to Claude Code or Cursor. You describe the work in one line; the pipeline plans it, writes tests before code, implements, reviews and opens a pull request.</p>
+  <div class="lanes-wrap">
+    <div class="lanes">
+      <span></span>
+      <span class="stage-h">Request</span><span class="stage-h">Plan</span><span class="stage-h gate-h">Gate</span><span class="stage-h">Build</span><span class="stage-h">Ship</span>
+      <span class="who">You</span>
+      <div class="cell you">Describe the work: <code>/tdd:task "validate input types on add"</code></div>
+      <div class="cell you">Answer one grouped question about scope and constraints</div>
+      <div class="cell gatecell"><strong>Read the spec.</strong> Say “proceed”, or stop and keep it as a plan</div>
+      <div class="cell idle">Nothing to do</div>
+      <div class="cell you">Review and merge the pull request</div>
+      <span class="who">Pipeline</span>
+      <div class="cell">Resolves a task ID such as <code>TASK-1</code> and explores the affected code</div>
+      <div class="cell">Writes a spec, then reviews it against the real codebase</div>
+      <div class="cell idle">Waits for your answer</div>
+      <div class="cell">Failing tests, implementation, code review: each a fresh agent, in a worktree</div>
+      <div class="cell">Lints, pushes, opens the PR, updates the tracker</div>
+    </div>
+  </div>
+  <p class="small">What it needs from your project: a test command that runs, and a conventions file that says how your code is written. <code>init</code> sets up both.</p>
+  <aside class="notes">This is the one-minute version for anyone who has not used it. Everything after this slide explains one of these cells in detail.</aside>
+</section>
+
+<!-- origin -->
+<section class="slide" data-chapter="Background">
+  <p class="eyebrow">Where it came from</p>
+  <h2>It began as a pipeline built into a single project</h2>
+  <div class="cols w-4-7 fill">
+    <ol class="steps origin">
+      <li><span class="n">1</span><span><strong>A pipeline that worked.</strong> Inside one project, it took work from task creation to an open pull request, with mandatory TDD, a spec review before implementation and a code review after it.</span></li>
+      <li><span class="n">2</span><span><strong>It could not be reused.</strong> It was wired to that project's stack, test and lint commands, absolute paths, issue tracker and ID prefix, and to one agent harness.</span></li>
+      <li><span class="n">3</span><span><strong>So it was extracted, in August 2026,</strong> into a package that installs in any project, on Claude Code or Cursor, with no trace of the project it came from.</span></li>
+    </ol>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th></th><th>Original pipeline</th><th>tdd today</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Projects</strong></td><td>One</td><td>Any, configured by <code>.tdd-pipeline/config.yaml</code></td></tr>
+          <tr><td><strong>Harness</strong></td><td>One</td><td>Claude Code and Cursor</td></tr>
+          <tr><td><strong>Stack rules</strong></td><td>Inline in the phase prompts</td><td>Read from your conventions file, derived from your code</td></tr>
+          <tr><td><strong>Worktrees</strong></td><td>Harness-created: a random branch renamed afterwards, and the spec had to be pushed first</td><td>Plain <code>git worktree add</code>, branch named for the task from the start</td></tr>
+          <tr><td><strong>Tracker</strong></td><td>One, hardwired</td><td><code>none</code>, <code>github</code> or <code>linear</code></td></tr>
+          <tr><td><strong>Commands</strong></td><td>Eleven, overlapping</td><td>Eight</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="small">Source: the design record in <code>docs/specs/2026-08-03-tdd-pipeline-plugin-design.md</code>, and the first end-to-end run against a real project in <code>docs/validation-2026-08-03.md</code>.</p>
+  <aside class="notes">The design was first collapsed to six commands, then revised to eight: plan and fix-bug came back once it was clear they stop at different points than task. Two commands with the same steps and different stopping points are not the same command.</aside>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-chapter="Background">
+  <p class="eyebrow">The problem it solves</p>
+  <h2>Three ways agent-written code goes wrong, and what the pipeline does about each</h2>
+  <div class="cols three fill" style="align-content:start">
+    <div class="stack">
+      <p class="cap">Problem</p>
+      <h3>Tests written after the code only confirm the code.</h3>
+      <p class="cap" style="margin-top:.8em">Pipeline answer</p>
+      <p style="font-size:.88em;line-height:1.45">Tests come first and are committed as a contract. The test phase has to <strong>see the suite fail</strong> before any implementation exists, and the execute phase cannot weaken it.</p>
+    </div>
+    <div class="stack">
+      <p class="cap">Problem</p>
+      <h3>An agent grading its own work tends to pass it.</h3>
+      <p class="cap" style="margin-top:.8em">Pipeline answer</p>
+      <p style="font-size:.88em;line-height:1.45">Every phase runs as a <strong>fresh subagent</strong>. The spec is reviewed by a separate pass, and the code is adjudicated by a code-review phase that returns a verdict.</p>
+    </div>
+    <div class="stack">
+      <p class="cap">Problem</p>
+      <h3>State kept in a chat session dies with the session.</h3>
+      <p class="cap" style="margin-top:.8em">Pipeline answer</p>
+      <p style="font-size:.88em;line-height:1.45">State lives in <strong>files and git</strong>: the spec, its handoff log, and a branch named for the task. Any phase can be resumed later, even from a different tool.</p>
+    </div>
+  </div>
+  <aside class="notes">The design goal is not speed. It is making it hard for an agent to produce work that looks right and is not.</aside>
+</section>
+
+<!-- extraction -->
+<section class="slide" data-chapter="Background">
+  <p class="eyebrow">The extraction</p>
+  <h2>Mechanics stayed in the package; project facts moved out</h2>
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Phase</th><th>Stayed in the package</th><th>Moved to your project</th></tr></thead>
+      <tbody>
+        <tr><td class="m">pipeline</td><td>Worktree guard, sequencing of the four phases, result aggregation</td><td>Absolute repository path, hardcoded setup script, harness isolation</td></tr>
+        <tr><td class="m">test</td><td>Study existing test patterns, red-phase verification, handoff log, commit</td><td>Test framework, mocking patterns, paths</td></tr>
+        <tr><td class="m">execute</td><td>Test protection contract, self-review, verification loop, lint gate, 300-character report</td><td>Architecture rules, lint and test commands</td></tr>
+        <tr><td class="m">code-review</td><td>Spec compliance, test integrity and quality, security, three-level verdict</td><td>Layer-specific rules, commands, paths</td></tr>
+        <tr><td class="m">end</td><td>Lint, persist discoveries, push, PR, tracker status</td><td>Hardcoded lint tools, package structure, worktree path</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">
+    <strong>The trade-off.</strong> An inline rule is always read; a pointer to a conventions file depends on the agent finding the right section. So execute cites the exact convention lines it applied, code-review checks every citation, and an area with no rule becomes an explicit warning.
+  </div>
+  <aside class="notes">This is the central design decision. Everything in "moved to your project" is now either a config key or a rule in the conventions file. The reverse also happened: pipeline protocol such as the spec structure and handoff log format moved out of the conventions file into core/contracts/, so the conventions file holds only project facts.</aside>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-chapter="Background">
+  <p class="eyebrow">Architecture</p>
+  <h2>One harness-neutral core, with thin adapters that point at it</h2>
+  <div class="arch fill">
+    <div class="adapter a1">
+      <div class="adapter-head"><h3>Claude Code</h3><span class="chip">/tdd:task</span></div>
+      <p class="path">adapters/claude-code/commands/task.md</p>
+      <pre class="ptr"><span class="d">Follow</span> ${CLAUDE_PLUGIN_ROOT}/<b>core/flows/task.md</b></pre>
+      <p class="note">Namespaced by the plugin, so it never clashes with the built-in <code>/init</code> or <code>/review</code>.</p>
+    </div>
+    <div class="link l1" aria-hidden="true"><span>points at</span></div>
+    <div class="adapter a2">
+      <div class="adapter-head"><h3>Cursor</h3><span class="chip">/tdd-task</span></div>
+      <p class="path">adapters/cursor/commands/tdd-task.md</p>
+      <pre class="ptr"><span class="d">Follow</span> $PIPELINE_ROOT/<b>core/flows/task.md</b></pre>
+      <p class="note">Root from <code>TDD_PIPELINE_ROOT</code>, the project's <code>.cursor/tdd</code>, or the user-level plugin.</p>
+    </div>
+    <div class="link l2" aria-hidden="true"><span>points at</span></div>
+    <div class="core">
+      <div class="core-head"><span class="core-name">core/</span><span class="core-tag">Plain Markdown · the only behaviour</span></div>
+      <ul class="tree">
+        <li><span class="glyph">├─</span><code>contracts/</code><span class="cnt">7</span><span class="desc">Config schema, spec template, handoff log, conventions template, review checklist</span></li>
+        <li class="hl"><span class="glyph">├─</span><code>flows/</code><span class="cnt">8</span><span class="desc">init, conventions, doctor, <b>task</b>, plan, review, fix-bug, resume</span></li>
+        <li><span class="glyph">├─</span><code>phases/</code><span class="cnt">5</span><span class="desc">pipeline (orchestrator), test, execute, code-review, end</span></li>
+        <li><span class="glyph">└─</span><code>trackers/</code><span class="cnt">3</span><span class="desc">none, github, linear</span></li>
+      </ul>
+      <p class="core-foot"><span class="chip green">enforced</span> <span><code>checks/core-is-neutral.sh</code> fails if core names a harness or a harness tool, so a project keeps working when a developer switches editors.</span></p>
+    </div>
+  </div>
+  <aside class="notes">An adapter file is a frontmatter shell plus a single pointer. If you want to change behaviour, you edit core, and both harnesses get it.</aside>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-chapter="Setup">
+  <p class="eyebrow">The commands</p>
+  <h2>Eight commands, typed differently on each harness</h2>
+  <div class="tbl-wrap">
+  <table class="tbl">
+    <thead><tr><th>Command</th><th>Claude Code</th><th>Cursor</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr class="group"><td colspan="4">Set up a project</td></tr>
+      <tr><td><strong>init</strong></td><td class="m">/tdd:init</td><td class="m">/tdd-init</td><td>Detects the stack, proposes <code>.tdd-pipeline/config.yaml</code>, commits it, hands off to conventions. Once per project.</td></tr>
+      <tr><td><strong>conventions</strong></td><td class="m">/tdd:conventions</td><td class="m">/tdd-conventions</td><td>Derives the project's rules from the code, each with a <code>file:line</code> citation.</td></tr>
+      <tr><td><strong>doctor</strong></td><td class="m">/tdd:doctor</td><td class="m">/tdd-doctor</td><td>Checks every requirement: <span class="chip green">pass</span> <span class="chip red">fail</span> <span class="chip">n/a</span>. Add <code>repair</code> to fix what it can.</td></tr>
+      <tr class="group"><td colspan="4">Do work</td></tr>
+      <tr><td><strong>task</strong></td><td class="m">/tdd:task</td><td class="m">/tdd-task</td><td>The main entry point: spec → review → gate → worktree → four phases → PR.</td></tr>
+      <tr><td><strong>plan</strong></td><td class="m">/tdd:plan</td><td class="m">/tdd-plan</td><td>Designs a change under a task ID and stops; <code>task</code> picks it up later.</td></tr>
+      <tr><td><strong>fix-bug</strong></td><td class="m">/tdd:fix-bug</td><td class="m">/tdd-fix-bug</td><td>Reproduces a defect with a failing test, finds the root cause, makes the minimal fix. Stops before pushing.</td></tr>
+      <tr class="group"><td colspan="4">Review and recover</td></tr>
+      <tr><td><strong>review</strong></td><td class="m">/tdd:review</td><td class="m">/tdd-review</td><td>Critiques a spec against the real codebase and fixes it in place.</td></tr>
+      <tr><td><strong>resume</strong></td><td class="m">/tdd:resume</td><td class="m">/tdd-resume</td><td>Re-enters an interrupted pipeline at one phase, runs only that phase, stops.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <aside class="notes">The Cursor names carry the tdd- prefix so they do not collide with Cursor's own /init, /review, /plan and /doctor.</aside>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-chapter="Setup">
+  <p class="eyebrow">Installation</p>
+  <h2>Install once per machine, then prepare each project with init</h2>
+  <div class="cols">
+    <div class="stack">
+      <h3>Claude Code · plugin marketplace</h3>
+<pre class="code" data-title="terminal">claude plugin marketplace add <span class="b">dfrnks/agent-plugins</span>
+claude plugin install <span class="b">tdd@dfrnks</span>
+
+<span class="d"># verify: should report Skills (8), Agents (5)</span>
+claude plugin details tdd@dfrnks</pre>
+      <p class="small"><code>marketplace add</code> takes the GitHub path. <code>install</code> takes the marketplace's own name, <code>dfrnks</code>. The mismatch is intentional.</p>
+      <p class="small">Adding the marketplace from a local clone path means edits to the clone take effect on the next dispatch, which is useful when you work on the pipeline itself.</p>
+    </div>
+    <div class="stack">
+      <h3>Cursor · user-level plugin</h3>
+<pre class="code" data-title="terminal">git clone https://github.com/dfrnks/agent-plugins.git \
+  ~/src/agent-plugins
+ln -s ~/src/agent-plugins ~/.cursor/plugins/local/tdd
+<span class="d"># then: Developer: Reload Window</span></pre>
+      <h3 style="margin-top:.3em">Cursor · per project</h3>
+<pre class="code">./install.sh --harness cursor --project /path/to/project</pre>
+      <p class="small">Both can coexist. An adapter prefers a project's own copy of <code>core/</code>, so a project can pin its own revision. Updating is a <code>git pull</code> in the clone.</p>
+    </div>
+  </div>
+  <aside class="notes">install.sh refuses --harness claude-code on purpose: symlinked Claude Code adapters would have no CLAUDE_PLUGIN_ROOT and every pointer would dangle.</aside>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-chapter="Setup">
+  <p class="eyebrow">Before the first run</p>
+  <h2>Permissions: when one is missing, it doesn't look like a permission problem</h2>
+  <div class="cols">
+    <div class="box">
+      <h3>The plugin root must be readable</h3>
+      <p>Every command reads files under the package's <code>core/</code>, outside your project. Interactive sessions ask once. Headless runs need it passed in:</p>
+<pre class="code">claude -p "…" --add-dir /path/to/agent-plugins</pre>
+    </div>
+    <div class="box">
+      <h3><code>git add</code> and <code>git commit</code> must be allowed</h3>
+      <p><code>init</code> and <code>conventions</code> commit what they write, because a worktree only contains committed files. If git is denied, the files get written, the commits don't, and doctor fails on the "tracked in git" rows.</p>
+    </div>
+    <div class="box">
+      <h3>The configured commands must run</h3>
+      <p>If the test phase cannot run <code>commands.test</code>, it reports <span class="chip amber">unverified</span> instead of claiming red, and the run stops as <span class="chip red">BLOCKED</span>.</p>
+    </div>
+    <div class="callout red">
+      <strong>The trap on Claude Code: trust the workspace first.</strong> In an untrusted workspace, Claude Code ignores the <em>whole</em> <code>permissions.allow</code> list in <code>.claude/settings.json</code>. Commits fail silently and doctor reports "not ready". Open the project interactively once and accept the trust dialog.
+    </div>
+  </div>
+  <aside class="notes">Worth reading before the first run rather than after. The untrusted-workspace case costs people the most time.</aside>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-chapter="Setup">
+  <p class="eyebrow">init</p>
+  <h2>init proposes, you confirm</h2>
+  <div class="cols w-5-6 fill">
+    <ol class="steps">
+      <li><span class="n">1</span><span><strong>Detect the stack</strong>: test runner, linter, base branch, git-ignored dependencies.</span></li>
+      <li><span class="n">2</span><span><strong>Propose the config</strong> and ask about everything it could not detect: tracker, conventions path, pull requests, how often the full suite runs.</span></li>
+      <li><span class="n">3</span><span><strong>Create directories</strong> under <code>.tdd-pipeline/</code> and git-ignore the worktrees directory.</span></li>
+      <li><span class="n">4</span><span><strong>Write a worktree setup script</strong> if dependencies are git-ignored (a venv, <code>node_modules</code>, a local <code>.env</code>).</span></li>
+      <li><span class="n">5</span><span><strong>Derive conventions</strong> by handing off to the conventions flow.</span></li>
+      <li><span class="n">6</span><span><strong>Verify</strong> the result with doctor.</span></li>
+    </ol>
+    <div class="stack">
+<pre class="code compact" data-title=".tdd-pipeline/config.yaml · Python example">version: 1
+project: ledger
+tracker:
+  type: none            <span class="d"># none | linear | github</span>
+  prefix: TASK          <span class="d"># IDs and branch names: TASK-1, TASK-2</span>
+commands:
+  test: ".venv/bin/python -m pytest -q {target}"
+  test_all: ".venv/bin/python -m pytest -q"
+  lint: ".venv/bin/python -m ruff check ."
+paths:
+  tests: [tests]
+  specs: .tdd-pipeline/tasks
+  worktrees: .tdd-pipeline/worktrees
+  conventions: CONVENTIONS.md   <span class="a"># no default</span>
+git:
+  base_branch: main
+  commit_trailer: ""
+  worktree_setup: scripts/setup-worktree.sh
+pr:
+  enabled: true
+policy:
+  full_suite: on_execute_and_end   <span class="d"># where test_all runs</span></pre>
+    </div>
+  </div>
+  <aside class="notes">Nothing reaches disk until you confirm every value. The directory is named for the pipeline, not for a harness, so the same config works on both.</aside>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-chapter="Setup">
+  <p class="eyebrow">Configuration rules</p>
+  <h2>The pipeline stops on a missing key. It never guesses.</h2>
+  <div class="cols w-6-5">
+    <div class="stack">
+      <p class="lede" style="color:var(--ink)">Every phase reads the config at Step 0. It never infers a command or a path from a package manifest or a directory listing: a wrong guess in an unattended run costs a whole branch of invalid work.</p>
+<pre class="code" data-title="phase output · Step 0"><span class="r">Cannot start:</span> `.tdd-pipeline/config.yaml` is missing
+key `commands.test`. Add it, or run the init flow
+to regenerate the configuration.</pre>
+      <p class="small">Mode-specific keys follow the same rule. <code>tracker.type: linear</code> also needs <code>tracker.team</code> and <code>tracker.states</code>.</p>
+    </div>
+    <div class="stack">
+      <div class="box">
+        <h3><code>paths.conventions</code> has no default</h3>
+        <p>Point it at the file that already holds your rules. Execute and code-review enforce whatever it contains, so an empty file means they enforce nothing.</p>
+      </div>
+      <div class="box">
+        <h3><code>git.worktree_setup</code></h3>
+        <p>Rebuilds what git doesn't track inside each fresh worktree. It runs by its own path, so it needs a shebang and the executable bit.</p>
+      </div>
+      <div class="box">
+        <h3><code>git.commit_trailer: ""</code></h3>
+        <p>The only trailer any flow may add. Empty means no trailer at all, and no agent attribution lines either.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">The fail-fast message names the file and the exact key. That is deliberate: the fix is always one edit.</aside>
+</section>
+
+<!-- policy -->
+<section class="slide" data-chapter="Setup">
+  <p class="eyebrow">policy.full_suite</p>
+  <h2>Choose which phases pay for the full suite</h2>
+  <div class="cols w-6-5">
+    <div class="stack">
+      <p style="font-size:.9em;line-height:1.45">The full run, <code>commands.test_all</code>, is usually the biggest cost in a pipeline. The targeted run, <code>commands.test</code>, always gates every Definition of Done item. The policy only decides where the full run also happens.</p>
+      <div class="tbl-wrap">
+      <table class="tbl matrix">
+        <thead><tr><th>Value</th><th>test</th><th>execute</th><th>end</th></tr></thead>
+        <tbody>
+          <tr><td class="m">every_phase <span class="chip">default</span></td><td><b class="on">●</b></td><td><b class="on">●</b></td><td><b class="on">●</b></td></tr>
+          <tr class="rec"><td class="m">on_execute_and_end <span class="chip green">recommended</span></td><td><b class="off">—</b></td><td><b class="on">●</b></td><td><b class="on">●</b></td></tr>
+          <tr><td class="m">on_execute</td><td><b class="off">—</b></td><td><b class="on">●</b></td><td><b class="off">—</b></td></tr>
+          <tr><td class="m">on_end</td><td><b class="off">—</b></td><td><b class="off">—</b></td><td><b class="on">●</b></td></tr>
+          <tr><td class="m">never</td><td colspan="3" class="small">nowhere: CI is the regression gate</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="box">
+        <h3>Unset means <code>every_phase</code></h3>
+        <p>The slowest value, kept as the default so an upgrade never starts verifying less without anyone choosing it. doctor passes the row with a note that says so.</p>
+      </div>
+      <div class="box">
+        <h3>init measures before it asks</h3>
+        <p>It times <code>commands.test</code> on one small module and <code>commands.test_all</code>, and puts both numbers in the question. A 15-minute full run is roughly an hour per task versus fifteen minutes.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">on_execute fails earliest, while a fix is cheap; on_end is the only single run that sees what lint autofix changed after approval, and on_execute_and_end keeps both. A monolith whose modules import each other freely wants every_phase. A repo of independent packages wastes most of that run. never is reasonable when someone watches CI, and expensive when the pipeline runs unattended. What commands.test_all means stays the project's call: a monorepo may define it as the packages a change touches.</aside>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-chapter="Setup">
+  <p class="eyebrow">conventions</p>
+  <h2>Your conventions are what the pipeline enforces, so this is the step to watch</h2>
+  <div class="cols w-5-6">
+    <div class="stack">
+      <ul class="plain">
+        <li>Parallel subagents explore seven areas: layering, error handling, naming, auth, data access, tests, formatting.</li>
+        <li>A pattern becomes a rule only when it holds at <strong>two or more independent sites</strong>. A single instance is reported as an observation.</li>
+        <li>Every rule carries the <code>file:line</code> it was read from.</li>
+        <li>You accept, edit or drop each group. There is no single yes for the whole set.</li>
+        <li>Doctor fails the project if the managed section holds <strong>fewer than five rules</strong>.</li>
+      </ul>
+    </div>
+    <div class="stack">
+      <p class="cap">From this repository's own conventions file</p>
+<pre class="code" data-title="CLAUDE.md · managed section"><span class="d">&lt;!-- pipeline:conventions:start --&gt;</span>
+<span class="w">## Data access</span>
+
+- Stage named paths; never `git add .` or
+  `git add -A` <span class="b">(core/flows/conventions.md:128,
+  core/phases/end.md:165)</span>.
+- Commit anything a phase must read; an
+  uncommitted file is invisible from inside a
+  worktree <span class="b">(core/flows/conventions.md:130)</span>.
+<span class="d">&lt;!-- pipeline:conventions:end --&gt;</span>
+
+<span class="d">&lt;!-- pipeline:discoveries:start --&gt;</span>
+<span class="d">  findings the end phase appends; never regenerated</span>
+<span class="d">&lt;!-- pipeline:discoveries:end --&gt;</span></pre>
+    </div>
+  </div>
+  <aside class="notes">The managed span is regenerated on each conventions run. The discoveries span is where later tasks add what they learned; a later conventions run can promote them.</aside>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-chapter="Setup">
+  <p class="eyebrow">doctor</p>
+  <h2>doctor reports one row per requirement and names the fix for the first failure</h2>
+  <div class="cols w-6-5">
+    <div class="stack">
+      <p class="cap">Example output · abridged</p>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Check</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td><code>.tdd-pipeline/config.yaml</code>, every key, tracked</td><td><span class="chip green">pass</span></td></tr>
+          <tr><td>Git repository with base branch <code>main</code></td><td><span class="chip green">pass</span></td></tr>
+          <tr><td><code>paths.specs</code> directory</td><td><span class="chip green">pass</span></td></tr>
+          <tr><td><code>paths.worktrees</code> directory, git-ignored</td><td><span class="chip green">pass</span></td></tr>
+          <tr><td><code>paths.conventions</code>, derived rules</td><td><span class="chip green">pass</span></td></tr>
+          <tr><td><code>policy.full_suite</code> set explicitly</td><td><span class="chip green">pass</span></td></tr>
+          <tr><td><code>paths.review_checklist</code> (not set)</td><td><span class="chip">n/a</span></td></tr>
+          <tr><td><code>git.worktree_setup</code> (no ignored deps)</td><td><span class="chip">n/a</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="cmd-line"><b>6 pass · 0 fail · 2 n/a — ready</b></p>
+    </div>
+    <div class="stack">
+      <div class="box fillp">
+        <h3>Reading a fail</h3>
+        <p>On <strong>not ready</strong>, doctor names the exact command for the first failure: <code>init</code>, <code>conventions</code> or a direct config edit. It only names a fix that can actually clear the row.</p>
+      </div>
+      <div class="box fillp">
+        <h3>"exists but is not tracked in git"</h3>
+        <p>The file was written but the commit was not. Neither init nor conventions can clear this row. Check the trust dialog and git permissions, then commit the file yourself.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Run doctor after init and whenever something looks off. Every row should be pass or n/a before the first task. On a greenfield project with no tracked source files, the conventions row is n/a with a stated reason; run conventions after the first code lands.</aside>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-chapter="Run a task">
+  <p class="eyebrow">task · the main entry point</p>
+  <h2>Give task an ID or a sentence. Everything before the gate is read-only.</h2>
+  <div class="gateflow fill">
+    <div class="stack">
+      <p class="cap">Before the gate · on the base branch</p>
+      <ol class="steps dense">
+        <li><span class="n">0</span><span><strong>Load configuration</strong>, fail fast on a missing key.</span></li>
+        <li><span class="n">1</span><span><strong>Resolve the item</strong> through the tracker and mark it started.</span></li>
+        <li><span class="n">2</span><span><strong>Write the spec.</strong> Parallel exploration, then <em>one</em> grouped question about scope and constraints, then a draft committed as <code>TASK-1: add spec</code>.</span></li>
+        <li><span class="n">3</span><span><strong>Review the spec</strong> against the real codebase, fix it in place, and log a <code>### review</code> entry.</span></li>
+      </ol>
+    </div>
+    <div class="gate"><span>Gate</span>Step 4<br>“proceed”?</div>
+    <div class="stack">
+      <p class="cap">After the gate · in a worktree</p>
+      <ol class="steps dense">
+        <li><span class="n">5</span><span><strong>Create the worktree</strong> on a branch named exactly <code>TASK-1</code>.</span></li>
+        <li><span class="n">6</span><span><strong>Run the pipeline</strong>: a subagent dispatches test, execute, code-review, end.</span></li>
+        <li><span class="n">7</span><span><strong>Report</strong>: task ID, spec path, review outcome, how the gate ended, result, branch, PR URL.</span></li>
+      </ol>
+      <pre class="code" style="margin-top:.4em">/tdd:task "validate input types on add"
+/tdd:task TASK-12      <span class="d"># existing item</span>
+/tdd:task #42          <span class="d"># github tracker</span></pre>
+    </div>
+  </div>
+  <aside class="notes">Your local checkout never leaves the base branch. Before the gate, the only file written is the spec.</aside>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-chapter="Run a task">
+  <p class="eyebrow">The gate and the spec</p>
+  <h2>Any answer other than “proceed” stops the run and leaves you a reviewed spec</h2>
+  <div class="cols w-5-6">
+    <div class="stack">
+      <p style="font-size:.95em;line-height:1.5">The gate is a hard stop. Declining leaves a reviewed, committed spec and nothing else: no worktree, no dispatch, no tracker change. That is also the plan-only path. Running <code>task TASK-1</code> later picks up the existing spec and goes straight to review.</p>
+      <div class="callout">
+        <strong>Split signals.</strong> If the Approach names more than five changes, or the Definition of Done has more than ten items, the task is several tasks. Split it into <code>TASK-1-1.md</code>, <code>TASK-1-2.md</code>, … under a parent index.
+      </div>
+      <p class="small">The review blocks a spec that says "verify the API before implementing". External schemas and existing data models get checked during planning, not left to the implementing phase.</p>
+    </div>
+    <div class="stack">
+      <p class="cap">Spec skeleton</p>
+<pre class="code" data-title=".tdd-pipeline/tasks/TASK-1.md"><span class="w"># TASK-1 — Validate input types on add</span>
+
+<span class="w">## Context</span>          <span class="d">why the change is needed</span>
+<span class="w">## Approach</span>         <span class="d">files, functions, data sources, by name</span>
+<span class="w">## Files to Modify</span>  <span class="d">every file, one note each</span>
+<span class="w">## Definition of Done</span>
+- [ ] add() raises TypeError for non-numeric input
+      <span class="d">(convention: raise, never return None)</span>
+- [ ] Test or verification step
+<span class="w">## Out of Scope</span>     <span class="d">so no phase drifts into it</span>
+<span class="w">## Agent Handoff Log</span>
+<span class="d">&lt;!-- phases append findings here --&gt;</span></pre>
+    </div>
+  </div>
+  <aside class="notes">Read the spec before answering the gate. The execute phase follows the Definition of Done literally, item by item.</aside>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-chapter="Run a task">
+  <p class="eyebrow">Worktree</p>
+  <h2>Each task gets its own worktree, on a branch named exactly after the task</h2>
+  <div class="cols">
+    <div class="stack">
+      <p class="cap">Local base in sync with the remote</p>
+<pre class="code">git fetch origin main
+git worktree add <span class="a">--no-track</span> \
+  .tdd-pipeline/worktrees/TASK-1 -b TASK-1 origin/main</pre>
+      <p class="small"><code>--no-track</code> keeps the task branch from inheriting <code>main</code> as its upstream. Without it, a bare <code>git push</code> would suggest pushing straight onto <code>main</code>.</p>
+      <p class="cap" style="margin-top:.6em">Local base has unpushed commits, or there's no remote</p>
+<pre class="code">git worktree add \
+  .tdd-pipeline/worktrees/TASK-1 -b TASK-1 main</pre>
+      <p class="small">Unpushed commits often include the config itself. The report names which ref was used.</p>
+    </div>
+    <div class="stack">
+      <div class="box">
+        <h3>Then, inside the worktree</h3>
+        <ul class="plain tight" style="font-size:.86em">
+          <li>The orchestrator checks it is not in the main checkout and that the branch equals the task ID.</li>
+          <li>It checks that the spec's handoff log has a <code>review</code> entry.</li>
+          <li>It runs <code>./scripts/setup-worktree.sh</code> if configured, and stops on a non-zero exit.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>Parallel tasks are supported</h3>
+        <p>One worktree per task, under <code>paths.worktrees</code>, which doctor requires to be git-ignored. An existing worktree with uncommitted work stops the run and asks first.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">The pipeline never resets your base branch to match the remote. Your checkout stays as you left it. If a project keeps the config or specs out of git, they are mirrored into the worktree and the spec is copied back after each phase.</aside>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-chapter="The pipeline">
+  <p class="eyebrow">The four phases</p>
+  <h2>Four fresh subagents, run in order, each one gated on the last one's report</h2>
+  <div class="cols four">
+    <div class="phase p-red">
+      <h3>test</h3>
+      <p>Writes the failing suite that defines the behaviour, and watches it fail.</p>
+      <dl class="kv"><dt>Model</dt><dd>opus</dd><dt>Report</dt><dd>≤ 300 chars</dd><dt>Commits</dt><dd>the tests</dd></dl>
+    </div>
+    <div class="phase p-green">
+      <h3>execute</h3>
+      <p>Makes the suite pass without touching what "pass" means.</p>
+      <dl class="kv"><dt>Model</dt><dd>opus</dd><dt>Report</dt><dd>≤ 300 chars</dd><dt>Commits</dt><dd>the implementation</dd></dl>
+    </div>
+    <div class="phase p-blue">
+      <h3>code-review</h3>
+      <p>Adjudicates the diff against the spec, the conventions and the tests.</p>
+      <dl class="kv"><dt>Model</dt><dd>opus</dd><dt>Report</dt><dd>≤ 500 chars</dd><dt>Commits</dt><dd>its log entry</dd></dl>
+    </div>
+    <div class="phase">
+      <h3>end</h3>
+      <p>Lints, saves what was learned, pushes, opens the PR, updates the tracker.</p>
+      <dl class="kv"><dt>Model</dt><dd>sonnet</dd><dt>Report</dt><dd>one line per item</dd><dt>Pushes</dt><dd>branch + PR</dd></dl>
+    </div>
+  </div>
+  <div class="orchestrator">
+    <strong>task-pipeline</strong> <span>(sonnet) dispatches each phase, waits for it to return, and reads one field of its report to decide whether the next runs. It never inlines a phase, never pauses mid-run, and never loops back.</span>
+  </div>
+  <p class="small">The short reports are for the orchestrator. The detail goes into the spec's handoff log, which the next phase reads in its fresh context.</p>
+  <aside class="notes">The opus pinning is a deliberate cost decision: those three are the phases where a weaker model produces work that looks right and is not. It can be changed in agents/ frontmatter. Cursor uses whatever model you selected.</aside>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-chapter="The pipeline" data-accent="red">
+  <p class="eyebrow">Phase: test · red</p>
+  <h2>Red is something the phase observed, not something it assumed</h2>
+  <div class="cols w-5-6">
+    <div class="stack">
+      <ul class="plain">
+        <li>Studies existing test patterns, writes a test plan, then writes tests under <code>paths.tests</code>.</li>
+        <li>Runs <code>commands.test</code>. Every new test must fail <strong>for the reason it asserts</strong>. A typo, import error or broken fixture also shows red, and proves nothing.</li>
+        <li>A test that passes before the implementation is either a <strong>regression guard</strong> (kept, noted as green by design) or a test that doesn't exercise the change (rewritten).</li>
+        <li>Under <code>policy.full_suite: every_phase</code>, also runs <code>commands.test_all</code> to confirm nothing that already passed broke.</li>
+      </ul>
+    </div>
+    <div class="stack">
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Status</th><th>Next</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip red">fail (red)</span></td><td class="m">execute</td><td>The contract is written and currently unmet.</td></tr>
+          <tr><td><span class="chip">n/a (nothing testable)</span></td><td class="m">execute</td><td>Nothing a command can observe (prose only). Code-review checks the claim.</td></tr>
+          <tr><td><span class="chip green">pass (green)</span></td><td class="m">BLOCKED</td><td>The tests describe no new behaviour.</td></tr>
+          <tr><td><span class="chip amber">unverified</span></td><td class="m">BLOCKED</td><td>The suite never ran. Make <code>commands.test</code> runnable.</td></tr>
+        </tbody>
+      </table>
+      </div>
+<pre class="code" data-title="test phase report">Tests: tests/test_ops.py. 4 tests written.
+Status: <span class="r">fail (red)</span>. Committed: yes.</pre>
+    </div>
+  </div>
+  <aside class="notes">Unverified is an environment or permission failure, not a test-design problem. The fix is making the command runnable.</aside>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-chapter="The pipeline" data-accent="green">
+  <p class="eyebrow">Phase: execute · green</p>
+  <h2>The committed tests are the contract, and execute may not rewrite it</h2>
+  <div class="cols">
+    <div class="stack">
+      <p class="cap">Test protection contract</p>
+      <ul class="plain x">
+        <li>Never modify an existing assertion to make the code pass.</li>
+        <li>Never delete a test.</li>
+        <li>Never weaken a condition: exact match to substring, a dropped edge case, a relaxed mock count.</li>
+      </ul>
+      <ul class="plain ok">
+        <li>Add new tests for scenarios found while implementing.</li>
+      </ul>
+      <div class="callout"><strong>Tie-breaker.</strong> If a "scaffolding fix" to a test file would change any assertion's expected value, it is not a scaffolding fix. Execute stops and escalates instead of editing.</div>
+    </div>
+    <div class="stack">
+      <p class="cap">What else it does</p>
+      <ol class="steps dense">
+        <li><span class="n">3</span><span><strong>Loads conventions</strong> and records a <code>### Conventions Applied</code> block citing each rule used.</span></li>
+        <li><span class="n">7</span><span><strong>Verification loop</strong> per Definition of Done item, then the full suite unless the policy is <code>on_end</code> or <code>never</code>.</span></li>
+        <li><span class="n">8</span><span><strong>Lint gate</strong> with <code>commands.lint</code>.</span></li>
+        <li><span class="n">10</span><span><strong>Test protection gate</strong>: compares test files in the working tree with the test phase's commit.</span></li>
+      </ol>
+      <p class="cap" style="margin-top:.4em">Stops and asks instead of guessing when</p>
+      <ul class="plain tight" style="font-size:.84em">
+        <li>a Definition of Done item is impossible as written,</li>
+        <li>two items conflict,</li>
+        <li>the work needs infrastructure outside the task's scope.</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">If a test looks wrong, execute implements toward the spec and documents the conflict in the handoff log. Code-review decides; execute never silently rewrites.</aside>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-chapter="The pipeline" data-accent="blue">
+  <p class="eyebrow">Phase: code-review</p>
+  <h2>Six review dimensions, three severities, one verdict</h2>
+  <div class="cols w-6-5">
+    <div class="stack">
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Dimension</th><th>What it checks</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Spec compliance</strong></td><td>Each Definition of Done item: satisfied, partial, missing. Undocumented deviations are findings.</td></tr>
+          <tr><td><strong>Conventions</strong></td><td>Each citation in Conventions Applied points at a real rule, and the code follows it.</td></tr>
+          <tr><td><strong>Security and isolation</strong></td><td>Authorization on new entry points, input validation, tenant scoping, no secrets.</td></tr>
+          <tr><td><strong>Test integrity</strong></td><td>Diffs every test file against the test phase's commit. Nothing weakened, deleted or re-expected.</td></tr>
+          <tr><td><strong>Test quality</strong></td><td>A test per Definition of Done item, error paths covered, and no production logic that exists only to satisfy a test.</td></tr>
+          <tr><td><strong>Checklist</strong></td><td>Spot-checks execute's Implementation Manifest, and scans <code>paths.review_checklist</code> if set.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="box">
+        <h3>Severity</h3>
+        <p><span class="chip red">Blocker</span> must be fixed: security hole, cross-account leak, unmet Definition of Done item, weakened test.</p>
+        <p><span class="chip amber">Warning</span> should be fixed: uncovered area, minor convention deviation.</p>
+        <p><span class="chip">Suggestion</span> doesn't affect the verdict.</p>
+      </div>
+<pre class="code" data-title="code-review report">Verdict: <span class="r">CHANGES_REQUESTED</span>.
+Blockers: DoD 2 unmet (float input accepted).
+Warnings: none.</pre>
+      <p class="small">One blocker means no approval. <code>CHANGES_REQUESTED</code> stops the pipeline. It does <strong>not</strong> loop back to execute on its own; a person decides with <code>resume</code>.</p>
+    </div>
+  </div>
+  <aside class="notes">Why no automatic loop: each unsupervised execute pass makes changes the rejecting review never saw, so nothing converges toward approval.</aside>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-chapter="The pipeline">
+  <p class="eyebrow">Phase: end</p>
+  <h2>end ships only what code-review approved</h2>
+  <div class="cols w-5-6">
+    <ol class="steps">
+      <li><span class="n">1</span><span><strong>Detect changed areas</strong> from the diff.</span></li>
+      <li><span class="n">2</span><span><strong>Lint</strong>. Re-run <code>commands.test_all</code> if autofix could change behaviour, and always under <code>on_end</code>.</span></li>
+      <li><span class="n">3</span><span><strong>Persist discoveries</strong>: project facts go to the conventions file's discoveries span; phase quirks go to <code>.tdd-pipeline/memory/&lt;phase&gt;/</code>.</span></li>
+      <li><span class="n">4</span><span><strong>Commit and push</strong> the branch, staging named paths only.</span></li>
+      <li><span class="n">5</span><span><strong>Open the pull request</strong> against the base branch. Skipped if <code>pr.enabled: false</code>, there's no remote, or one already exists.</span></li>
+      <li><span class="n">6</span><span><strong>Update the tracker</strong> to its review state.</span></li>
+      <li><span class="n">8</span><span><strong>Cleanup hint</strong>: the <code>git worktree remove</code> command, to run only after the PR merges.</span></li>
+    </ol>
+    <div class="stack">
+      <p class="cap">Pull request body</p>
+      <div class="box fillp">
+        <p><strong>Summary</strong> of what changed.</p>
+        <p><strong>Definition of Done</strong> copied from the spec, with satisfied items checked.</p>
+        <p><strong>Test plan</strong>: the commands a reviewer runs, <code>commands.test_all</code>, <code>commands.lint</code>, and anything else the spec names.</p>
+      </div>
+<pre class="code" data-title="end phase report">Lint: clean.
+Persisted: 1 discovery to CONVENTIONS.md.
+Pushed: TASK-1.
+PR: https://github.com/…/pull/57
+End phase: <span class="g">completed</span>.</pre>
+    </div>
+  </div>
+  <aside class="notes">The orchestrator reads only the last line of this report; if it is missing, the run is treated as stopped. A failed tracker update is a stop, not a warning. A board that says in-progress while the code has shipped is exactly what the pipeline is trying to prevent.</aside>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-chapter="The pipeline">
+  <p class="eyebrow">Results</p>
+  <h2>Every run ends with one of three results</h2>
+  <div class="cols three fill" style="align-content:start">
+    <div class="stack">
+      <p class="big-state green">SHIPPED</p>
+      <p style="font-size:.9em;line-height:1.45">The end phase reached its last step. The branch is pushed and the PR is open.</p>
+      <p class="cap" style="margin-top:.6em">What you do</p>
+      <p style="font-size:.9em;line-height:1.45">Review and merge the PR like any other. Remove the worktree afterwards.</p>
+    </div>
+    <div class="stack">
+      <p class="big-state red">STOPPED</p>
+      <ul class="plain tight" style="font-size:.86em">
+        <li>code-review returned <code>CHANGES_REQUESTED</code></li>
+        <li>execute stopped or escalated</li>
+        <li>the worktree guard or setup script failed</li>
+        <li>end stopped partway (push, tracker)</li>
+      </ul>
+      <p class="cap" style="margin-top:.6em">What you do</p>
+      <p style="font-size:.9em;line-height:1.45">Read the reason and the handoff log, fix the cause, then <code>resume TASK-1</code>.</p>
+    </div>
+    <div class="stack">
+      <p class="big-state amber">BLOCKED</p>
+      <ul class="plain tight" style="font-size:.86em">
+        <li>test reported <code>pass (green)</code></li>
+        <li>test reported <code>unverified</code></li>
+        <li>the spec has no <code>review</code> entry</li>
+      </ul>
+      <p class="cap" style="margin-top:.6em">What you do</p>
+      <p style="font-size:.9em;line-height:1.45">Make <code>commands.test</code> runnable, run <code>review</code> on the spec, or rethink what the tests should describe.</p>
+    </div>
+  </div>
+  <p class="small">A non-shipped report always carries a one-line reason, the branch and the worktree path, so you know where to pick up.</p>
+  <aside class="notes">BLOCKED means the pipeline could not start meaningful work. STOPPED means it started and something needs a decision.</aside>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-chapter="Recovery">
+  <p class="eyebrow">The handoff log</p>
+  <h2>Phases talk to each other only through the spec's handoff log</h2>
+  <div class="cols">
+    <div class="stack">
+      <p class="cap">Illustrative</p>
+<pre class="code" data-title="TASK-1.md · Agent Handoff Log"><span class="w">### review (2026-09-10)</span>
+- Spec named calc.py; add() lives in ledger/ops.py.
+  Fixed Files to Modify.
+
+<span class="w">### test (2026-09-10)</span>
+- 4 tests in tests/test_ops.py, red on TypeError.
+- test_add_ints_unchanged: regression guard,
+  green by design.
+
+<span class="w">### execute (2026-09-10)</span>
+- Validation in ledger/ops.py; no test file touched.
+- Conventions Applied: raise, never return None
+  <span class="b">(ledger/io.py:41)</span>
+
+<span class="w">### code-review (2026-09-10)</span>
+- Verdict: <span class="g">APPROVED</span>. Blockers: none.</pre>
+    </div>
+    <div class="stack">
+      <p style="font-size:.9em;line-height:1.5">Each phase reads the whole log before it starts and appends one dated entry before it finishes. Entries are never edited. Useful notes are concrete: "changing this identifier breaks six tests", not "be careful".</p>
+      <p class="cap" style="margin-top:.3em">Where a finding goes</p>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <tbody>
+          <tr><td>Fact about the codebase</td><td class="m">conventions · discoveries span</td></tr>
+          <tr><td>Quirk of running a phase</td><td class="m">.tdd-pipeline/memory/&lt;phase&gt;/</td></tr>
+          <tr><td>Detail of this task only</td><td class="m">the handoff log</td></tr>
+          <tr><td>Your personal preference</td><td class="m">your own memory, not the repo</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="small">When a finding could go in either the conventions file or the log, the conventions file wins.</p>
+    </div>
+  </div>
+  <aside class="notes">This is why resume works: the log records which phases ran and what they concluded, and it is committed with the branch.</aside>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-chapter="Recovery">
+  <p class="eyebrow">resume</p>
+  <h2>resume runs exactly one phase and stops</h2>
+  <div class="cols w-6-5">
+    <div class="stack">
+<pre class="code">/tdd:resume TASK-1            <span class="d"># infer the phase from the log</span>
+/tdd:resume TASK-1 execute    <span class="d"># or name it</span></pre>
+      <p class="cap" style="margin-top:.4em">How it picks the phase</p>
+      <ol class="steps dense">
+        <li><span class="n">1</span><span>Find the <strong>last</strong> <code>test</code>, <code>execute</code>, <code>code-review</code> or <code>end</code> entry, by position in the file.</span></li>
+        <li><span class="n">2</span><span>None yet → <strong>test</strong>.</span></li>
+        <li><span class="n">3</span><span><code>code-review</code> with <code>CHANGES_REQUESTED</code> → <strong>execute</strong>.</span></li>
+        <li><span class="n">4</span><span><code>end</code> → nothing to resume. It never re-runs end blind.</span></li>
+        <li><span class="n">5</span><span>Otherwise → the next phase in order.</span></li>
+      </ol>
+    </div>
+    <div class="stack">
+      <p class="cap">A rejected review, fixed</p>
+<pre class="code" data-title="handoff log headings">### review
+### test
+### code-review   <span class="r">CHANGES_REQUESTED</span>
+  <span class="d">→ resume picks</span> <span class="w">execute</span>
+### execute
+  <span class="d">→ resume picks</span> <span class="w">code-review</span></pre>
+      <p class="small">Each resume is one deliberate step by a person. After the fix, the next resume runs code-review, so the fix gets reviewed before anything ships.</p>
+      <div class="callout"><strong>The branch name is how resume finds a task.</strong> It looks up <code>refs/heads/TASK-1</code>. Rename the branch and resume will say there is nothing to resume.</div>
+    </div>
+  </div>
+  <aside class="notes">Resume refuses to run any phase, including test, against a spec with no review entry.</aside>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-chapter="Wrap-up">
+  <p class="eyebrow">Other entry points and trackers</p>
+  <h2>Not every piece of work needs the full pipeline</h2>
+  <div class="cols three">
+    <div class="box">
+      <h3>plan</h3>
+      <p>Resolves a task ID, settles open questions with you, drafts and refutes the spec, commits it. Runs nothing; <code>task</code> picks it up later.</p>
+      <p class="cmd-line"><b>/tdd:plan</b> "validate input types on add"</p>
+    </div>
+    <div class="box">
+      <h3>review</h3>
+      <p>Critiques a spec against the actual code and fixes it in place. Writes the <code>### review</code> entry the pipeline requires.</p>
+      <p class="cmd-line"><b>/tdd:review</b> TASK-3</p>
+    </div>
+    <div class="box">
+      <h3>fix-bug</h3>
+      <p>Failing test first, then root cause, minimal fix, verify. No spec; stops before pushing because nothing reviewed it.</p>
+      <p class="cmd-line"><b>/tdd:fix-bug</b> "500 on empty list"</p>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+  <table class="tbl">
+    <thead><tr><th>tracker.type</th><th>Task IDs come from</th><th>Status updates</th><th>Needs</th></tr></thead>
+    <tbody>
+      <tr><td class="m">none</td><td>Highest <code>TASK-N</code> in the specs directory + 1, confirmed with you</td><td>none</td><td>nothing</td></tr>
+      <tr><td class="m">github</td><td>An existing issue, or one created with <code>gh issue create</code></td><td>Labels <code>TASK:in-progress</code> → <code>TASK:in-review</code></td><td><code>gh</code> authenticated</td></tr>
+      <tr><td class="m">linear</td><td>An existing issue, or a new one in <code>tracker.team</code></td><td>The states in <code>tracker.states</code></td><td>Linear MCP connected</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <aside class="notes">An unauthenticated tracker is a stop with the exact command that fixes it. The pipeline never falls back to tracker type none.</aside>
+</section>
+
+<!-- 23 -->
+<section class="slide" data-chapter="Wrap-up">
+  <p class="eyebrow">Constraints</p>
+  <h2>Four constraints to know before you rely on it</h2>
+  <div class="cols">
+    <div class="box">
+      <h3>The branch name is the task ID</h3>
+      <p>No <code>feature/</code> prefix or username. Team branch naming conventions aren't supported yet, and a renamed branch is invisible to resume.</p>
+    </div>
+    <div class="box">
+      <h3>Three agents run on the larger model</h3>
+      <p>test, execute and code-review are pinned to <code>opus</code>; the orchestrator and end use <code>sonnet</code>. A full task runs all five. Change it in the frontmatter under <code>agents/</code>.</p>
+    </div>
+    <div class="box">
+      <h3>It commits on your current branch</h3>
+      <p>init, conventions and the task spec are committed to the base branch, because worktrees only see committed files. Only named paths are staged, so your own uncommitted work stays uncommitted.</p>
+    </div>
+    <div class="box">
+      <h3>It stops rather than degrading</h3>
+      <p>A missing key, an unauthenticated tracker or a suite it can't run each stop the run with the exact fix. Plan for a few stops while you set up a new project.</p>
+    </div>
+  </div>
+  <aside class="notes">The validation doc in docs/ records the first end-to-end run against a real project, including what was not verified.</aside>
+</section>
+
+<!-- 24 -->
+<section class="slide" data-chapter="Wrap-up">
+  <p class="eyebrow">Cheat sheet</p>
+  <h2>Your first task in five minutes</h2>
+  <div class="cols w-6-5 fill">
+<pre class="code compact" data-title="terminal"><span class="d"># 1. install (Claude Code)</span>
+claude plugin marketplace add dfrnks/agent-plugins
+claude plugin install tdd@dfrnks
+
+<span class="d"># 2. bootstrap: confirm the config, review each rule group</span>
+/tdd:init
+
+<span class="d"># 3. every row pass or n/a</span>
+/tdd:doctor
+
+<span class="d"># 4. optional: design first when the approach isn't settled</span>
+/tdd:plan "validate input types on add"
+<span class="d">#    → TASK-1, spec at .tdd-pipeline/tasks/TASK-1.md</span>
+/tdd:review TASK-1
+
+<span class="d"># 5. run it: task reuses the TASK-1 spec, reviews it inline,</span>
+<span class="d">#    stops at the gate (skipped step 4? pass a description)</span>
+/tdd:task TASK-1
+<span class="a">#    → gate: proceed</span>
+
+<span class="d"># 6. only if something was interrupted or rejected</span>
+/tdd:resume TASK-1</pre>
+    <div class="stack">
+      <p class="cap">Where things live in your project</p>
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <tbody>
+          <tr><td class="m">.tdd-pipeline/config.yaml</td><td>the only required file</td></tr>
+          <tr><td class="m">.tdd-pipeline/tasks/TASK-1.md</td><td>spec and handoff log, from plan or task</td></tr>
+          <tr><td class="m">.tdd-pipeline/worktrees/TASK-1/</td><td>one per task, git-ignored</td></tr>
+          <tr><td class="m">.tdd-pipeline/memory/&lt;phase&gt;/</td><td>phase-workflow learnings</td></tr>
+          <tr><td class="m">paths.conventions</td><td>the rules that get enforced</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="small">On Cursor, the same commands use a dash: <code>/tdd-init</code>, <code>/tdd-plan</code>, <code>/tdd-review</code>, <code>/tdd-task</code>.</p>
+      <p class="small">Source and docs: <code>github.com/dfrnks/agent-plugins</code>. The README covers permissions, updating and the full config schema.</p>
+    </div>
+  </div>
+  <aside class="notes">Step 4 is optional: without it, run task with a description and it writes the spec itself. With it, plan resolves TASK-1 and writes the spec under that ID, and task TASK-1 reuses it instead of drafting another. Suggest people start with a small, well-understood change so they see every phase once before trusting it with something bigger.</aside>
+</section>
+
+</div>
+</main>
+
+<div class="notes-panel" id="notesPanel" hidden><b>Speaker notes</b><span id="notesText"></span></div>
+
+<nav class="bar" aria-label="Slide navigation">
+  <button type="button" id="prevBtn" aria-label="Previous slide">←</button>
+  <span class="count" id="count" aria-live="polite">01 / 24</span>
+  <button type="button" id="nextBtn" aria-label="Next slide">→</button>
+  <div class="chapters" id="chapters"></div>
+  <button type="button" id="notesBtn" aria-pressed="false">Notes</button>
+  <span class="hint">← → · N notes · F fullscreen</span>
+</nav>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  var stage=document.getElementById('stage');
+  var vp=document.getElementById('viewport');
+  var slides=[].slice.call(stage.querySelectorAll('.slide'));
+  var total=slides.length;
+  var idx=0;
+  var pad=function(n){return (n<10?'0':'')+n;};
+
+
+  // light syntax highlighting for code blocks; leaves hand-colored spans alone
+  var tok=/((?<![#\w])#\s[^\n]*)|("[^"\n]*")|(\/tdd[:\-][\w-]+)|((?<![\w-])--[\w-]+)|(\b[A-Z]{2,}-\d+(?:-\d+)?\b)|^([ \t]*)([A-Za-z_][\w.]*)(?=:(?:\s|$))|^((?:claude|git|gh|ln|cd)\b|\.\/[\w.\/-]+)/gm;
+  var cls=[null,'k-com','k-str','k-cmd','k-flag','k-id',null,'k-key','k-bin'];
+  [].slice.call(document.querySelectorAll('pre.code')).forEach(function(pre){
+    [].slice.call(pre.childNodes).forEach(function(n){
+      if(n.nodeType!==3)return;
+      var t=n.nodeValue,frag=document.createDocumentFragment(),last=0,m;
+      tok.lastIndex=0;
+      while((m=tok.exec(t))){
+        if(m[0]===''){tok.lastIndex++;continue;}
+        var start=m.index;
+        if(m[6]!==undefined&&m[7]!==undefined){start+=m[6].length;}
+        if(start>last)frag.appendChild(document.createTextNode(t.slice(last,start)));
+        var g=0;for(var i=1;i<cls.length;i++){if(cls[i]&&m[i]!==undefined){g=i;break;}}
+        var sp=document.createElement('span');sp.className=cls[g];
+        sp.textContent=t.slice(start,m.index+m[0].length);
+        frag.appendChild(sp);last=m.index+m[0].length;
+      }
+      if(last===0)return;
+      if(last<t.length)frag.appendChild(document.createTextNode(t.slice(last)));
+      pre.replaceChild(frag,n);
+    });
+  });
+
+  slides.forEach(function(s,k){
+    var f=document.createElement('span');
+    f.className='folio';
+    f.textContent=pad(k+1)+' / '+pad(total);
+    s.appendChild(f);
+  });
+
+  // chapters: contiguous runs of data-chapter
+  var chapters=[];
+  slides.forEach(function(s,k){
+    var c=s.getAttribute('data-chapter');
+    var last=chapters[chapters.length-1];
+    if(!last||last.name!==c){chapters.push({name:c,start:k,end:k});}else{last.end=k;}
+  });
+  var chapWrap=document.getElementById('chapters');
+  chapters.forEach(function(c){
+    var b=document.createElement('button');
+    b.type='button';
+    b.style.flexGrow=String(c.end-c.start+1);
+    b.innerHTML='<span class="lbl"></span><span class="track"><i></i></span>';
+    b.querySelector('.lbl').textContent=c.name;
+    b.setAttribute('aria-label','Go to chapter: '+c.name);
+    b.style.setProperty('--accent','var(--c-'+c.name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+')');
+    b.addEventListener('click',function(){go(c.start);});
+    chapWrap.appendChild(b);
+    c.el=b;
+  });
+
+  var notesPanel=document.getElementById('notesPanel');
+  var notesText=document.getElementById('notesText');
+  var notesBtn=document.getElementById('notesBtn');
+  var count=document.getElementById('count');
+
+  function go(n){
+    idx=Math.max(0,Math.min(total-1,n));
+    slides.forEach(function(s,k){s.classList.toggle('is-active',k===idx);});
+    count.textContent=pad(idx+1)+' / '+pad(total);
+    chapters.forEach(function(c){
+      var inC=idx>=c.start&&idx<=c.end;
+      var pct=idx>c.end?100:(inC?((idx-c.start+1)/(c.end-c.start+1))*100:0);
+      c.el.classList.toggle('current',inC);
+      c.el.querySelector('i').style.width=pct+'%';
+    });
+    var n2=slides[idx].querySelector('.notes');
+    notesText.textContent=n2?n2.textContent:'No notes for this slide.';
+    try{history.replaceState(null,'','#'+(idx+1));}catch(e){}
+  }
+
+  function fit(){
+    var s=Math.min(vp.clientWidth/1280,vp.clientHeight/720)*0.96;
+    root.style.setProperty('--s',s.toFixed(4));
+  }
+  function mode(){
+    var deck=window.innerWidth>=760&&window.innerHeight>=440;
+    root.classList.toggle('deck',deck);
+    if(deck)fit();
+  }
+
+  document.getElementById('prevBtn').addEventListener('click',function(){go(idx-1);});
+  document.getElementById('nextBtn').addEventListener('click',function(){go(idx+1);});
+  function toggleNotes(){
+    var show=notesPanel.hidden;
+    notesPanel.hidden=!show;
+    notesBtn.setAttribute('aria-pressed',show?'true':'false');
+  }
+  notesBtn.addEventListener('click',toggleNotes);
+
+  document.addEventListener('keydown',function(e){
+    if(!root.classList.contains('deck'))return;
+    if(e.metaKey||e.ctrlKey||e.altKey)return;
+    var k=e.key;
+    if(k==='ArrowRight'||k==='PageDown'||(k===' '&&!e.shiftKey)){e.preventDefault();go(idx+1);}
+    else if(k==='ArrowLeft'||k==='PageUp'||(k===' '&&e.shiftKey)){e.preventDefault();go(idx-1);}
+    else if(k==='Home'){e.preventDefault();go(0);}
+    else if(k==='End'){e.preventDefault();go(total-1);}
+    else if(k==='n'||k==='N'){toggleNotes();}
+    else if(k==='f'||k==='F'){
+      try{ if(document.fullscreenElement){document.exitFullscreen();}else{root.requestFullscreen();} }catch(err){}
+    }
+  });
+
+  var tx=null;
+  vp.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+  vp.addEventListener('touchend',function(e){
+    if(tx===null||!root.classList.contains('deck'))return;
+    var dx=e.changedTouches[0].clientX-tx;
+    if(Math.abs(dx)>50)go(idx+(dx<0?1:-1));
+    tx=null;
+  },{passive:true});
+
+  window.addEventListener('resize',mode);
+  var start=parseInt((location.hash||'').replace('#',''),10);
+  mode();
+  go(isNaN(start)?0:start-1);
+})();
+</script>
+</body>
+</html>
