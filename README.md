@@ -441,3 +441,7 @@ which GitHub renders in place.
 first end-to-end run of this pipeline against a real project, criterion by
 criterion, including what was verified by execution, what was not, and the
 defects the run exposed. It is written to be honest rather than green.
+
+## License
+
+Released under the [MIT License](LICENSE).
