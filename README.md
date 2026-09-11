@@ -424,6 +424,17 @@ alternative would be prose so indirect it stops being executable. The
 neutrality that matters is that no *phase* or *flow* depends on which tracker
 you chose, and `tracker.type` is what selects between them.
 
+## Presentation
+
+[`docs/presentation/tdd-pipeline-walkthrough.html`](docs/presentation/tdd-pipeline-walkthrough.html)
+is a technical walkthrough of the pipeline for people who have not used it:
+why it exists, setup, the task flow and its gate, the four phases, and
+recovery. GitHub shows the file as source, so download it and open it in a
+browser — arrow keys move between slides, **N** shows the speaker notes, and
+**F** goes fullscreen. The same slides are exported as
+[`tdd-pipeline-walkthrough.pdf`](docs/presentation/tdd-pipeline-walkthrough.pdf),
+which GitHub renders in place.
+
 ## Validation
 
 [`docs/validation-2026-08-03.md`](docs/validation-2026-08-03.md) records the
