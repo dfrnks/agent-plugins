@@ -11,31 +11,47 @@ plausible shapes, a direction that has to be argued before it is scheduled.
 Forcing that through `task` either wastes a pipeline run or turns the gate
 into a design review it was never meant to be.
 
-The output is a spec in `paths.specs`, in the same shape `task` produces, so
-nothing downstream has to know which flow wrote it. `review` critiques it,
-`task` picks it up, `resume` re-enters it. This flow adds a way in, not a
-second kind of artifact.
+The output is a spec at `paths.specs/<task-id>.md`, in the same shape and
+at the same path `task` produces, so nothing downstream has to know which
+flow wrote it. `review <task-id>` critiques it, and `task <task-id>` takes it
+through the pipeline without drafting it again, because `task` reuses a spec
+it finds already at that path. This flow adds a way in, not a second kind of
+artifact.
 
 ## Input
 
-The argument is a description of what needs designing — a feature, a module,
-a migration, an architectural change. Extra context (constraints,
-preferences, an approach the user already has in mind) is input to Step 1.
+The argument is either a tracker identifier (for example `TASK-1`) naming an
+item that already exists, or a description of what needs designing — a
+feature, a module, a migration, an architectural change. Extra context
+(constraints, preferences, an approach the user already has in mind) is
+input to Step 1.
 
 If no argument is given, ask what should be planned. Do not guess from the
 branch name or recent commits: this flow's value is that a person chose the
 subject.
 
-Unlike `task`, this flow takes **no task ID and consults no tracker**. The
-work may never become a tracked item, and inventing an ID would produce a
-spec whose name promises a tracker entry that does not exist.
+Like `task`, this flow resolves the work item through the tracker, so the
+spec carries the task ID that `task`, `review`, and `resume` look it up by.
+Unlike `task`, it never calls the tracker's `set_status`: nothing has
+started, and the tracker should not claim otherwise. Moving the item to its
+start state stays the job of the flow that starts it.
 
 ## Step 0 — Load configuration
 
 Read `.tdd-pipeline/config.yaml`. Follow the fail-fast protocol in
 `core/contracts/pipeline-config.md`: stop and name the exact missing key if
-the file or a key this flow needs is absent. This flow needs `paths.specs`,
-`paths.conventions`, and `git.commit_trailer`.
+the file or a key this flow needs is absent. This flow needs `tracker.type`,
+`tracker.prefix`, `paths.specs`, `paths.conventions`, and
+`git.commit_trailer`. `tracker.type` selects which file among
+`core/trackers/none.md`, `core/trackers/linear.md`, and
+`core/trackers/github.md` resolves the item; that file may require further
+keys of its own, and an absent one follows the same fail-fast rule.
+
+When the argument is a tracker identifier, resolve it now, through that
+file's `resolve_or_create` operation, and use what the item already says —
+its title and description — as the goal Step 1 starts from. If a spec
+already exists at `paths.specs/<task-id>.md`, read it: this run revises that
+spec in place rather than writing a second one beside it.
 
 ## Step 1 — Understand the goal
 
@@ -96,14 +112,10 @@ drafted as one unit wastes the drafting.
 
 ## Step 4 — Draft the spec
 
-Write the spec into `paths.specs`, following the skeleton and completeness
-rules in `core/contracts/spec-template.md` exactly — every section present,
-including `## Out of Scope` and an empty `## Agent Handoff Log`.
-
-Name it for its subject, not for a task ID this flow never resolved: a short,
-specific, hyphenated name (`webhook-delivery-retries`). If the work later
-becomes a tracked item, `task` writes its own spec under the tracker's ID,
-and this one stands as the design that preceded it.
+Write the spec to `paths.specs/<task-id>.md`, with the ID resolved as below,
+following the skeleton and completeness rules in
+`core/contracts/spec-template.md` exactly — every section present, including
+`## Out of Scope` and an empty `## Agent Handoff Log`.
 
 Two completeness rules are why this flow writes a real spec rather than a
 looser plan document: an unverified external API schema and an unverified
@@ -113,6 +125,25 @@ read this spec later cannot, and `review` would only send it back.
 
 Every step in `## Approach` must be actionable. "Handle the error case" is
 not a design; it is a note that a design is still owed.
+
+### Resolving the task ID
+
+When Step 0 already resolved an identifier, use it. Otherwise resolve one
+here, and not earlier: by now Steps 1 to 3 have turned the description into
+a design a person has shaped, and an item created at the first message would
+outlive every design abandoned during those questions.
+
+Call `resolve_or_create` in the tracker file Step 0 selected, with the
+design's title as the free-text description and its `## Context` as any
+body that file asks for. The tracker creates the item exactly as it would
+for `task`, and that file's own rules govern how — including the
+confirmation it asks for and its guard against a spec already present at
+the derived path. Use the returned ID as-is for the filename and the spec's
+title line; do not reconstruct or reformat it.
+
+Report the created item in Step 8. A design that is later abandoned leaves
+an item behind, and whoever abandons it closes it in the tracker; this flow
+never deletes one.
 
 ## Step 5 — Refute the draft
 
@@ -162,8 +193,12 @@ plainly, so nobody approves expecting work to start.
 
 ```bash
 git add <spec file>
-git commit -m "plan: <spec name>"
+git commit -m "<task-id>: add spec"
 ```
+
+The message is the one `task` uses for the same file, since the file is the
+same artifact whichever flow wrote it. A run that revised an existing spec
+commits it as `<task-id>: revise spec`.
 
 If `git.commit_trailer` is non-empty, append it as a trailer; if empty, omit
 it rather than adding an empty line.
@@ -180,13 +215,15 @@ Stage only the spec file. This flow wrote nothing else.
 
 Return, in order:
 
+- The task ID, and whether it named an existing item or Step 4 created one.
 - The spec path, and a one-line summary of what it designs.
 - What Step 3 established as out of scope — the boundary is the part of a
   design most easily lost between the conversation and the file.
 - Whether Step 3 proposed splitting the work, and into what.
-- The next step, named as a command rather than described: `review` to have
-  the spec critiqued by a fresh reader, or `task` to take it through the
-  pipeline.
+- The next step, named as a command with the task ID filled in rather than
+  described: `review <task-id>` to have the spec critiqued by a fresh
+  reader, or `task <task-id>` to take it through the pipeline, which
+  reuses this spec instead of drafting its own.
 
 Do not run either. This flow ends here, and a flow that continues into
 implementation because the design looked finished is the exact commitment

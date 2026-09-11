@@ -13,8 +13,8 @@ in this mode and are never read.
 
 ## resolve_or_create
 
-Input: the argument passed to the task flow — either a tracker identifier
-or a free-text description.
+Input: the argument passed to the task or plan flow — either a tracker
+identifier or a free-text description.
 
 1. If the argument matches `<prefix>-<number>` (the prefix from
    `tracker.prefix`), that string is the task ID. Nothing else to resolve.
@@ -27,7 +27,7 @@ or a free-text description.
      elsewhere, so a stale or partially-cleaned directory could produce an
      ID that collides with something the user already knows about.
 
-Two task flows started close together can both scan `paths.specs` before
+Two flows started close together can both scan `paths.specs` before
 either has written a spec file, both compute the same highest-plus-one, and
 both present the same derived ID for confirmation — a real race, not a
 theoretical one, since this pipeline explicitly supports running multiple
