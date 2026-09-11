@@ -282,6 +282,13 @@ ol.steps.origin li{padding:.75em 0;font-size:.84em}
 .tbl.matrix b.on{color:var(--green);font-size:1.15em}
 .tbl.matrix b.off{color:var(--muted);font-weight:400}
 .tbl.matrix tr.rec td{background:var(--green-soft)}
+.why{font-size:.88em;line-height:1.5;color:var(--muted)}
+.callout.accent{border-color:var(--accent);background:var(--accent-soft)}
+.benefits{gap:1em}
+.benefits .box h3{font-size:1em}
+.benefits .box p{font-size:.8em}
+.benefits .via{margin-top:auto;font:600 .56em/1.2 var(--mono)!important;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
+.benefits .box{align-self:stretch}
 .cmd-line{font:500 .78em/1.4 var(--mono);color:var(--muted)}
 .cmd-line b{color:var(--ink);font-weight:600}
 
@@ -397,81 +404,91 @@ Result: <span class="g">SHIPPED</span>   <span class="d">PR opened against main<
   <aside class="notes">This is the one-minute version. The full path uses one ID throughout: plan writes TASK-1.md, review critiques it, and task TASK-1 reuses that spec instead of drafting another; task still reviews it inline before the gate. For small, clear work, task with a description does both steps itself.</aside>
 </section>
 
-<!-- origin -->
-<section class="slide" data-chapter="Background">
-  <p class="eyebrow">Where it came from</p>
-  <h2>It began as a pipeline built into a single project</h2>
-  <div class="cols w-4-7 fill">
-    <ol class="steps origin">
-      <li><span class="n">1</span><span><strong>A pipeline that worked.</strong> Inside one project, it took work from task creation to an open pull request, with mandatory TDD, a spec review before implementation and a code review after it.</span></li>
-      <li><span class="n">2</span><span><strong>It could not be reused.</strong> It was wired to that project's stack, test and lint commands, absolute paths, issue tracker and ID prefix, and to one agent harness.</span></li>
-      <li><span class="n">3</span><span><strong>So it was extracted, in August 2026,</strong> into a package that installs in any project, on Claude Code or Cursor, with no trace of the project it came from.</span></li>
-    </ol>
-    <div class="tbl-wrap">
-      <table class="tbl">
-        <thead><tr><th></th><th>Original pipeline</th><th>tdd today</th></tr></thead>
-        <tbody>
-          <tr><td><strong>Projects</strong></td><td>One</td><td>Any, configured by <code>.tdd-pipeline/config.yaml</code></td></tr>
-          <tr><td><strong>Harness</strong></td><td>One</td><td>Claude Code and Cursor</td></tr>
-          <tr><td><strong>Stack rules</strong></td><td>Inline in the phase prompts</td><td>Read from your conventions file, derived from your code</td></tr>
-          <tr><td><strong>Worktrees</strong></td><td>Harness-created: a random branch renamed afterwards, and the spec had to be pushed first</td><td>Plain <code>git worktree add</code>, branch named for the task from the start</td></tr>
-          <tr><td><strong>Tracker</strong></td><td>One, hardwired</td><td><code>none</code>, <code>github</code> or <code>linear</code></td></tr>
-          <tr><td><strong>Commands</strong></td><td>Eleven, overlapping</td><td>Eight</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-  <p class="small">Source: the design record in <code>docs/specs/2026-08-03-tdd-pipeline-plugin-design.md</code>, and the first end-to-end run against a real project in <code>docs/validation-2026-08-03.md</code>.</p>
-  <aside class="notes">The design was first collapsed to six commands, then revised to eight: plan and fix-bug came back once it was clear they stop at different points than task. Two commands with the same steps and different stopping points are not the same command.</aside>
-</section>
-
 <!-- 2 -->
 <section class="slide" data-chapter="Background">
-  <p class="eyebrow">The problem it solves</p>
-  <h2>Three ways agent-written code goes wrong, and what the pipeline does about each</h2>
-  <div class="cols three fill" style="align-content:start">
+  <p class="eyebrow">Why it was created</p>
+  <h2>Coding agents write plausible code. Plausible is not the same as correct.</h2>
+  <div class="cols four" style="gap:1.4em">
     <div class="stack">
-      <p class="cap">Problem</p>
-      <h3>Tests written after the code only confirm the code.</h3>
-      <p class="cap" style="margin-top:.8em">Pipeline answer</p>
-      <p style="font-size:.88em;line-height:1.45">Tests come first and are committed as a contract. The test phase has to <strong>see the suite fail</strong> before any implementation exists, and the execute phase cannot weaken it.</p>
+      <h3>Tests written after the code confirm the code</h3>
+      <p class="why">An agent that implements first writes tests describing what it built, not what was asked. The suite goes green and proves nothing.</p>
     </div>
     <div class="stack">
-      <p class="cap">Problem</p>
-      <h3>An agent grading its own work tends to pass it.</h3>
-      <p class="cap" style="margin-top:.8em">Pipeline answer</p>
-      <p style="font-size:.88em;line-height:1.45">Every phase runs as a <strong>fresh subagent</strong>. The spec is reviewed by a separate pass, and the code is adjudicated by a code-review phase that returns a verdict.</p>
+      <h3>An agent grading its own work passes it</h3>
+      <p class="why">The context that made a mistake is the worst place to find it. Self-review in the same session repeats the same assumptions.</p>
     </div>
     <div class="stack">
-      <p class="cap">Problem</p>
-      <h3>State kept in a chat session dies with the session.</h3>
-      <p class="cap" style="margin-top:.8em">Pipeline answer</p>
-      <p style="font-size:.88em;line-height:1.45">State lives in <strong>files and git</strong>: the spec, its handoff log, and a branch named for the task. Any phase can be resumed later, even from a different tool.</p>
+      <h3>Plans rest on guesses about your code</h3>
+      <p class="why">“Extend the existing endpoint” or “the API returns X”, never checked, turns into a whole branch built on a wrong assumption.</p>
+    </div>
+    <div class="stack">
+      <h3>State kept in a chat dies with the chat</h3>
+      <p class="why">A session that crashes or runs out of context takes its decisions with it, and the next one starts over.</p>
     </div>
   </div>
-  <aside class="notes">The design goal is not speed. It is making it hard for an agent to produce work that looks right and is not.</aside>
+  <div class="callout accent"><strong>tdd makes these failures structurally hard</strong> instead of relying on a careful prompt: tests first, a fresh agent per phase, specs reviewed against the code, and all state in files.</div>
+  <aside class="notes">The design goal is not speed. It is making it hard for an agent to produce work that looks right and is not. Each of these four maps to a mechanism on the next slide.</aside>
+</section>
+
+<!-- benefits -->
+<section class="slide" data-chapter="Background">
+  <p class="eyebrow">Why it's useful</p>
+  <h2>What you get from it</h2>
+  <div class="cols three benefits">
+    <div class="box">
+      <h3>Tests that failed before the code existed</h3>
+      <p>The test phase has to see the suite go red, for the reason each test asserts, before execute writes a line.</p>
+      <p class="via">test phase · fail (red)</p>
+    </div>
+    <div class="box">
+      <h3>Tests nobody quietly weakened</h3>
+      <p>Execute may not edit an assertion or delete a test, and code-review diffs every test file against the commit that wrote it.</p>
+      <p class="via">test protection contract</p>
+    </div>
+    <div class="box">
+      <h3>Plans checked against the real code</h3>
+      <p>Before the gate, a fresh reviewer verifies the spec's claims about your code and external APIs. A guess is a blocker, not a note.</p>
+      <p class="via">review · hard blockers</p>
+    </div>
+    <div class="box">
+      <h3>Your rules, enforced with citations</h3>
+      <p>Execute cites the conventions it applied by <code>file:line</code>, and code-review checks each citation against the file.</p>
+      <p class="via">conventions · code-review</p>
+    </div>
+    <div class="box">
+      <h3>Work that survives the session</h3>
+      <p>The spec, its handoff log and a branch per task hold all state, so any phase can resume later, even from another editor.</p>
+      <p class="via">handoff log · resume</p>
+    </div>
+    <div class="box">
+      <h3>Your attention where it counts</h3>
+      <p>You decide twice: at the gate, after reading the spec, and on the pull request. Everything in between runs on its own.</p>
+      <p class="via">gate · pull request</p>
+    </div>
+  </div>
+  <aside class="notes">Each benefit names the mechanism behind it; the rest of the talk shows each mechanism in detail. Same pipeline on Claude Code and Cursor.</aside>
 </section>
 
 <!-- extraction -->
 <section class="slide" data-chapter="Background">
-  <p class="eyebrow">The extraction</p>
-  <h2>Mechanics stayed in the package; project facts moved out</h2>
+  <p class="eyebrow">Package and project</p>
+  <h2>The package holds the mechanics; your project holds the facts</h2>
   <div class="tbl-wrap">
     <table class="tbl">
-      <thead><tr><th>Phase</th><th>Stayed in the package</th><th>Moved to your project</th></tr></thead>
+      <thead><tr><th>Phase</th><th>In the package</th><th>In your project</th></tr></thead>
       <tbody>
-        <tr><td class="m">pipeline</td><td>Worktree guard, sequencing of the four phases, result aggregation</td><td>Absolute repository path, hardcoded setup script, harness isolation</td></tr>
-        <tr><td class="m">test</td><td>Study existing test patterns, red-phase verification, handoff log, commit</td><td>Test framework, mocking patterns, paths</td></tr>
-        <tr><td class="m">execute</td><td>Test protection contract, self-review, verification loop, lint gate, 300-character report</td><td>Architecture rules, lint and test commands</td></tr>
-        <tr><td class="m">code-review</td><td>Spec compliance, test integrity and quality, security, three-level verdict</td><td>Layer-specific rules, commands, paths</td></tr>
-        <tr><td class="m">end</td><td>Lint, persist discoveries, push, PR, tracker status</td><td>Hardcoded lint tools, package structure, worktree path</td></tr>
+        <tr><td class="m">pipeline</td><td>Worktree guard, sequencing of the four phases, result aggregation</td><td>Base branch, worktree directory, <code>git.worktree_setup</code> script</td></tr>
+        <tr><td class="m">test</td><td>Study existing test patterns, red-phase verification, handoff log, commit</td><td><code>commands.test</code>, <code>paths.tests</code>, test and mocking patterns from your conventions</td></tr>
+        <tr><td class="m">execute</td><td>Test protection contract, self-review, verification loop, lint gate, 300-character report</td><td>Architecture rules from your conventions, <code>commands.test_all</code>, <code>commands.lint</code></td></tr>
+        <tr><td class="m">code-review</td><td>Spec compliance, test integrity and quality, security, three-level verdict</td><td>Layer-specific rules from your conventions, optional <code>paths.review_checklist</code></td></tr>
+        <tr><td class="m">end</td><td>Lint, persist discoveries, push, PR, tracker status</td><td><code>commands.lint</code>, <code>pr.enabled</code>, <code>tracker.type</code></td></tr>
       </tbody>
     </table>
   </div>
   <div class="callout">
     <strong>The trade-off.</strong> An inline rule is always read; a pointer to a conventions file depends on the agent finding the right section. So execute cites the exact convention lines it applied, code-review checks every citation, and an area with no rule becomes an explicit warning.
   </div>
-  <aside class="notes">This is the central design decision. Everything in "moved to your project" is now either a config key or a rule in the conventions file. The reverse also happened: pipeline protocol such as the spec structure and handoff log format moved out of the conventions file into core/contracts/, so the conventions file holds only project facts.</aside>
+  <aside class="notes">This is the central design decision. Everything in the "your project" column is either a config key or a rule in the conventions file, which is how one package works on any stack. Pipeline protocol, such as the spec structure and handoff log format, lives in core/contracts/, so your conventions file holds only facts about your project.</aside>
 </section>
 
 <!-- 3 -->
