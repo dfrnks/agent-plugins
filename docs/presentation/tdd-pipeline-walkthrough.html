@@ -260,6 +260,7 @@ ol.steps.dense li{padding:.36em 0}
 .lanes .cell.gatecell{background:var(--amber-soft);border-color:var(--amber)}
 .lanes .cell.idle{background:transparent;border:1.5px dashed var(--rule);color:var(--muted);display:flex;align-items:center}
 .lanes code{font-size:.9em}
+.lanes code.nw{white-space:nowrap;overflow-wrap:normal}
 ol.steps.origin li{padding:.75em 0;font-size:.84em}
 
 /* ---------- phases ---------- */
@@ -377,23 +378,23 @@ Result: <span class="g">SHIPPED</span>   <span class="d">PR opened against main<
   <div class="lanes-wrap">
     <div class="lanes">
       <span></span>
-      <span class="stage-h">Request</span><span class="stage-h">Plan</span><span class="stage-h gate-h">Gate</span><span class="stage-h">Build</span><span class="stage-h">Ship</span>
+      <span class="stage-h">Plan</span><span class="stage-h">Review</span><span class="stage-h gate-h">Gate</span><span class="stage-h">Build</span><span class="stage-h">Ship</span>
       <span class="who">You</span>
-      <div class="cell you">Describe the work: <code>/tdd:task "validate input types on add"</code></div>
-      <div class="cell you">Answer one grouped question about scope and constraints</div>
+      <div class="cell you"><code>/tdd:plan "validate input types on add"</code>, then answer its questions and confirm the spec</div>
+      <div class="cell you"><code class="nw">/tdd:review TASK-1</code>, then <code class="nw">/tdd:task TASK-1</code> to start the work</div>
       <div class="cell gatecell"><strong>Read the spec.</strong> Say “proceed”, or stop and keep it as a plan</div>
       <div class="cell idle">Nothing to do</div>
       <div class="cell you">Review and merge the pull request</div>
       <span class="who">Pipeline</span>
-      <div class="cell">Resolves a task ID such as <code>TASK-1</code> and explores the affected code</div>
-      <div class="cell">Writes a spec, then reviews it against the real codebase</div>
+      <div class="cell">Resolves <code>TASK-1</code>, explores the code, drafts the spec, argues against it, commits it</div>
+      <div class="cell">A fresh reader critiques the spec against the real code and fixes it in place</div>
       <div class="cell idle">Waits for your answer</div>
       <div class="cell">Failing tests, implementation, code review: each a fresh agent, in a worktree</div>
       <div class="cell">Lints, pushes, opens the PR, updates the tracker</div>
     </div>
   </div>
-  <p class="small">What it needs from your project: a test command that runs, and a conventions file that says how your code is written. <code>init</code> sets up both.</p>
-  <aside class="notes">This is the one-minute version for anyone who has not used it. Everything after this slide explains one of these cells in detail.</aside>
+  <p class="small"><strong>Shortcut:</strong> <code>/tdd:task "validate input types on add"</code> runs plan and review in one go, with a single grouped question, then stops at the same gate. Either way, the project needs a test command that runs and a conventions file; <code>init</code> sets up both.</p>
+  <aside class="notes">This is the one-minute version. The full path uses one ID throughout: plan writes TASK-1.md, review critiques it, and task TASK-1 reuses that spec instead of drafting another; task still reviews it inline before the gate. For small, clear work, task with a description does both steps itself.</aside>
 </section>
 
 <!-- origin -->
