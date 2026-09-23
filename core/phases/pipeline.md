@@ -27,6 +27,12 @@ the spec. Report which paths were mirrored in Step 5, or that none were.
 Reaching this step with the file already absent *and* tracked is the ordinary
 fail-fast case, and stops the run as before.
 
+Once any mirroring is done, read every file under
+`.tdd-pipeline/memory/pipeline/`, per `core/contracts/handoff-log.md`,
+`## Phase memory`. Those are lessons earlier runs of this phase paid for;
+apply the ones that bear on this task. An absent or empty directory is not
+an error.
+
 ## Step 1 — Verify the working directory
 
 This phase must never run against the main repository. The portable check

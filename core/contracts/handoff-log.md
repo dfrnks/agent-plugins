@@ -65,7 +65,15 @@ never be left guessing which row applies:
 | Detail specific to this task only | this handoff log |
 | Personal communication preference | the operator's own memory, outside the repository |
 
-Row 1 names a span, not just a file, and the span is not optional. A
+Row 1 names a span, not just a file, and the span is not optional. "Append"
+means **insert immediately above** `<!-- pipeline:discoveries:end -->`, under
+the matching area heading inside the span — never at the end of the file. A
+block written after the end marker sits outside both spans: the conventions
+flow does not own it, the discoveries span does not contain it, and a diff
+that shows only added lines looks exactly like a correct append. After
+writing, list the marker lines with their line numbers and confirm the new
+entry falls between them and that nothing but whitespace follows the end
+marker. A
 convention written anywhere else inside `paths.conventions` — most
 temptingly, straight under the matching area heading in the managed
 section — is written into a span the conventions flow regenerates wholesale
@@ -110,3 +118,37 @@ later reader of this log knows the finding was acted on rather than dropped:
 ```
 → Escalated to conventions: <one-line summary of what was added>
 ```
+
+Every escalation is written inside the task's worktree, at the same relative
+path it has in the main checkout, and nowhere else. A file written into the
+main checkout never reaches the branch, ships with nothing, and leaves the
+operator's own working tree dirty — while the log line above claims it was
+acted on.
+
+## Phase memory
+
+`.tdd-pipeline/memory/<phase>/` is this pipeline's own memory, one directory
+per phase, named exactly as the phase is: `test`, `execute`, `code-review`,
+`end`, `pipeline`. It is the only memory the pipeline reads. A harness may
+offer an agent-memory feature of its own; the pipeline does not use it,
+because a learning kept there is invisible to every other harness and splits
+one project's lessons across two places that never see each other.
+
+**Reading.** At its first step, before any other work, every phase reads
+every file under its own directory. The files are few and short by design,
+so read all of them rather than choosing by filename. A lesson the phase
+never reads is a lesson it pays for again.
+
+**Writing.** One learning per file, in Markdown, named in kebab-case after
+the lesson itself (`restore-from-a-copy-not-from-version-control.md`, not
+`note-3.md`). The file opens with a single H1 stating the rule, then says
+what was observed and on which task, why it matters, and how to apply it.
+Before writing, read the directory: a new occurrence of a lesson already on
+file extends that file with the new case rather than adding a second one.
+Write it inside the worktree, per the paragraph above this section, so it
+ships in the phase's commit.
+
+A lesson that stops being specific to one phase — it changes what a phase
+must do, not how one run went — belongs in that phase's own file in the
+pipeline, not in any project's memory. Phase memory is where such a lesson
+waits until someone moves it there.

@@ -16,6 +16,11 @@ the file or a key this phase needs is absent. This phase needs
 `paths.tests`, `paths.conventions`, and `git.commit_trailer` — plus
 `commands.typecheck`, if the project sets it.
 
+Then read every file under `.tdd-pipeline/memory/execute/`, per
+`core/contracts/handoff-log.md`, `## Phase memory`. Those are lessons
+earlier runs of this phase paid for; apply the ones that bear on this
+task. An absent or empty directory is not an error.
+
 ## Step 1 — Read the handoff log
 
 Read `paths.specs/<task-id>.md` in full, per
@@ -96,6 +101,13 @@ Record what was applied, in the handoff log (Step 9), in exactly this shape:
 - <rule text> — conventions:<line>  → applied at <file>:<line>
 - No rule found covering <area> — flagging for review
 ```
+
+Take each `conventions:<line>` from the file on disk, by searching it for
+the rule's text, never from a copy of the file already held in context. A
+long conventions file held in context carries no reliable line numbers, and
+a citation built from one points at the wrong line while the rule it names
+exists — the reviewer then sees a dangling pointer instead of an applied
+rule.
 
 A "no rule found" line is a required output when true, not an admission of
 failure. The conventions file cannot cover every area, and this phase saying
@@ -262,8 +274,17 @@ this phase may commit. `--diff-filter=MD` reports modifications and deletions
 only, so a test added under Step 4's grant never appears — a new file is
 untracked and absent from this diff entirely.
 
-Any output names a file this phase was not allowed to change. Two cases, and
-the difference is whether the change was deliberate:
+When `paths.tests` names a directory that also holds implementation — a
+project whose tests sit beside the code they test — the output lists this
+phase's own implementation edits too, and those are not violations. Narrow
+the output to test files by the project's own test-file naming, as the
+test phase found it in its Step 2 or the conventions file states it, and
+gate on what remains. Say in Step 9 that the output was narrowed and by
+which pattern, so code-review can repeat the check. Never narrow by
+judgment, file by file: a pattern is checkable, a choice is not.
+
+Any remaining output names a file this phase was not allowed to change. Two
+cases, and the difference is whether the change was deliberate:
 
 - **Not deliberate** — most often the Step 8 lint gate's formatter reaching a
   file outside the implementation. Restore it and run the gate again:
@@ -286,10 +307,12 @@ checkout. A gate the phase can pass by withholding a file is not a gate.
 ## Step 11 — Commit
 
 Stage the implementation files from Step 5, any test file added under
-Step 4's grant, and the spec file's updated handoff log, then commit:
+Step 4's grant, any file Step 9 escalated to under `paths.conventions` or
+`.tdd-pipeline/memory/`, and the spec file's updated handoff log, then
+commit:
 
 ```bash
-git add <implementation files> <spec file>
+git add <implementation files> <escalated files, if any> <spec file>
 git commit -m "<task-id>: implement <short description>"
 ```
 

@@ -27,6 +27,11 @@ the file or a key this phase needs is absent. This phase needs
 file may require further keys of its own (`tracker.team`, `tracker.states`),
 and an absent one follows the same fail-fast rule.
 
+Then read every file under `.tdd-pipeline/memory/end/`, per
+`core/contracts/handoff-log.md`, `## Phase memory`. Those are lessons
+earlier runs of this phase paid for; apply the ones that bear on this
+task. An absent or empty directory is not an error.
+
 ## Step 1 — Detect changed areas
 
 Identify every commit made for this task since it diverged from
@@ -98,7 +103,25 @@ conventions flow rewrites the managed section wholesale on every run, so
 anything written there is silently discarded; the discoveries span exists so
 these appends survive. Match the surrounding entries' heading structure,
 tone, and detail. If the fact fits no existing heading, add the smallest new
-one that describes it.
+one that describes it. Insert it immediately above the end marker, per the
+handoff-log contract's escalation routing, never at the end of the file.
+
+Before committing, check `paths.conventions` as a whole, not only this
+phase's own append: the test, execute, and code-review phases may each have
+escalated into it during this task, and nothing after this phase reads their
+edits again. Diff the file from where this task diverged from
+`git.base_branch` to the working tree, and confirm two things:
+
+- **Only added lines.** A removed line is a durable entry from another task
+  that an edit meant as an append overwrote. Restore it before committing.
+- **Every added line sits inside the discoveries span.** List the marker
+  lines with their line numbers; nothing but whitespace may follow
+  `<!-- pipeline:discoveries:end -->`. A pure-addition diff proves nothing
+  about placement — content appended after the end marker passes the first
+  check and still lands outside both spans. Move it above the marker, under
+  its area heading.
+
+Record either repair in the `### end` entry below.
 
 Route every other finding through the handoff-log contract's table:
 
@@ -169,7 +192,8 @@ Stage Step 2's lint fixes, any edit Step 3 made to `paths.conventions` or
 `.tdd-pipeline/memory/<phase>/`, and the spec file's updated handoff log:
 
 ```bash
-git add <lint-fixed files> <paths.conventions, if edited> <spec file>
+git add <lint-fixed files> <paths.conventions, if edited> \
+  <.tdd-pipeline/memory/ files, if written> <spec file>
 git commit -m "<task-id>: ship"
 ```
 

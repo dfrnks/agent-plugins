@@ -20,6 +20,11 @@ It does **not** need `commands.test_all`: this phase reads the diff and the
 handoff log and never invokes the suite, so requiring the key only made a
 project without one fail this phase for a reason that does not exist.
 
+Then read every file under `.tdd-pipeline/memory/code-review/`, per
+`core/contracts/handoff-log.md`, `## Phase memory`. Those are lessons
+earlier runs of this phase paid for; apply the ones that bear on this
+task. An absent or empty directory is not an error.
+
 ## Step 1 — Load context
 
 Read `paths.specs/<task-id>.md` in full, per
@@ -60,6 +65,13 @@ Reconcile the changed files against `## Files to Modify`: a file touched that
 the spec never named, or a named file left untouched, is a finding — not
 necessarily a blocker, but never silently accepted.
 
+When `git.base_branch` for this task is another task's branch rather than
+the project's main line, diff from the merge base of this branch with that
+base, never from the base's current tip. The base may have gained commits
+while this task ran; diffing against its tip shows them reversed, as if
+this task had undone them. Read those new base commits too — one of them
+may already resolve a finding this task's handoff log leaves open.
+
 ## Step 3 — Review dimensions
 
 Work through all six in order. Do not skip one because the diff looks small;
@@ -79,7 +91,23 @@ line by line: does the cited rule exist at the cited line, and does the code
 at the cited location do what the rule says? A citation pointing at the wrong
 line, a rule that says something different from the claim, or applied code
 that does not follow the cited rule are each findings. This is what keeps the
-citation honest rather than decorative.
+citation honest rather than decorative. Resolve each citation by searching
+the file on disk for the rule's text; when only the line number is wrong and
+the rule exists and was followed, report the dangling pointer as a warning
+rather than the rule as missing.
+
+Apply the same check to every entry an earlier phase of this task added to
+`paths.conventions`, whatever phase wrote it. Each carries `file:line`
+citations written before later phases edited those files, so they drift
+without anyone changing the entry. Re-resolve each against the current code
+and name every one that no longer points where it claims, so the end phase
+corrects it before it ships into the conventions file.
+
+Then check every `→ Escalated to` line in the handoff log against this
+task's diff. An escalation whose file change is not in the diff — most
+often written into the main checkout instead of the worktree — never ships,
+while the log says it was acted on. That is a warning naming the path where
+the write was expected.
 
 Every "no rule found" line becomes a warning naming the uncovered area, so
 the gap is visible to whoever maintains `paths.conventions` next. A missing
@@ -226,15 +254,17 @@ escalation here too, so a later reader knows it was acted on.
 
 ## Step 6 — Commit
 
-Stage the spec file's updated handoff log, then commit:
+Stage the spec file's updated handoff log and any file Step 5 escalated to
+under `paths.conventions` or `.tdd-pipeline/memory/`, then commit:
 
 ```bash
-git add <spec file>
+git add <escalated files, if any> <spec file>
 git commit -m "<task-id>: code review — <verdict>"
 ```
 
 Stage the spec file specifically — never `git add .` or `git add -A`. This
-phase changes no implementation or test file, so nothing else belongs here.
+phase changes no implementation or test file, so nothing beyond those
+belongs here.
 If `git.commit_trailer` is non-empty, append it as a trailer; if empty, omit
 it rather than adding an empty line.
 
