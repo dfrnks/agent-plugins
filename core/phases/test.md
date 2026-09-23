@@ -15,6 +15,11 @@ the file or a key this phase needs is absent. This phase needs
 `commands.test`, `commands.test_all`, `paths.tests`, `paths.specs`,
 `paths.conventions`, and `git.commit_trailer`.
 
+Then read every file under `.tdd-pipeline/memory/test/`, per
+`core/contracts/handoff-log.md`, `## Phase memory`. Those are lessons
+earlier runs of this phase paid for; apply the ones that bear on this
+task. An absent or empty directory is not an error.
+
 ## Step 1 — Load the spec
 
 Read `paths.specs/<task-id>.md` in full, per
@@ -89,6 +94,16 @@ under test, following Step 2's patterns. Hold every test to these standards:
   correct one. Assert the real value.
 - **No testing of internals.** Assert on observable behavior — inputs and
   outcomes — not on private state the execute phase may change freely.
+- **Existing guards that pin what this task changes are adjusted here.**
+  Execute may not edit a test, so an existing test that freezes a value the
+  spec changes, or says may change, leaves execute nothing to do but fail
+  or bend the implementation to the old value. Adjust it in this phase:
+  exclude only the items the spec names from the frozen check, keep every
+  other field of those items frozen, and bound the field that moves — a
+  range when the spec says only that it "may" change — rather than pinning
+  a guessed new value. Never loosen the guard for items the spec does not
+  name, and say in Step 6 that moving any other item is a test change that
+  returns to this phase.
 
 Write the tests as the actual contract: specific enough that an
 implementation satisfying every one has satisfied the spec, and no test
@@ -116,12 +131,53 @@ call for opposite responses:
   error, a broken fixture, an assertion too weak to distinguish the old code
   path from the new, or a case the old code handled by coincidence. This is
   the defect this step exists to catch: rewrite the test so it genuinely
-  fails for the reason it claims.
+  fails for the reason it claims. One cause is easy to miss because it
+  looks like a correct flip: when the task **shortens** a string and the new
+  text is contained in the old, a containment assertion on the new text is
+  already true of the old code. Assert the whole element exactly, and
+  assert separately that the removed tail is gone.
 
 The distinction is whether the spec asked this test to guard something that
 must keep working (keep it) or to describe something new (fix it). When
 unclear, re-read `## Definition of Done` before deciding — guessing risks
 deleting the one test standing between this task and a silent regression.
+
+### Red that proves less than it looks
+
+A red summary line can hide three failures of the suite itself. Check for
+each before trusting it.
+
+- **Count the expected failures before the run.** While writing, keep a
+  tally of which new tests must fail now and which are controls that must
+  pass now. After the run, match the failing test names against that tally
+  one by one. A control that broke hides inside the expected red, and a
+  test meant to fail that passed by accident hides behind a count that
+  still looks plausible; only the name-by-name match catches either.
+- **A file that never loaded ran no test.** When a test file imports code
+  that does not exist yet, the runner reports it as failed with zero tests
+  executed. Nothing inside it ran, so a wrong helper, a mistyped selector,
+  or a mock of the wrong shape stays invisible and reaches execute as a
+  contract it cannot meet. Put minimal throwaway stubs of the missing
+  modules in place, run, and confirm every test now executes and fails by
+  assertion rather than by crashing. Then remove them, per the rules for
+  throwaway code below. While the stubs are in place, also run every
+  existing test file whose mocks intercept a module the implementation will
+  newly import — a component, a helper, or one more symbol from a module
+  already mocked. A mock that does not declare what the new code imports can
+  take down a whole existing file the moment execute writes the import,
+  in a file execute never touched.
+- **An assertion after a failing line never ran.** When a setup step, a
+  lookup, or a fixture inside the test fails first, the test is red for the
+  right reason and says nothing about the assertions below that line. For a
+  pattern matched against generated text — a migration, a config, a
+  rendered artifact — write a plausible sample in a scratch location and
+  run the pattern against it directly. Loosen what the project's formatter
+  is known to rewrite.
+
+When a test fails and its message prints the whole subject — a large
+document, a full source file — the run becomes unreadable and buries the
+other failures. Assert a boolean with a short message for any subject that
+large.
 
 Then, **if `policy.full_suite` is `every_phase`**, run `commands.test_all` to
 confirm the new tests broke nothing already passing. Under any other value skip
@@ -195,6 +251,26 @@ before committing:
    only files that may remain untracked are the test files themselves.
 5. Re-run the tests, confirming red again, before Step 7 commits anything.
 
+"Put it in place" sometimes has to mean the real path: a project whose
+imports resolve through an alias rooted in the source tree cannot load a
+module from anywhere else. Writing there is acceptable only because step 4
+removes it mechanically. The same rules hold for the stubs of the section
+above, and for any in-place mutation made to prove a guard catches what it
+exists to catch:
+
+- **Restore from a copy taken before the edit, never from version control,
+  whenever the working tree holds uncommitted work.** Restoring a file from
+  the last commit brings back the version from before that work — on a
+  repair re-entry, where execute's implementation sits uncommitted, that
+  erases the whole green phase. Copy the file aside, record its checksum,
+  arrange the restore to run however the command exits, make the edit, run,
+  and confirm the checksum matches afterwards — all in one step, so the
+  window where the tree is altered stays bounded.
+- **Delete a throwaway migration and reset any database it ran against.** A
+  reference implementation that included a schema migration leaves a
+  shared test database stamped with a revision that no longer exists, and
+  the re-run meant to confirm red fails for that reason instead.
+
 The reference implementation must never be committed, and must not be where
 the expected values came from. It proves the assertions are mutually
 **consistent** — that one implementation can satisfy all of them at once. It
@@ -238,11 +314,12 @@ section, which the conventions flow regenerates wholesale.
 
 ## Step 7 — Commit
 
-Stage only the test files from Step 4 and the spec file's updated handoff
-log, then commit:
+Stage only the test files from Step 4, any file Step 6 escalated to under
+`paths.conventions` or `.tdd-pipeline/memory/`, and the spec file's updated
+handoff log, then commit:
 
 ```bash
-git add <test files> <spec file>
+git add <test files> <escalated files, if any> <spec file>
 git commit -m "<task-id>: add failing tests"
 ```
 

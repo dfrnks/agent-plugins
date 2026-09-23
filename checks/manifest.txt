@@ -3,7 +3,7 @@
 core/contracts/pipeline-config.md|## Schema;## Required keys by mode;## Fail-fast protocol
 core/contracts/project-requirements.md|## Requirements;## Why a populated conventions file is mandatory;## Greenfield projects
 core/contracts/spec-template.md|## Skeleton;## What a spec leaves out;## Completeness rules;## Subtask structure
-core/contracts/handoff-log.md|## Format;## Reading;## Writing;## Escalation routing
+core/contracts/handoff-log.md|## Format;## Reading;## Writing;## Escalation routing;## Phase memory
 core/contracts/conventions-template.md|## Managed section markers;## Area headings;## Discoveries section markers
 core/contracts/review-checklist-base.md|## Security;## Correctness;## Tests;## Data and migrations
 core/contracts/untracked-scaffolding.md|## Detection;## Mirroring in;## Mirroring back;## Never staged
