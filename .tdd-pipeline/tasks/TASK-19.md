@@ -225,3 +225,65 @@ that the only case left.
 - Test protection gate: `git diff --name-only --diff-filter=MD HEAD --
   tests` was empty.
 - No escalation to CLAUDE.md or phase memory.
+
+### code-review (2026-09-24)
+- Diff read in full from merge base 9cd2ca5: afb49ba (test) touched
+  `tests/fixtures/manifest-github-labels.txt` (new) and `tests/run.sh`
+  (+2 lines); 3976f73 (execute) touched `core/trackers/github.md` and this
+  spec. Files match `## Files to Modify` exactly; nothing extra, nothing
+  missing.
+
+#### Blockers
+- None.
+
+#### Warnings
+- CLAUDE.md:11 ("Never name ... a third-party tool in `core/`") is
+  contradicted by `core/trackers/github.md`, which has always named `gh`
+  and now names it more (lines 55, 58, 64-65). `checks/core-is-neutral.sh:11`
+  does not list `gh`, so lint passes. Execute flagged this; the spec's DoD
+  item 3 sanctions it. The rule's prose should carve out a tracker file's
+  own integration CLI, or the checker and prose will keep disagreeing.
+- Test quality: the only new test pins step 3's first line. DoD item 2's
+  substance (`--limit`, case-insensitive compare, "already exists" as
+  success, no `--force`, step 4's qualified claim) and DoD item 4 (wrap)
+  are verified only by this review reading the file, not by any test. The
+  spec asked for exactly this, so it is not a deviation, but a later edit
+  can drop any of those clauses without the suite noticing.
+
+#### Suggestions
+- Conventions Applied cites the em dashes at github.md:55,60; there are
+  three, at :55, :56, and :60. All are spaced, so only the pointer is short.
+
+#### Dimension results
+- Spec compliance: all five DoD items satisfied. github.md:53-67 is the
+  spec's Approach step 2 block byte-for-byte (diffed after stripping the
+  3-space list indent); steps 1, 2 and `## resolve_or_create` untouched.
+  `./tests/run.sh` 40 passed, 0 failed; the full `commands.lint` exits 0.
+  Red confirmed independently: at afb49ba `checks/structure.sh
+  tests/fixtures/manifest-github-labels.txt` exits 1 naming the missing
+  line; at HEAD it exits 0. Deviations: none documented, none found.
+- Conventions: each citation resolved by text search in CLAUDE.md, and all
+  line numbers hold: wrap at 77 (:118), em dashes (:125), `N. ` lists
+  (:121), named-path staging (:92), third-party tools (:11). Longest
+  changed line is 73 columns; short lines only at :53, :54, :57, as the
+  spec permits. No "no rule found" lines; no `→ Escalated to` lines; no
+  earlier phase of this task added to CLAUDE.md.
+- Security and isolation: not applicable. Prose only; no entry point,
+  input path, tenant boundary, or secret. No `gh` command was run against
+  the repository during review.
+- Test integrity: `tests/` was touched only by afb49ba (the test phase).
+  `git diff afb49ba HEAD -- tests` is empty, so execute changed no test.
+  Inspected, not just listed. No test was flagged as appearing wrong.
+- Test quality: fixture named `<subject>-<condition>`, with a `#` comment
+  like manifest-dependencies.txt; assert placed after the dependencies
+  assert per the spec. Coverage gap recorded under Warnings. No production
+  logic exists to accommodate a test.
+- Checklist verification: `paths.review_checklist` is not configured. The
+  manifest was spot-checked on the two least obvious lines: DoD item 2 →
+  github.md:53-67 (held: every required clause present) and DoD item 4 →
+  wrap and em dashes (held, except the em-dash pointer noted above).
+  Manifest present and otherwise accurate.
+- Design: not applicable. The diff adds no code (prose and tests only).
+
+#### Verdict
+APPROVED_WITH_WARNINGS
