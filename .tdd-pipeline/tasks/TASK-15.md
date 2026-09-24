@@ -496,3 +496,33 @@ word containing "cursor". Prose under `core/` is hard-wrapped at 77 columns
   cleaner. Optional.
 - No escalation.
 - Verdict: APPROVED.
+
+### end (2026-09-24)
+- Read the full handoff log (review, test, execute, code-review). Nothing
+  further durable to escalate: the one project fact this task surfaced —
+  `checks/structure.sh:45` now matches a required line as a whole line
+  with `grep -qxF --` — was already escalated by the execute phase, which
+  rewrote the stale `CLAUDE.md` discovery in place; code-review confirmed
+  the citation and content. Code-review's one suggestion (wording of that
+  same entry, "no longer" vs. "does not") was explicitly marked optional
+  and stylistic, not a separate durable fact, so it was not escalated
+  again. No phase-workflow learning was found for `.tdd-pipeline/memory/`.
+- Checked `CLAUDE.md` from `ae26626` (this task's divergence point) to the
+  working tree: the only change is the discoveries-span rewrite at
+  lines 141-144 (between `<!-- pipeline:discoveries:start -->` at line 137
+  and `<!-- pipeline:discoveries:end -->` at line 154); the managed section
+  (lines 7-135) is untouched. That entry replaces, rather than purely adds,
+  the prior text — but the replaced text is the same discoveries item this
+  task was scoped to correct (Approach step 1, DoD item 1), already
+  reviewed and approved by code-review, not another task's entry
+  accidentally overwritten. No repair applied.
+- Step 1: three commits since `ae26626` (538a54e, eb1a104, 763f759) touch
+  every file the spec named plus the spec file itself; nothing outside
+  `paths.conventions` was touched by this phase.
+- Step 2: `commands.lint` ran (Step 1 found changes outside the spec file)
+  and exited clean, with no autofix output — nothing to revert, nothing
+  that could have changed behavior, so no `commands.test_all` re-run was
+  needed.
+- Managed section of `CLAUDE.md` already holds rules, so this is not the
+  project's first source code; no greenfield transition to report.
+- Ran, completed through Step 8.
