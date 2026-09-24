@@ -20,11 +20,13 @@ outside the code under test are isolated" (`core/phases/test.md:41-42`)
 while writing a suite, but the conventions file never records it for execute
 or code-review.
 
-This task widens two existing areas instead of adding an eighth. The count
-"seven" appears twelve times across five files
+This task widens two existing areas instead of adding an eighth. The area
+count "seven" appears twelve times across five files
 (`core/contracts/conventions-template.md`, `core/flows/conventions.md`,
 `core/flows/doctor.md`, `core/contracts/project-requirements.md`,
-`core/flows/init.md`), and a new heading would leave every existing
+`core/flows/init.md`; the thirteenth match of `seven` under `core/`,
+`core/phases/code-review.md:77`, counts review dimensions and is unrelated),
+and a new heading would leave every existing
 conventions file without it until the flow is re-run.
 
 This task runs after TASK-15: its fixture names a line beginning with `-`,
@@ -43,7 +45,8 @@ or library, and no word containing "cursor".
    core/contracts/conventions-template.md|Two areas reach further than their names suggest.
    ```
 
-   and add to `tests/run.sh`, after the structure-checker asserts:
+   and add to `tests/run.sh`, directly after the "core files carry the design
+   check" assert (lines 87-88), before the adapter-coverage asserts:
 
    ```bash
    assert_exit 0 "conventions flow derives how dependencies are handled" \
@@ -60,8 +63,8 @@ or library, and no word containing "cursor".
 
    ```markdown
    - Module boundaries and layering, including how code reaches its
-     input/output dependencies — storage, network, clock, external
-     services — and where the project places indirection around them
+     input/output dependencies — storage, network, clock, an external
+     service — and where the project places indirection around them
    - Error handling
    - Naming
    - Authentication and authorization
@@ -79,9 +82,9 @@ or library, and no word containing "cursor".
    ```markdown
    Two areas reach further than their names suggest.
    "Module boundaries and layering" also records how code reaches its
-   input/output dependencies — storage, network, clock, external services
-   — and where the project places indirection around them. "Testing" also
-   records how tests replace those dependencies. Both describe what the
+   input/output dependencies — storage, network, clock, an external
+   service — and where the project places indirection around them.
+   "Testing" also records how tests replace those dependencies. Both describe what the
    project does, not what it should do: a project that calls its storage
    directly has that as its rule once the practice clears the bar in
    `core/flows/conventions.md` Step 2.
@@ -123,3 +126,29 @@ or library, and no word containing "cursor".
 
 ## Agent Handoff Log
 <!-- Phases append findings here — see handoff-log.md -->
+
+### review (2026-09-24)
+- Reviewed against main at 5be3dd1, after TASK-15 merged. Hard blockers
+  cleared: no external API; every internal claim located —
+  conventions.md:51-67/56-62/61, conventions-template.md:52-58 (with "An
+  area with no derived rules" at :60), test.md:41-42 all match.
+- Fixed drift: `grep -rn '\bseven\b' core/` now returns 13 matches in 6
+  files; TASK-15 added code-review.md:77 ("all seven" dimensions). The
+  Context now says twelve area-count occurrences and names that line as
+  unrelated.
+- Fixed drift: TASK-15 added three structure-checker asserts, so "after the
+  structure-checker asserts" was ambiguous; the anchor is now the design
+  check assert at tests/run.sh:87-88.
+- Fixed: "external services" became "an external service" in both the
+  Step 1 bullet and the template paragraph, matching
+  review-checklist-base.md:83-85 word for word; this also removes a line
+  that began with an em dash. The fixture lines are unchanged.
+- Validated by simulation: the fixture exits 1 with "missing heading" for
+  both lines today (no parse error); a control line beginning with `-`
+  matches, confirming TASK-15's `--` fix; the proposed text passes
+  core-is-neutral.sh; widths are within 77 apart from the intentional
+  49-column break.
+- Validated: execute.md:88-94, the conventions greenfield section, and
+  CLAUDE.md's `## Testing` headings need no change; "mocking" survives only
+  in `docs/`, which is out of scope.
+- Not split: three Approach changes, six DoD items.
