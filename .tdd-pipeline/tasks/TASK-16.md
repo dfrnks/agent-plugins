@@ -179,3 +179,47 @@ or library, and no word containing "cursor".
   (fixture as the red-first path for a prose-only change, per its
   `## Testing` note on `tests/run.sh:59`).
 - No deviation from the spec's test expectations. Nothing escalated.
+
+### execute (2026-09-24)
+
+### Implementation Manifest
+- DoD "tests/run.sh includes the assert naming
+  tests/fixtures/manifest-dependencies.txt; it fails before and passes
+  after" satisfied by tests/run.sh (test phase's assert, unchanged) —
+  `./tests/run.sh` now gives 39 passed, 0 failed; red was 38/1 per the
+  test entry.
+- DoD "Step 1 names the sixth area Testing ... both widened bullets name
+  input/output dependencies" satisfied by core/flows/conventions.md:56-58
+  and core/flows/conventions.md:63 — first bullet names input/output
+  dependencies and indirection; sixth bullet reads "Testing, including test
+  structure and how tests replace dependencies"; "Test structure and
+  mocking" no longer appears anywhere under core/.
+- DoD "conventions-template.md carries the scope paragraph, defers to
+  Step 2's bar, seven headings unchanged" satisfied by
+  core/contracts/conventions-template.md:60-67 — paragraph inserted after
+  the numbered list at :52-58, which is untouched; it cites
+  `core/flows/conventions.md` Step 2 (heading at conventions.md:71).
+- DoD "No added line names a framework, library, or language" satisfied by
+  the lint run — `checks/core-is-neutral.sh` passes.
+- DoD "Added prose wraps at 77 columns with spaced em dashes" satisfied by
+  both core diffs — no added line exceeds 77 columns; the template's :60
+  line is the intentional short break; every em dash is spaced.
+- DoD "commands.lint and commands.test_all pass" — both exit 0.
+- No entry point, authorization, validation, schema, or credential path
+  touched: prose-only change.
+
+### Conventions Applied
+- Hard-wrap Markdown prose under `core/` at 77 columns — conventions:118
+  → applied at core/contracts/conventions-template.md:60-67,
+  core/flows/conventions.md:56-58
+- Space every em dash on both sides — conventions:125 → applied at
+  core/flows/conventions.md:57-58, core/contracts/conventions-template.md:62-63
+- Reference a core file by its full `core/<dir>/<file>.md` path —
+  conventions:22 → applied at core/contracts/conventions-template.md:67
+- Never name a harness ... or a third-party tool in `core/` —
+  conventions:11 → applied at both core diffs (core-is-neutral.sh passes)
+
+### Notes
+- Text applied verbatim from the Approach; no deviation. No test appeared
+  wrong. Test protection gate: `git diff --name-only --diff-filter=MD HEAD
+  -- tests` is empty. Nothing escalated.

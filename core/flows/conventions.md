@@ -53,12 +53,14 @@ empty-or-nothing, and this flow does not second-guess it in either direction.
 Dispatch exploration subagents in parallel, one per area, each covering a
 distinct concern across the whole codebase rather than one file at a time:
 
-- Module boundaries and layering
+- Module boundaries and layering, including how code reaches its
+  input/output dependencies — storage, network, clock, an external
+  service — and where the project places indirection around them
 - Error handling
 - Naming
 - Authentication and authorization
 - Data access
-- Test structure and mocking
+- Testing, including test structure and how tests replace dependencies
 - Formatting and lint
 
 Each reports concrete instances of a pattern it found, every one carrying the
