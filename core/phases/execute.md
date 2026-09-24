@@ -178,6 +178,13 @@ After each file or logical chunk, review it critically before moving on:
   touches match what the rest of the codebase expects?
 - **Edge cases** — not-found, empty input, boundary values: handled, or
   silently assumed away?
+- **Reuse** — does something in the codebase already do this?
+  Search for the concept, not the name just written. The full list of
+  design signals is the `## Design` section of
+  `core/contracts/review-checklist-base.md`, which code-review applies.
+- **Simplicity** — does this add something the task does not need?
+  An abstraction earns its place with a second implementation today —
+  a test double counts — or a Definition of Done item that names it.
 
 Rewrite anything that fails before proceeding. A chunk reviewed only once the
 whole task is "done" costs far more to fix than one reviewed while fresh.

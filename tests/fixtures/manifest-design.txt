@@ -1,0 +1,6 @@
+# The lines TASK-15 adds to core: the design check and its pointers.
+core/contracts/review-checklist-base.md|## Design
+core/phases/code-review.md|### 7. Design
+core/phases/execute.md|- **Reuse** — does something in the codebase already do this?;- **Simplicity** — does this add something the task does not need?
+core/flows/fix-bug.md|- **Reuse** — does something in the codebase already do what the fix adds?;- **Simplicity** — does the fix add something the defect does not need?
+core/flows/conventions.md|On a re-run, bring an existing checklist up to the seed.

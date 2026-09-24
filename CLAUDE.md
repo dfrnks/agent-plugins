@@ -138,11 +138,10 @@ code rather than trusted on its own.
 
 ## Testing
 
-- `checks/structure.sh:18` matches a required heading with `grep -qF`, an
-  unanchored fixed string, so a heading merely mentioned in prose — inside a
-  fence, in a cross-reference — satisfies the check. A manifest row proves
-  the string is present, never that the section exists
-  (`checks/structure.sh:18`).
+- `checks/structure.sh:45` matches each required line as a whole line with
+  `grep -qxF --`: a heading merely mentioned in prose no longer satisfies it,
+  a line beginning with `-` is matched rather than read as an option, and a
+  required string cannot contain `;`, which the checker splits a row on.
 - A change that touches only Markdown prose has no red-green purchase, and
   the pipeline has no `n/a` path for it: the test phase must report
   `unverified` when it cannot observe a failing suite

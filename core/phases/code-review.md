@@ -74,8 +74,8 @@ may already resolve a finding this task's handoff log leaves open.
 
 ## Step 3 — Review dimensions
 
-Work through all six in order. Do not skip one because the diff looks small;
-a one-line change can violate any of them.
+Work through all seven in order. Do not skip one because the diff looks
+small; a one-line change can violate any of them.
 
 ### 1. Spec compliance
 
@@ -195,7 +195,8 @@ strategically — sampled and cross-checked, not re-derived from scratch.
    boundary, and the Definition of Done item whose mapping to code is least
    obvious — the lines most likely to hide a problem.
 3. **Scan `paths.review_checklist`**, when configured, for items relevant to
-   this change that the manifest does not mention, and verify those directly.
+   this change that the manifest does not mention, and verify those directly
+   — except its `## Design` items, which dimension 7 owns.
    The manifest says what execute thought worth recording, not what a
    checklist built from the project's own history says is worth checking.
 
@@ -212,16 +213,38 @@ formality:
   gap. When a spot-check fails, escalate the severity beyond what the same
   defect would otherwise earn.
 
+### 7. Design
+
+This dimension asks whether the change will be cheap to change again: no
+second copy of anything, no indirection nothing needs.
+
+- Check this task's diff against the `## Design` section of
+  `core/contracts/review-checklist-base.md`, whether or not
+  `paths.review_checklist` is set, and apply that section's conventions-first
+  rule against `paths.conventions`.
+- A diff that adds or changes no code — prose, configuration, or tests only
+  — reports this dimension not applicable, as dimension 3 does for a project
+  with no notion of separate owners of data.
+- This dimension owns the Design items: dimension 6 does not grade them again
+  when they reach `paths.review_checklist`, so one defect never carries two
+  severities.
+- The first two items — reimplemented logic and a copied business rule — are
+  blockers when the finding cites the `file:line` of the existing code
+  duplicated, and warnings without that citation. Every other Design item is
+  a warning.
+
 ## Step 4 — Classify findings
 
 Sort every finding from Step 3 into one of three severities:
 
 - **Blocker** — must be fixed before merge: a security hole, a data leak
   across accounts, an unmet Definition of Done item, a weakened or deleted
-  test.
+  test, reimplemented existing logic or a copied business rule, cited per
+  dimension 7.
 - **Warning** — should be fixed, but does not block: an uncovered area named
   by a "no rule found" line, a missing `### Conventions Applied` block, a
-  minor convention deviation, a partially satisfied checklist item.
+  minor convention deviation, a partially satisfied checklist item, any
+  other design finding from dimension 7.
 - **Suggestion** — worth raising, changes nothing about the verdict.
 
 A task with one or more blockers cannot be `APPROVED` or
@@ -241,6 +264,8 @@ following `core/contracts/handoff-log.md`. Include:
 - The manifest spot-check result from dimension 6 — which lines were checked
   and why those, which held up, and which checklist items needed direct
   verification because the manifest never mentioned them.
+- The design result from dimension 7 — each blocker with the `file:line` of
+  the code it duplicates, and each warning.
 - Any adjudication on a test execute flagged as appearing wrong, with
   reasoning.
 - The verdict from Step 7.

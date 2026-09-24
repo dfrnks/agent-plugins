@@ -205,6 +205,14 @@ through. Those may all be worth doing, and each enlarges a diff whose entire
 value is that a reviewer can see the fix without looking for it. Note them in
 Step 8 instead.
 
+Before verifying, hold the lines the fix adds to two questions:
+
+- **Reuse** — does something in the codebase already do what the fix adds?
+  Then the fix calls it instead of adding a second copy.
+- **Simplicity** — does the fix add something the defect does not need?
+  It needs no abstraction, option, or extension point the defect does
+  not require.
+
 Do not weaken or edit any existing test to accommodate the change. If an
 existing test now fails, that is a finding: either the fix is wrong, or that
 test encoded the defect. Say which in Step 8, and never resolve it by editing
@@ -242,6 +250,8 @@ Return, in order:
 - **Root cause** — the one or two sentences from Step 4, with `file:line`.
 - **Fix** — what changed, and why that addresses the cause rather than the
   symptom.
+- **Design** — the answers to Step 6's Reuse and Simplicity questions,
+  naming the existing code the fix calls when Reuse applied.
 - **Test** — the test that reproduces the defect, and what it asserts.
 - **Verification** — the three results from Step 7, stated as results rather
   than claims.

@@ -1,0 +1,2 @@
+# The required line begins with "-" and is present as a whole line.
+tests/fixtures/structure-dash-heading.md|- A line that begins with a dash

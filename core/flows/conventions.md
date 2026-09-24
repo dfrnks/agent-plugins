@@ -136,14 +136,22 @@ by a different route.
 ## Step 5 — Derive the checklist
 
 Derive `paths.review_checklist`, seeded from
-`core/contracts/review-checklist-base.md`'s four sections and extended with
+`core/contracts/review-checklist-base.md`'s five sections and extended with
 the rules accepted in Step 3 that read as review-time checks rather than
 implementation-time instructions. A naming convention belongs in the
 conventions file alone; "every new entry point carries an authorization
 check" reads equally as a rule to follow and a box to check during review,
-and belongs in both. Never replace the seed's four sections — this flow only
-appends, the same way it only appends to the conventions file's managed
-section.
+and belongs in both. Never replace the seed's five sections — this flow only
+adds to the checklist, never removes from it.
+
+On a re-run, bring an existing checklist up to the seed.
+Compare `paths.review_checklist` against
+`core/contracts/review-checklist-base.md`: insert each seed section the
+checklist lacks at its position in the seed, and add each seed item
+missing from a section the checklist has to the end of that section.
+This needs no confirmation in Step 3 — the seed is never optional.
+Without it, content added to the seed later reaches only projects that
+derive their checklist for the first time.
 
 Commit the checklist too, for the same reason Step 4 commits:
 
