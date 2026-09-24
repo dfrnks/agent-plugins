@@ -179,3 +179,49 @@ that the only case left.
   its red-first fixture pattern for prose-only changes and its
   `<subject>-<condition>` fixture naming.
 - Deviations from the spec: none.
+
+### execute (2026-09-24)
+
+### Implementation Manifest
+- DoD "`tests/run.sh` includes the assert naming
+  `tests/fixtures/manifest-github-labels.txt`; it fails on the pre-change
+  repository and passes after" satisfied by tests/run.sh (test phase,
+  commit afb49ba) — red before this change (39/1), green after (40/0).
+- DoD "`set_status` step 3 lists labels with `--limit`, compares names
+  case-insensitively, creates each missing status label, treats 'already
+  exists' as success, and forbids `--force`; step 4 no longer claims the
+  removal is harmless without qualification" satisfied by
+  core/trackers/github.md:53-62 (step 3) and core/trackers/github.md:63-67
+  (step 4) — text is the spec's Approach step 2 block verbatim, at column 0.
+- DoD "`checks/core-is-neutral.sh` passes" satisfied by
+  core/trackers/github.md:53-67 — the checker exits 0 as part of
+  `commands.lint`.
+- DoD "Added prose wraps at 77 columns ... with spaced em dashes" satisfied
+  by core/trackers/github.md:53-67 — no line exceeds 77 columns (awk
+  length check); lines end short only at :53 (intentional break) and :54,
+  :57 (before unbreakable code spans); all three em dashes are spaced.
+- DoD "`commands.lint` and `commands.test_all` pass" — `./tests/run.sh`
+  40 passed, 0 failed; the full lint command exits 0.
+- Checklist-relevant areas: none — no entry point, authorization,
+  validation, schema, or credential path touched; prose only.
+
+### Conventions Applied
+- Hard-wrap Markdown prose under `core/` at 77 columns — conventions:118
+  → applied at core/trackers/github.md:53-67
+- Space every em dash on both sides — conventions:125 → applied at
+  core/trackers/github.md:55,60
+- Use `N. ` for an ordered list — conventions:121 → applied at
+  core/trackers/github.md:53,63
+- Stage named paths; never `git add .` — conventions:92 → applied at the
+  commit of this phase
+- Never name a third-party tool in `core/` — conventions:11 → not
+  violated in effect: `gh` was already named in this tracker file and is
+  not on `checks/core-is-neutral.sh`'s list, as the spec's DoD states;
+  flagging for review that the rule's prose and the checker's list differ.
+
+### Notes
+- Deviations from the spec: none. Steps 1, 2, and `## resolve_or_create`
+  untouched.
+- Test protection gate: `git diff --name-only --diff-filter=MD HEAD --
+  tests` was empty.
+- No escalation to CLAUDE.md or phase memory.
