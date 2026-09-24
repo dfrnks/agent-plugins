@@ -67,7 +67,7 @@ word containing "cursor". Prose under `core/` is hard-wrapped at 77 columns
      core/phases/code-review.md|### 7. Design
      core/phases/execute.md|- **Reuse** — does something in the codebase already do this?;- **Simplicity** — does this add something the task does not need?
      core/flows/fix-bug.md|- **Reuse** — does something in the codebase already do what the fix adds?;- **Simplicity** — does the fix add something the defect does not need?
-     core/flows/conventions.md|- **Seed content the checklist lacks.**
+     core/flows/conventions.md|On a re-run, bring an existing checklist up to the seed.
      ```
 
    - In `tests/run.sh`, after the structure-checker asserts (line 82), add:
@@ -86,16 +86,31 @@ word containing "cursor". Prose under `core/` is hard-wrapped at 77 columns
    names is a deliberately short first line followed by a line break, and
    the break is intentional: a later rewrap that pulls the next word up
    breaks the match. The first and third asserts fail until the `--` fix
-   and steps 2 to 5 land.
+   and steps 2 to 5 land. The second assert passes from the start — before
+   the fix the checker already exits 1 there, for the wrong reason — and
+   stays as the guard that the fix does not start accepting a missing line.
+
+   - **`CLAUDE.md` discoveries span (lines 137-155), with the `--` fix.**
+     The `## Testing` entry at lines 141-145 describes `checks/structure.sh` wrongly — it cites line
+     18 (the match is at line 45), says `grep -qF` and "unanchored" (the code
+     uses `grep -qxF`, a whole-line match) — and TASK-16 depends on how that
+     match behaves. Rewrite that one entry, in place inside the span, to:
+     `checks/structure.sh:45` matches each required line as a whole line with
+     `grep -qxF --`: a heading merely mentioned in prose no longer satisfies
+     it, a line beginning with `-` is matched rather than read as an option,
+     and a required string cannot contain `;`, which the checker splits a
+     row on. Leave every other entry, and the managed section, untouched.
 
 2. **`core/contracts/review-checklist-base.md` — the single source.**
    - Line 5: "four sections" becomes "five sections".
    - Add `## Design` between `## Tests` (lines 52-60) and
-     `## Data and migrations` (line 62). It opens with this precondition, in
-     the style of the Data section's (lines 64-65): every item yields to
-     `paths.conventions` — a pattern the conventions establish is not a
-     finding — and an item about layers applies only where the project has
-     layers. Items, in the file's `- [ ] ` format with 6-space continuation:
+     `## Data and migrations` (line 62). The section has no precondition —
+     it applies to every project — but opens with a precedence rule, worded
+     without naming a configuration key, since this seed is copied into
+     project checklists: "The project's own conventions come first: a
+     pattern they establish is never a finding here, even where an item
+     below would flag it." Items, in the file's `- [ ] ` format with 6-space
+     continuation:
      - The change calls logic the codebase already has instead of
        reimplementing it.
      - Each business rule lives in one place; changing it means editing one
@@ -107,8 +122,10 @@ word containing "cursor". Prose under `core/` is hard-wrapped at 77 columns
        names it.
      - No implementation satisfies a contract with an operation that only
        signals "not supported" or silently does nothing.
-     - Each function added or changed does one job and, where the project
-       has layers, stays inside one.
+     - Each function added or changed does one job. When the project has
+       layers: it stays inside one. A project without layers marks that half
+       not applicable. (This follows the in-item condition style of the
+       Security section, lines 31-34.)
      - Adding one case touched one site, not every place that branches on
        the set.
      - Indirection around a dependency sits at an input/output boundary —
@@ -124,34 +141,40 @@ word containing "cursor". Prose under `core/` is hard-wrapped at 77 columns
      regenerated wholesale). Replace that sentence with: "Never replace the
      seed's five sections — this flow only adds to the checklist, never
      removes from it."
-   - `core/flows/conventions.md` `## Drift reporting` (lines 158-172): add a
-     third bullet to the list, whose first line is exactly the fixture's
+   - Directly after that sentence, still in Step 5 and before its commit
+     block, add a paragraph whose first line is exactly the fixture's
      string, followed by an intentional break:
 
      ```markdown
-     - **Seed content the checklist lacks.**
-       On a re-run, compare `paths.review_checklist` against
-       `core/contracts/review-checklist-base.md`: insert each seed section
-       the checklist lacks at its position in the seed, and add each seed
-       item missing from a section the checklist has to the end of that
-       section. Without this, content added to the seed later reaches only
-       projects that derive their checklist for the first time.
+     On a re-run, bring an existing checklist up to the seed.
+     Compare `paths.review_checklist` against
+     `core/contracts/review-checklist-base.md`: insert each seed section the
+     checklist lacks at its position in the seed, and add each seed item
+     missing from a section the checklist has to the end of that section.
+     This needs no confirmation in Step 3 — the seed is never optional.
+     Without it, content added to the seed later reaches only projects that
+     derive their checklist for the first time.
      ```
 
-     Unlike the other two bullets, this one needs no accept/edit/drop
-     choice — the seed is never optional — and the paragraph after the list
-     should say so in one sentence.
+     `## Drift reporting` stays unchanged: it covers the conventions file's
+     managed section, not the checklist.
 
 3. **`core/phases/code-review.md` — dimension 7.**
    - Line 77: "Work through all six in order." becomes "Work through all
      seven in order."
    - After dimension 6 ends (line 213, before `## Step 4`), append
      `### 7. Design`. Appending, not inserting, keeps the references to
-     "dimension 6" / "sixth dimension" (lines 43, 56, 241) correct. Its body:
+     "dimension 6" / "sixth dimension" (lines 43, 56, 241) correct. Its body
+     opens with one framing sentence, as dimension 5 does — this dimension
+     asks whether the change will be cheap to change again: no second copy
+     of anything, no indirection nothing needs — then:
      - Check this task's diff against the `## Design` section of
        `core/contracts/review-checklist-base.md`, whether or not
-       `paths.review_checklist` is set, and apply that section's precondition
-       — `paths.conventions` first.
+       `paths.review_checklist` is set, and apply that section's
+       conventions-first rule against `paths.conventions`.
+     - A diff that adds or changes no code — prose, configuration, or tests
+       only — reports this dimension not applicable, as dimension 3 does
+       for a project with no notion of separate owners of data.
      - This dimension owns the Design items: dimension 6 does not grade them
        again when they reach `paths.review_checklist`, so one defect never
        carries two severities.
@@ -199,14 +222,20 @@ word containing "cursor". Prose under `core/` is hard-wrapped at 77 columns
      ```
 
      The first bullet's first line is 74 columns and must stay unbroken.
-   - Step 8 — Report (line 238 onward): add one item — the answer to both
-     questions, naming the existing code the fix calls when Reuse applied.
+   - Step 8 — Report (lines 238-251): directly after the **Fix** item, add
+
+     ```markdown
+     - **Design** — the answers to Step 6's Reuse and Simplicity questions,
+       naming the existing code the fix calls when Reuse applied.
+     ```
+
      fix-bug has no review gate, so the report is the only place the check
      is visible.
 
 ## Files to Modify
 
 - `checks/structure.sh` — `--` before the grep pattern.
+- `CLAUDE.md` — rewrite the stale `checks/structure.sh` discovery.
 - `tests/fixtures/structure-dash-heading.md`,
   `tests/fixtures/manifest-dash-heading.txt`,
   `tests/fixtures/manifest-dash-heading-missing.txt`,
@@ -215,32 +244,35 @@ word containing "cursor". Prose under `core/` is hard-wrapped at 77 columns
 - `core/contracts/review-checklist-base.md` — "five sections", `## Design`.
 - `checks/manifest.txt` — `## Design` in the checklist-base row.
 - `core/flows/conventions.md` — "five sections", corrected Step 5 sentence,
-  Drift reporting bullet.
+  Step 5 re-run paragraph.
 - `core/phases/code-review.md` — "all seven", dimension 7, dimension 6
   exception, Step 4 and Step 5 additions.
 - `core/phases/execute.md` — two Step 6 bullets.
-- `core/flows/fix-bug.md` — Step 6 lead-in and bullets, Step 8 item.
+- `core/flows/fix-bug.md` — Step 6 lead-in and bullets, Step 8 **Design**
+  item.
 
 ## Definition of Done
 
 - [ ] `checks/structure.sh` passes `--` to grep, and `tests/run.sh` asserts
       both that a present line beginning with `-` is accepted and that a
       missing one is rejected (Testing: "Assert both the accepting and the
-      rejecting case for every checker").
+      rejecting case for every checker"), and the `CLAUDE.md` discovery
+      about it is rewritten inside the discoveries span only.
 - [ ] The `manifest-design.txt` assert fails on the pre-change repository and
       passes after; every string in that fixture appears as a whole line.
 - [ ] `core/contracts/review-checklist-base.md` says "five sections" and has
-      `## Design` with its conventions-first precondition and the eight
-      items; `checks/manifest.txt` requires it.
+      `## Design` with its conventions-first opening rule, no precondition,
+      and the eight items; `checks/manifest.txt` requires it.
 - [ ] `core/phases/code-review.md` says "all seven" and has `### 7. Design`,
       pointing at the checklist base section, with the citation rule for its
-      two blockers; dimension 6, Step 4, and Step 5 name it.
+      two blockers and its not-applicable rule for a diff with no code;
+      dimension 6, Step 4, and Step 5 name it.
 - [ ] `core/phases/execute.md` and `core/flows/fix-bug.md` carry the Reuse
       and Simplicity bullets without restating the Design list; fix-bug's
-      Step 8 reports the answers.
+      Step 8 carries the **Design** item after **Fix**.
 - [ ] `core/flows/conventions.md` says "five sections", no longer claims the
-      managed section is only appended to, and carries the Drift reporting
-      bullet.
+      managed section is only appended to, and carries the re-run paragraph
+      in Step 5; `## Drift reporting` is unchanged.
 - [ ] No added line names a principle acronym, a language, or a tool, and
       `checks/core-is-neutral.sh` passes (Module boundaries: "Never name a
       harness ... or a third-party tool in `core/`").
@@ -258,8 +290,50 @@ word containing "cursor". Prose under `core/` is hard-wrapped at 77 columns
 - `docs/presentation/tdd-pipeline-walkthrough.html` and `.pdf`, which still
   say "Six review dimensions".
 - Renumbering or reordering the existing six dimensions.
-- The stale `CLAUDE.md` discoveries about `grep -qF` and the missing `n/a`
-  path.
+- The stale `CLAUDE.md` discovery about the missing `n/a` path, and any
+  change to the managed section of `CLAUDE.md`.
+- `## Drift reporting` in `core/flows/conventions.md`.
 
 ## Agent Handoff Log
 <!-- Phases append findings here — see handoff-log.md -->
+
+### review (2026-09-24)
+- Hard blockers cleared. No external API is involved. Every internal claim
+  was located: all cited `file:line` references in the body were checked
+  against the files at commit 8cf26d8 and match (structure.sh:45,
+  execute.md:167-184, code-review.md:43/56/77/197-200/213/217-225/235-243/252,
+  fix-bug.md:199-213/238-251, review-checklist-base.md:5/10-13/52-65,
+  conventions.md:139/144-146/158-172, conventions-template.md:91-92,
+  pipeline.md:209-216, run.sh:82, manifest.txt:8).
+- Fixed: the `## Design` opener was called a precondition but could never
+  make the section not applicable (review-checklist-base.md:15-21 defines a
+  precondition as exactly that). It is now a precedence rule with no
+  precondition and no configuration key, since the seed is copied into
+  project checklists; the layer condition moved inside its item, in the
+  Security section's style (lines 31-34). Dimension 7 now says
+  "conventions-first rule".
+- Fixed: dimension 7 lacked the framing sentence dimensions 3 and 5 open
+  with and any not-applicable rule; both added (a diff with no code).
+- Fixed: the checklist re-run bullet was placed in `## Drift reporting`,
+  which is about the conventions file's managed section and feeds Step 3's
+  accept/edit/drop choice — a category error that forced an exception
+  sentence. It is now a Step 5 paragraph; the fixture line changed with it.
+- Fixed: fix-bug Step 8's new item had no text or position; it is now a
+  **Design** item after **Fix**.
+- Fixed: stated that the dash-rejection assert passes from the start
+  (structure.sh exits 1 for the wrong reason pre-fix) and why it stays.
+- Added to scope: `CLAUDE.md:141-145` misdescribes `checks/structure.sh`
+  (line 18, `grep -qF`, "unanchored"); the `--` fix would make it wrong a
+  fourth way and TASK-16 relies on the behaviour. Folded into step 1 so
+  Approach stays at five changes. Only the discoveries span is edited.
+- Validated: nothing else counts dimensions or checklist sections outside
+  `docs/` (excluded) and the historical design spec; README.md, agents/,
+  adapters, doctor.md, project-requirements.md need no change.
+- Validated: new fixtures trip no checker — references-resolve scans only
+  `*.md` and skips `tests/fixtures/` in whole-repo mode; no-leakage skips
+  fixtures; core-is-neutral scans only `core/`.
+- Test split: the test phase writes only `tests/` (fixtures, run.sh), giving
+  two red asserts; `checks/structure.sh`, `checks/manifest.txt`, and the
+  prose are execute's. The real-manifest assert (run.sh:81-82) goes red
+  only if execute edits manifest.txt:8 before adding `## Design`.
+- Not split: five Approach changes, nine DoD items.
