@@ -57,6 +57,15 @@ in this order:
 6. Testing
 7. Formatting and lint
 
+Two areas reach further than their names suggest.
+"Module boundaries and layering" also records how code reaches its
+input/output dependencies — storage, network, clock, an external
+service — and where the project places indirection around them.
+"Testing" also records how tests replace those dependencies. Both
+describe what the project does, not what it should do: a project that
+calls its storage directly has that as its rule once the practice clears
+the bar in `core/flows/conventions.md` Step 2.
+
 An area with no derived rules for this project still keeps its heading,
 followed by a line stating that no rule was derived — omitting the heading
 would leave a later reader unable to tell "checked, nothing found" from

@@ -1,0 +1,4 @@
+# The lines TASK-16 adds to core: how the conventions flow records the way a
+# project reaches and replaces its input/output dependencies.
+core/flows/conventions.md|- Testing, including test structure and how tests replace dependencies
+core/contracts/conventions-template.md|Two areas reach further than their names suggest.

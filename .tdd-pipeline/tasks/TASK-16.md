@@ -20,11 +20,13 @@ outside the code under test are isolated" (`core/phases/test.md:41-42`)
 while writing a suite, but the conventions file never records it for execute
 or code-review.
 
-This task widens two existing areas instead of adding an eighth. The count
-"seven" appears twelve times across five files
+This task widens two existing areas instead of adding an eighth. The area
+count "seven" appears twelve times across five files
 (`core/contracts/conventions-template.md`, `core/flows/conventions.md`,
 `core/flows/doctor.md`, `core/contracts/project-requirements.md`,
-`core/flows/init.md`), and a new heading would leave every existing
+`core/flows/init.md`; the thirteenth match of `seven` under `core/`,
+`core/phases/code-review.md:77`, counts review dimensions and is unrelated),
+and a new heading would leave every existing
 conventions file without it until the flow is re-run.
 
 This task runs after TASK-15: its fixture names a line beginning with `-`,
@@ -43,7 +45,8 @@ or library, and no word containing "cursor".
    core/contracts/conventions-template.md|Two areas reach further than their names suggest.
    ```
 
-   and add to `tests/run.sh`, after the structure-checker asserts:
+   and add to `tests/run.sh`, directly after the "core files carry the design
+   check" assert (lines 87-88), before the adapter-coverage asserts:
 
    ```bash
    assert_exit 0 "conventions flow derives how dependencies are handled" \
@@ -60,8 +63,8 @@ or library, and no word containing "cursor".
 
    ```markdown
    - Module boundaries and layering, including how code reaches its
-     input/output dependencies — storage, network, clock, external
-     services — and where the project places indirection around them
+     input/output dependencies — storage, network, clock, an external
+     service — and where the project places indirection around them
    - Error handling
    - Naming
    - Authentication and authorization
@@ -79,12 +82,12 @@ or library, and no word containing "cursor".
    ```markdown
    Two areas reach further than their names suggest.
    "Module boundaries and layering" also records how code reaches its
-   input/output dependencies — storage, network, clock, external services
-   — and where the project places indirection around them. "Testing" also
-   records how tests replace those dependencies. Both describe what the
-   project does, not what it should do: a project that calls its storage
-   directly has that as its rule once the practice clears the bar in
-   `core/flows/conventions.md` Step 2.
+   input/output dependencies — storage, network, clock, an external
+   service — and where the project places indirection around them.
+   "Testing" also records how tests replace those dependencies. Both
+   describe what the project does, not what it should do: a project that
+   calls its storage directly has that as its rule once the practice clears
+   the bar in `core/flows/conventions.md` Step 2.
    ```
 
 ## Files to Modify
@@ -123,3 +126,165 @@ or library, and no word containing "cursor".
 
 ## Agent Handoff Log
 <!-- Phases append findings here — see handoff-log.md -->
+
+### review (2026-09-24)
+- Reviewed against main at 5be3dd1, after TASK-15 merged. Hard blockers
+  cleared: no external API; every internal claim located —
+  conventions.md:51-67/56-62/61, conventions-template.md:52-58 (with "An
+  area with no derived rules" at :60), test.md:41-42 all match.
+- Fixed drift: `grep -rn '\bseven\b' core/` now returns 13 matches in 6
+  files; TASK-15 added code-review.md:77 ("all seven" dimensions). The
+  Context now says twelve area-count occurrences and names that line as
+  unrelated.
+- Fixed drift: TASK-15 added three structure-checker asserts, so "after the
+  structure-checker asserts" was ambiguous; the anchor is now the design
+  check assert at tests/run.sh:87-88.
+- Fixed: "external services" became "an external service" in both the
+  Step 1 bullet and the template paragraph, matching
+  review-checklist-base.md:83-85 word for word; this also removes a line
+  that began with an em dash. The fixture lines are unchanged.
+- Validated by simulation: the fixture exits 1 with "missing heading" for
+  both lines today (no parse error); a control line beginning with `-`
+  matches, confirming TASK-15's `--` fix; the proposed text passes
+  core-is-neutral.sh; widths are within 77 apart from the intentional
+  49-column break.
+- Validated: execute.md:88-94, the conventions greenfield section, and
+  CLAUDE.md's `## Testing` headings need no change; "mocking" survives only
+  in `docs/`, which is out of scope.
+- Not split: three Approach changes, six DoD items.
+
+### test (2026-09-24)
+- Wrote `tests/fixtures/manifest-dependencies.txt` (the two spec lines,
+  verbatim, under a comment header in the `manifest-design.txt` style) and
+  one `assert_exit 0` in `tests/run.sh` directly after the design check
+  assert. 1 test added.
+- Red for the right reason: `./tests/run.sh` gives 38 passed, 1 failed;
+  the one failure is the new assert, and `checks/structure.sh` names both
+  lines as "missing heading" in `core/flows/conventions.md` and
+  `core/contracts/conventions-template.md`. The checker evaluates each line
+  independently, so neither assertion hides behind the other. Every
+  existing assert stayed green; no regression guard was added.
+- Contract satisfiable: verified. Applied the Approach's text for steps 2
+  and 3 in place from backed-up copies (restore on exit, checksums matched
+  after), and got 39 passed, 0 failed, with `core-is-neutral.sh`,
+  `structure.sh` and `references-resolve.sh` also passing. Expected values
+  are the spec's own strings; nothing was computed.
+- For execute: the fixture lines must appear as whole lines, exactly. The
+  sixth bullet sits on one 70-column line, and the template paragraph's
+  first line ends after "suggest." — a rewrap that pulls the next word up
+  breaks the match. The old bullet "- Test structure and mocking" is
+  replaced, not kept; the structure checker cannot assert its absence, so
+  code review should confirm it is gone.
+- `paths.conventions` (`CLAUDE.md`) holds a testing section; followed it
+  (fixture as the red-first path for a prose-only change, per its
+  `## Testing` note on `tests/run.sh:59`).
+- No deviation from the spec's test expectations. Nothing escalated.
+
+### execute (2026-09-24)
+
+### Implementation Manifest
+- DoD "tests/run.sh includes the assert naming
+  tests/fixtures/manifest-dependencies.txt; it fails before and passes
+  after" satisfied by tests/run.sh (test phase's assert, unchanged) —
+  `./tests/run.sh` now gives 39 passed, 0 failed; red was 38/1 per the
+  test entry.
+- DoD "Step 1 names the sixth area Testing ... both widened bullets name
+  input/output dependencies" satisfied by core/flows/conventions.md:56-58
+  and core/flows/conventions.md:63 — first bullet names input/output
+  dependencies and indirection; sixth bullet reads "Testing, including test
+  structure and how tests replace dependencies"; "Test structure and
+  mocking" no longer appears anywhere under core/.
+- DoD "conventions-template.md carries the scope paragraph, defers to
+  Step 2's bar, seven headings unchanged" satisfied by
+  core/contracts/conventions-template.md:60-67 — paragraph inserted after
+  the numbered list at :52-58, which is untouched; it cites
+  `core/flows/conventions.md` Step 2 (heading at conventions.md:71).
+- DoD "No added line names a framework, library, or language" satisfied by
+  the lint run — `checks/core-is-neutral.sh` passes.
+- DoD "Added prose wraps at 77 columns with spaced em dashes" satisfied by
+  both core diffs — no added line exceeds 77 columns; the template's :60
+  line is the intentional short break; every em dash is spaced.
+- DoD "commands.lint and commands.test_all pass" — both exit 0.
+- No entry point, authorization, validation, schema, or credential path
+  touched: prose-only change.
+
+### Conventions Applied
+- Hard-wrap Markdown prose under `core/` at 77 columns — conventions:118
+  → applied at core/contracts/conventions-template.md:60-67,
+  core/flows/conventions.md:56-58
+- Space every em dash on both sides — conventions:125 → applied at
+  core/flows/conventions.md:57-58, core/contracts/conventions-template.md:62-63
+- Reference a core file by its full `core/<dir>/<file>.md` path —
+  conventions:22 → applied at core/contracts/conventions-template.md:67
+- Never name a harness ... or a third-party tool in `core/` —
+  conventions:11 → applied at both core diffs (core-is-neutral.sh passes)
+
+### Notes
+- Text applied verbatim from the Approach; no deviation. No test appeared
+  wrong. Test protection gate: `git diff --name-only --diff-filter=MD HEAD
+  -- tests` is empty. Nothing escalated.
+
+### code-review (2026-09-24)
+- Diff read in full from merge base 31614c0 (main tip): commits eab56ea
+  (test) and 6bf17d9 (execute). Changed files match `## Files to Modify`
+  exactly, plus the spec's own handoff log. No
+  `.tdd-pipeline/memory/code-review/` directory exists; nothing to apply.
+- Blockers: none.
+- Warnings: none.
+- Suggestions: the fixture pins only the sixth bullet and the paragraph's
+  first line; the first bullet's widening
+  (core/flows/conventions.md:56-58) and the removal of "Test structure and
+  mocking" have no automated guard. Verified by hand here
+  (`grep -rn "Test structure and mocking" core/` is empty). The structure
+  checker matches single lines only, so a guard would need a new check —
+  out of scope for this task.
+- Spec compliance: all six DoD items satisfied. Red confirmed
+  independently: neither fixture line appears as a whole line in main's
+  copies of the two core files (`grep -cxF` returns 0 for each); green is
+  39 passed, 0 failed. Lint (`commands.lint`) exits 0. Seven template
+  headings and order unchanged (conventions-template.md:52-58). Paragraph
+  defers to `core/flows/conventions.md` Step 2, which exists at
+  conventions.md:71. No added core line exceeds 77 columns; all four em
+  dashes spaced. No deviation from the spec.
+- Conventions: all four `### Conventions Applied` citations resolve at the
+  cited CLAUDE.md lines (11, 22, 118, 125), and the code at the cited
+  locations follows them. No "no rule found" lines. No escalations in this
+  task's log, and no phase of this task added to `paths.conventions`;
+  CLAUDE.md's existing `tests/run.sh:59` citation still points at the
+  manifest-good assert (the new assert landed at :89-90).
+- Security and isolation: not applicable — prose and test fixture only,
+  no entry point, input, data owner, or credential.
+- Test integrity: only eab56ea touched `tests/`; 6bf17d9 touched no test
+  file (inspected via `git show --stat`). Nothing to compare against.
+- Test quality: one assert covers the fixture; it is a pure presence
+  check with no cleanup needs. No production code exists to accommodate
+  a test.
+- Manifest spot-check: checked the conventions.md:56-58/:63 line (least
+  obvious DoD mapping, and the one the test phase asked review to confirm)
+  and the conventions-template.md:60-67 line (Step 2 deferral). Both hold.
+  No `paths.review_checklist` configured.
+- Design: not applicable — the diff adds no code, only prose, a fixture,
+  and one assert.
+- Verdict: APPROVED.
+
+### end (2026-09-24)
+- Reviewed the whole handoff log (review, test, execute, code-review
+  entries) for durable findings against `paths.conventions` (`CLAUDE.md`).
+  Nothing durable found: every convention citation in the execute entry's
+  "Conventions Applied" already exists in CLAUDE.md's managed section, the
+  code-review entry's structure-checker observation already matches the
+  discoveries span's existing `checks/structure.sh:45` entry
+  (CLAUDE.md:141-144), and every other finding (spec drift fixes, fixture
+  wording, phase-workflow notes) is specific to this task or this pipeline
+  run. Nothing escalated to `paths.conventions` or
+  `.tdd-pipeline/memory/end/`.
+- `paths.conventions` (`CLAUDE.md`) is unchanged by this task (confirmed
+  via `git diff main...TASK-16 -- CLAUDE.md`, empty); no repair needed for
+  discoveries-span placement or line removal.
+- Step 2 lint (`commands.lint`): ran, exited clean, no autofix output —
+  `git status` showed no changes after the run, so no
+  `commands.test_all` re-run was needed.
+- This project's `paths.conventions` managed section already holds rules
+  (not greenfield); no first-code transition to report.
+- End phase ran to completion: lint clean, nothing to persist, branch
+  committed and pushed, pull request opened, tracker updated.
