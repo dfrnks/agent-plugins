@@ -152,3 +152,30 @@ or library, and no word containing "cursor".
   CLAUDE.md's `## Testing` headings need no change; "mocking" survives only
   in `docs/`, which is out of scope.
 - Not split: three Approach changes, six DoD items.
+
+### test (2026-09-24)
+- Wrote `tests/fixtures/manifest-dependencies.txt` (the two spec lines,
+  verbatim, under a comment header in the `manifest-design.txt` style) and
+  one `assert_exit 0` in `tests/run.sh` directly after the design check
+  assert. 1 test added.
+- Red for the right reason: `./tests/run.sh` gives 38 passed, 1 failed;
+  the one failure is the new assert, and `checks/structure.sh` names both
+  lines as "missing heading" in `core/flows/conventions.md` and
+  `core/contracts/conventions-template.md`. The checker evaluates each line
+  independently, so neither assertion hides behind the other. Every
+  existing assert stayed green; no regression guard was added.
+- Contract satisfiable: verified. Applied the Approach's text for steps 2
+  and 3 in place from backed-up copies (restore on exit, checksums matched
+  after), and got 39 passed, 0 failed, with `core-is-neutral.sh`,
+  `structure.sh` and `references-resolve.sh` also passing. Expected values
+  are the spec's own strings; nothing was computed.
+- For execute: the fixture lines must appear as whole lines, exactly. The
+  sixth bullet sits on one 70-column line, and the template paragraph's
+  first line ends after "suggest." — a rewrap that pulls the next word up
+  breaks the match. The old bullet "- Test structure and mocking" is
+  replaced, not kept; the structure checker cannot assert its absence, so
+  code review should confirm it is gone.
+- `paths.conventions` (`CLAUDE.md`) holds a testing section; followed it
+  (fixture as the red-first path for a prose-only change, per its
+  `## Testing` note on `tests/run.sh:59`).
+- No deviation from the spec's test expectations. Nothing escalated.
