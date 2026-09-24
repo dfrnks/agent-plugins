@@ -1,0 +1,2 @@
+# TASK-19: github set_status creates both status labels before editing.
+core/trackers/github.md|3. Make sure both status labels exist in the repository.

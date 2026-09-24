@@ -88,6 +88,8 @@ assert_exit 0 "core files carry the design check" \
   checks/structure.sh tests/fixtures/manifest-design.txt
 assert_exit 0 "conventions flow derives how dependencies are handled" \
   checks/structure.sh tests/fixtures/manifest-dependencies.txt
+assert_exit 0 "github tracker creates both status labels before editing" \
+  checks/structure.sh tests/fixtures/manifest-github-labels.txt
 assert_exit 0 "every core phase and flow has a Claude Code adapter" \
   checks/adapters-cover-core.sh claude-code
 assert_exit 1 "adapter-coverage checker rejects an adapter directory missing a core file" \

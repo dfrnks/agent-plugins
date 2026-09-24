@@ -143,3 +143,39 @@ that the only case left.
   API behaviour and was observed during TASK-16, whose `set_status start`
   removed the then-existing, not-carried `TASK:in-review` without error.
 - Not split: two Approach changes, five DoD items.
+
+### test (2026-09-24)
+- Tests: `tests/fixtures/manifest-github-labels.txt` (new, one record) and
+  one `assert_exit 0` in `tests/run.sh` after the "conventions flow derives
+  how dependencies are handled" assert. 1 test added.
+- Red: `./tests/run.sh` reports 39 passed, 1 failed. The one failure is the
+  new test, "github tracker creates both status labels before editing",
+  with `missing heading in core/trackers/github.md: 3. Make sure both status
+  labels exist in the repository.` That line is missing because step 3 is
+  not written yet, not because the test is broken. All 39 existing tests
+  still pass, and none of them was written as a regression guard for this
+  task.
+- Satisfiable: yes. I pasted the spec's step 3 and 4 block, exactly as the
+  spec gives it at column 0, into a copy-backed `core/trackers/github.md`.
+  With that in place `./tests/run.sh` gave 40 passed, 0 failed, and
+  `checks/core-is-neutral.sh`, `checks/no-leakage.sh`,
+  `checks/references-resolve.sh` and `checks/structure.sh` all exited 0.
+  I restored the file from the copy (checksum matched) and saw red again.
+  The expected value comes from the spec's Approach step 2 text, not from
+  anything computed.
+- Coverage limit: this fixture pins only step 3's first line. Nothing in
+  the suite checks the rest of DoD item 2 (`--limit`, case-insensitive
+  compare, "already exists" as success, no `--force`, step 4's
+  qualified claim), and nothing checks the 77-column wrap. Code review
+  has to check those by reading the file. This follows the spec, which
+  asks for exactly one fixture line; the structure checker matches only
+  whole lines, and the rest of the text is wrapped prose it cannot pin
+  reliably.
+- Line-match caveat for execute: `checks/structure.sh` uses `grep -qxF`,
+  so the step 3 line must be exactly `3. Make sure both status labels
+  exist in the repository.` at column 0, with no trailing whitespace and
+  nothing after it on that line.
+- Conventions: `CLAUDE.md` has a testing section (two, in fact). I followed
+  its red-first fixture pattern for prose-only changes and its
+  `<subject>-<condition>` fixture naming.
+- Deviations from the spec: none.
