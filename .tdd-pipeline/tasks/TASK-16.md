@@ -266,3 +266,25 @@ or library, and no word containing "cursor".
 - Design: not applicable — the diff adds no code, only prose, a fixture,
   and one assert.
 - Verdict: APPROVED.
+
+### end (2026-09-24)
+- Reviewed the whole handoff log (review, test, execute, code-review
+  entries) for durable findings against `paths.conventions` (`CLAUDE.md`).
+  Nothing durable found: every convention citation in the execute entry's
+  "Conventions Applied" already exists in CLAUDE.md's managed section, the
+  code-review entry's structure-checker observation already matches the
+  discoveries span's existing `checks/structure.sh:45` entry
+  (CLAUDE.md:141-144), and every other finding (spec drift fixes, fixture
+  wording, phase-workflow notes) is specific to this task or this pipeline
+  run. Nothing escalated to `paths.conventions` or
+  `.tdd-pipeline/memory/end/`.
+- `paths.conventions` (`CLAUDE.md`) is unchanged by this task (confirmed
+  via `git diff main...TASK-16 -- CLAUDE.md`, empty); no repair needed for
+  discoveries-span placement or line removal.
+- Step 2 lint (`commands.lint`): ran, exited clean, no autofix output —
+  `git status` showed no changes after the run, so no
+  `commands.test_all` re-run was needed.
+- This project's `paths.conventions` managed section already holds rules
+  (not greenfield); no first-code transition to report.
+- End phase ran to completion: lint clean, nothing to persist, branch
+  committed and pushed, pull request opened, tracker updated.
