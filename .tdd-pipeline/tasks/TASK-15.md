@@ -441,3 +441,58 @@ word containing "cursor". Prose under `core/` is hard-wrapped at 77 columns
   tests` is empty. No test appeared wrong.
 - No escalation: the one durable fact (structure.sh's whole-line match) is
   the CLAUDE.md discovery rewrite the spec already asked for.
+
+### code-review (2026-09-24)
+- Diff read in full: `git diff main...HEAD` (538a54e test, eb1a104
+  execute). Changed files match `## Files to Modify` exactly — no extra
+  file, none left untouched. `## Drift reporting` (conventions.md:168 on)
+  is not in the diff.
+- Spec compliance: all nine DoD items satisfied. Pre-change red confirmed
+  independently in a detached worktree at 538a54e: the dash-accept and
+  design-fixture asserts fail, `checks/structure.sh
+  tests/fixtures/manifest-design.txt` exits 1; at HEAD 38 passed, 0
+  failed, and `commands.lint` exits 0. Wording matches the spec's Approach
+  text for every added block; dimension 7 carries the framing sentence,
+  the checklist-base pointer, the not-applicable rule, the ownership rule,
+  and the `file:line` citation rule for its two blockers; Step 4 and Step
+  5 name it; dimension 6 sub-step 3 carries the exception
+  (code-review.md:199). Nothing Out of Scope was touched or is missing.
+- Neutrality and format: added lines under `core/` and `CLAUDE.md` grepped
+  for principle acronyms, language and tool names, and "cursor",
+  "poetry", "composer", "rollup" — none; `checks/core-is-neutral.sh`
+  passes. Every added line is 77 columns or fewer; em dashes spaced
+  (including the line-leading dash at code-review.md:227); `- ` lists
+  only.
+- Conventions: every `### Conventions Applied` citation resolves —
+  CLAUDE.md:11, :22, :92, :118, :120, :121, :125 each hold the cited rule,
+  and the applied locations follow it. No "no rule found" lines. The
+  rewritten `CLAUDE.md` discovery cites `checks/structure.sh:45`, which is
+  the `grep -qxF --` line. No `→ Escalated to` lines to check.
+- Security and isolation: not applicable — no entry point, input
+  boundary, owner-scoped data, or credential in this project's change.
+- Test integrity: only 538a54e touched `tests/`; eb1a104 changed no file
+  under `tests/` (`git diff 538a54e HEAD -- tests` is empty). Inspected,
+  not merely listed. No test flagged as appearing wrong.
+- Test quality: each checker change has an accept and a reject assert
+  (dash present / dash missing); the prose DoD items are covered by
+  `manifest-design.txt`. No production code exists only for a test — the
+  `--` fix corrects option parsing for any caller.
+- Manifest spot-check: checked structure.sh:45 (the only code change, and
+  the one TASK-16 depends on) — holds; code-review.md:216-235 (least
+  obvious mapping: the citation rule for blockers) — holds; fix-bug.md:253
+  (**Design** after **Fix**) — holds. The Step 4 range is cited as
+  :241-247 where the Blocker bullet starts at :240; cosmetic, not a
+  finding. No `paths.review_checklist` configured, so no checklist scan.
+- Design (dimension 7): the only code change is one token in
+  checks/structure.sh:45 — no reimplementation, no copied rule, no new
+  indirection. The design signals are written once
+  (review-checklist-base.md:62-85) and execute.md:181-187, fix-bug.md:
+  208-215, and code-review.md:216-235 point at it without restating it.
+  No findings.
+- Blockers: none. Warnings: none.
+- Suggestion: the rewritten CLAUDE.md:141-144 discovery says a prose
+  mention "no longer" satisfies the check — wording relative to history
+  in an entry meant to state a durable fact; "does not" would read
+  cleaner. Optional.
+- No escalation.
+- Verdict: APPROVED.
