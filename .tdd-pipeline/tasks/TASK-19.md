@@ -2,7 +2,7 @@
 
 ## Context
 
-`core/trackers/github.md:52-57` (`set_status`, steps 3 and 4) creates only the
+`core/trackers/github.md:53-57` (`set_status`, steps 3 and 4) creates only the
 target label when it is missing, then runs
 `gh issue edit <n> --add-label "<label>" --remove-label "<other-label>"` and
 states that "the remove is a no-op, without error, the first time a given
@@ -30,8 +30,11 @@ that the only case left.
 1. **Red-first fixture.** Add `tests/fixtures/manifest-github-labels.txt`:
 
    ```
+   # TASK-19: github set_status creates both status labels before editing.
    core/trackers/github.md|3. Make sure both status labels exist in the repository.
    ```
+
+   The comment line follows `tests/fixtures/manifest-dependencies.txt`.
 
    and add to `tests/run.sh`, directly after the "conventions flow derives
    how dependencies are handled" assert (the last structure-checker assert,
@@ -48,16 +51,23 @@ that the only case left.
    fails until step 2 lands.
 
 2. **`core/trackers/github.md` `## set_status`, steps 3 and 4 (lines
-   52-57).** Replace both steps with:
+   53-57).** Replace both steps with the text below. The block is indented
+   here only because it sits inside this list: in `github.md` each step
+   starts at column 0, like the existing steps, and the fixture line must
+   match `3. Make sure both status labels exist in the repository.` at
+   column 0.
 
    ```markdown
    3. Make sure both status labels exist in the repository.
       List the repository's labels once, with
       `gh label list --limit 1000 --json name --jq '.[].name'` — the default
       limit of 30 would hide labels in a larger repository — and create each
-      of the two that the list does not name exactly, with
-      `gh label create "<label>"`. Never pass `--force`: it overwrites the
-      colour and description of a label the project already customised.
+      of the two that the list does not name, with
+      `gh label create "<label>"`. Compare names case-insensitively, as
+      GitHub does, and treat an "already exists" failure from the create as
+      success — the label is there, whether a differently cased name or a
+      parallel run put it there. Never pass `--force`: it overwrites the
+      color and description of a label the project already customized.
    4. Apply the target label and remove the other: `gh issue edit <n>
       --add-label "<label>" --remove-label "<other-label>"`. `gh` rejects
       the whole edit when either label is missing from the repository,
@@ -65,8 +75,10 @@ that the only case left.
       such as the first time an issue is labeled at all, is harmless.
    ```
 
-   Keep the wrap at 77 columns everywhere except the step 3 first line's
-   intentional break. Leave steps 1 and 2 and `## resolve_or_create`
+   Keep the wrap at 77 columns. Lines end short only at the step 3 first
+   line's intentional break and before a code span that cannot break. Use
+   American spelling ("color", "customized"), matching `github.md`'s own
+   "honoring" and "labeled" and `gh`'s `--color` flag. Leave steps 1 and 2 and `## resolve_or_create`
    untouched.
 
 ## Files to Modify
@@ -82,14 +94,16 @@ that the only case left.
       `tests/fixtures/manifest-github-labels.txt`; it fails on the pre-change
       repository and passes after (Testing: "Assert both the accepting and
       the rejecting case").
-- [ ] `set_status` step 3 lists labels with `--limit`, creates each missing
-      status label, and forbids `--force`; step 4 no longer claims the
+- [ ] `set_status` step 3 lists labels with `--limit`, compares names
+      case-insensitively, creates each missing status label, treats "already
+      exists" as success, and forbids `--force`; step 4 no longer claims the
       removal is harmless without qualification.
 - [ ] `checks/core-is-neutral.sh` passes (Module boundaries: harness and
       tool names stay out of `core/` — `gh` is already the tracker file's
       own integration and is not on the checker's list).
-- [ ] Added prose wraps at 77 columns except the intentional break, with
-      spaced em dashes (Formatting and lint).
+- [ ] Added prose wraps at 77 columns, short only at the intentional break
+      and before unbreakable code spans, with spaced em dashes (Formatting
+      and lint).
 - [ ] `commands.lint` and `commands.test_all` pass.
 
 ## Out of Scope
@@ -101,3 +115,31 @@ that the only case left.
 
 ## Agent Handoff Log
 <!-- Phases append findings here — see handoff-log.md -->
+
+### review (2026-09-24)
+- Hard blockers cleared. No external API schema beyond `gh` flags, all
+  checked against `gh label list --help` and `gh label create --help` on
+  gh 2.97.0: `--limit` (default 30), `--json name`, `--jq` exist;
+  `gh label create` without `--force` fails with "already exists" on an
+  existing label. The listing command ran read-only and printed both
+  `TASK:` labels. Internal claim located: github.md steps 3-4 are at
+  lines 53-57 (the draft said 52-57; fixed).
+- Fixed: GitHub label names are case-insensitive, so an exact comparison
+  could miss `task:in-progress` and then fail to create `TASK:in-progress`.
+  Step 3 now compares case-insensitively and treats "already exists" as
+  success, which also covers two runs creating the same label at once.
+- Fixed: the replacement block is indented in the spec only because it
+  sits in a list; stated that each step starts at column 0 in github.md,
+  since `grep -qxF` would not match an indented fixture line.
+- Fixed: spelling set to American ("color", "customized"), matching
+  github.md ("honoring", "labeled"); core/ has no prior "color"/"colour".
+- Fixed: the wrap rule now allows short lines before unbreakable code
+  spans; the fixture gains a `#` comment like manifest-dependencies.txt.
+- Validated: nothing else in core/, README.md, CLAUDE.md, or docs/
+  describes label creation or removal; pipeline-config.md:155-169 covers
+  names only. Assert placement after tests/run.sh:89-90 is correct.
+- Left as-is: step 4's claim that removing a label the issue does not
+  carry is harmless could not be confirmed read-only; it matches GitHub's
+  API behaviour and was observed during TASK-16, whose `set_status start`
+  removed the then-existing, not-carried `TASK:in-review` without error.
+- Not split: two Approach changes, five DoD items.
