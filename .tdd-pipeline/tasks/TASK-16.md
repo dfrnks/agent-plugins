@@ -223,3 +223,46 @@ or library, and no word containing "cursor".
 - Text applied verbatim from the Approach; no deviation. No test appeared
   wrong. Test protection gate: `git diff --name-only --diff-filter=MD HEAD
   -- tests` is empty. Nothing escalated.
+
+### code-review (2026-09-24)
+- Diff read in full from merge base 31614c0 (main tip): commits eab56ea
+  (test) and 6bf17d9 (execute). Changed files match `## Files to Modify`
+  exactly, plus the spec's own handoff log. No
+  `.tdd-pipeline/memory/code-review/` directory exists; nothing to apply.
+- Blockers: none.
+- Warnings: none.
+- Suggestions: the fixture pins only the sixth bullet and the paragraph's
+  first line; the first bullet's widening
+  (core/flows/conventions.md:56-58) and the removal of "Test structure and
+  mocking" have no automated guard. Verified by hand here
+  (`grep -rn "Test structure and mocking" core/` is empty). The structure
+  checker matches single lines only, so a guard would need a new check —
+  out of scope for this task.
+- Spec compliance: all six DoD items satisfied. Red confirmed
+  independently: neither fixture line appears as a whole line in main's
+  copies of the two core files (`grep -cxF` returns 0 for each); green is
+  39 passed, 0 failed. Lint (`commands.lint`) exits 0. Seven template
+  headings and order unchanged (conventions-template.md:52-58). Paragraph
+  defers to `core/flows/conventions.md` Step 2, which exists at
+  conventions.md:71. No added core line exceeds 77 columns; all four em
+  dashes spaced. No deviation from the spec.
+- Conventions: all four `### Conventions Applied` citations resolve at the
+  cited CLAUDE.md lines (11, 22, 118, 125), and the code at the cited
+  locations follows them. No "no rule found" lines. No escalations in this
+  task's log, and no phase of this task added to `paths.conventions`;
+  CLAUDE.md's existing `tests/run.sh:59` citation still points at the
+  manifest-good assert (the new assert landed at :89-90).
+- Security and isolation: not applicable — prose and test fixture only,
+  no entry point, input, data owner, or credential.
+- Test integrity: only eab56ea touched `tests/`; 6bf17d9 touched no test
+  file (inspected via `git show --stat`). Nothing to compare against.
+- Test quality: one assert covers the fixture; it is a pure presence
+  check with no cleanup needs. No production code exists to accommodate
+  a test.
+- Manifest spot-check: checked the conventions.md:56-58/:63 line (least
+  obvious DoD mapping, and the one the test phase asked review to confirm)
+  and the conventions-template.md:60-67 line (Step 2 deferral). Both hold.
+  No `paths.review_checklist` configured.
+- Design: not applicable — the diff adds no code, only prose, a fixture,
+  and one assert.
+- Verdict: APPROVED.
