@@ -50,8 +50,18 @@ This mode has no named workflow states, so a label stands in for one.
    at a time — the pair represents mutually exclusive states, not
    independent tags.
 2. Recover the issue number from the task ID (`<prefix>-<number>`).
-3. If the target label does not exist in the repository yet, create it
-   first: `gh label create "<label>"`.
-4. Apply it and remove the other: `gh issue edit <n> --add-label "<label>"
-   --remove-label "<other-label>"`. The remove is a no-op, without error,
-   the first time a given issue is labeled at all.
+3. Make sure both status labels exist in the repository.
+   List the repository's labels once, with
+   `gh label list --limit 1000 --json name --jq '.[].name'` — the default
+   limit of 30 would hide labels in a larger repository — and create each
+   of the two that the list does not name, with
+   `gh label create "<label>"`. Compare names case-insensitively, as
+   GitHub does, and treat an "already exists" failure from the create as
+   success — the label is there, whether a differently cased name or a
+   parallel run put it there. Never pass `--force`: it overwrites the
+   color and description of a label the project already customized.
+4. Apply the target label and remove the other: `gh issue edit <n>
+   --add-label "<label>" --remove-label "<other-label>"`. `gh` rejects
+   the whole edit when either label is missing from the repository,
+   which step 3 rules out; removing a label the issue does not carry,
+   such as the first time an issue is labeled at all, is harmless.
