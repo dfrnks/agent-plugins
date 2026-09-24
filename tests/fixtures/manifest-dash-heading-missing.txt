@@ -1,0 +1,2 @@
+# The required line begins with "-" and does not appear in the file.
+tests/fixtures/structure-dash-heading.md|- A line that is not there

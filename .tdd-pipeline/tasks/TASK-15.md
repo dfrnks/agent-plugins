@@ -337,3 +337,37 @@ word containing "cursor". Prose under `core/` is hard-wrapped at 77 columns
   prose are execute's. The real-manifest assert (run.sh:81-82) goes red
   only if execute edits manifest.txt:8 before adding `## Design`.
 - Not split: five Approach changes, nine DoD items.
+
+### test (2026-09-24)
+- Wrote 3 asserts in `tests/run.sh` (after the real-manifest assert) and
+  four fixtures: `tests/fixtures/structure-dash-heading.md`,
+  `tests/fixtures/manifest-dash-heading.txt`,
+  `tests/fixtures/manifest-dash-heading-missing.txt`,
+  `tests/fixtures/manifest-design.txt`. The manifest fixtures open with a
+  `#` comment line, as every existing manifest fixture does.
+- Red, 36 passed / 2 failed, matched name by name against the tally:
+  "structure checker matches a required line beginning with a dash" fails
+  because grep reads `- A line…` as an option (`grep: invalid option`),
+  exit 1; "core files carry the design check" fails on all seven missing
+  lines (the four dash lines also hit the grep option error). Both trace to
+  missing behaviour, not a broken fixture.
+- Regression guard, green by design: "structure checker rejects a missing
+  line beginning with a dash" exits 1 now (for the wrong reason, grep's
+  option error) and must stay 1 after the `--` fix. Every pre-existing
+  assert still passes.
+- Satisfiability: verified. With `--` applied in place to
+  `checks/structure.sh:45` (copy taken aside, restore trapped, checksum
+  confirmed identical afterwards), the dash-present fixture exits 0 and
+  the dash-missing fixture exits 1 with "missing heading ... - A line that
+  is not there". The design fixture's strings, run against scratch samples
+  built from the spec's Approach text (steps 2-5), exit 0. Anchor: the
+  spec's own Approach wording; no value was computed.
+- For execute: `checks/structure.sh` must get the `--` fix or every dash
+  line in `manifest-design.txt` stays red regardless of the prose. Each
+  fixture string must land as a whole line, byte for byte, including the
+  spaced em dashes and `**` markup.
+- `paths.conventions` (`CLAUDE.md`) holds a testing section; followed it
+  (accept and reject case for the dash line, fixture under `paths.tests`
+  for a prose change).
+- No deviation from the spec's test expectations. `tests/run.sh` also
+  touches no checker; `checks/manifest.txt` is left to execute.

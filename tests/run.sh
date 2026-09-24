@@ -80,6 +80,12 @@ assert_exit 1 "structure checker rejects a heading named only in prose" \
   checks/structure.sh tests/fixtures/manifest-heading-lookalike.txt
 assert_exit 0 "structure checker passes the real manifest against the repository" \
   checks/structure.sh
+assert_exit 0 "structure checker matches a required line beginning with a dash" \
+  checks/structure.sh tests/fixtures/manifest-dash-heading.txt
+assert_exit 1 "structure checker rejects a missing line beginning with a dash" \
+  checks/structure.sh tests/fixtures/manifest-dash-heading-missing.txt
+assert_exit 0 "core files carry the design check" \
+  checks/structure.sh tests/fixtures/manifest-design.txt
 assert_exit 0 "every core phase and flow has a Claude Code adapter" \
   checks/adapters-cover-core.sh claude-code
 assert_exit 1 "adapter-coverage checker rejects an adapter directory missing a core file" \
