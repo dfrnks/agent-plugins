@@ -287,3 +287,45 @@ that the only case left.
 
 #### Verdict
 APPROVED_WITH_WARNINGS
+
+### end (2026-09-24)
+- Step 1: changed files since main are `.tdd-pipeline/tasks/TASK-19.md`
+  (spec/handoff log), `core/trackers/github.md`, `tests/run.sh`, and
+  `tests/fixtures/manifest-github-labels.txt`. The spec file's own edits
+  are handoff-log-only; the other three sit in `commands.lint`'s scope, so
+  lint ran.
+- Step 2: `commands.lint` ran and exited 0 clean on the first run —
+  `shellcheck` over tracked `.sh` files, `checks/no-leakage.sh`,
+  `checks/core-is-neutral.sh`, `checks/references-resolve.sh`, and
+  `checks/structure.sh` all passed. `git status --porcelain` was empty
+  after the run, so no autofix touched anything and there was nothing to
+  diff against Step 1's file list or revert. No `commands.test_all`
+  re-run was needed: no fix was applied for a re-run to verify, and
+  `policy.full_suite` is unset (default `every_phase`), which does not
+  mandate an unconditional re-run at this step the way `on_end` would.
+- Step 3: escalated one finding to `paths.conventions` (`CLAUDE.md`), in
+  the discoveries span under a new "Module boundaries and layering"
+  heading: `core/trackers/github.md` names `gh` in `core/`, and
+  `checks/core-is-neutral.sh:11`'s disallowed-tool list does not include
+  `gh`, so lint passes even though CLAUDE.md:11's ban on naming a
+  third-party tool in `core/` is contradicted in practice — carried over
+  from code-review's warning on this task.
+  → Escalated to conventions: `core/trackers/github.md` naming `gh` in
+  `core/` is not caught by `checks/core-is-neutral.sh`'s disallowed-tool
+  list, leaving CLAUDE.md:11's ban on third-party tools in `core/`
+  unenforced against a tracker file's own integration.
+  Code-review's second warning (test coverage gap on DoD item 2's
+  substance and the 77-column wrap) was not escalated: it is specific to
+  this task's own fixture and this task's own lines in
+  `core/trackers/github.md`, not a durable fact about the project itself,
+  and the general mechanism behind it (`checks/structure.sh`'s `grep -qxF`
+  whole-line matching) is already on file in this same discoveries span
+  under "Testing". No phase-workflow learning was found for
+  `.tdd-pipeline/memory/end/`.
+  Checked `paths.conventions` as a whole from where this task diverged
+  from `main`: the diff against `CLAUDE.md` is pure addition (no removed
+  lines), and every added line sits between the discoveries start marker
+  (line 137, unmoved) and its end marker (line 165 after the insertion),
+  with nothing but the file's trailing newline after the end marker. No
+  repair was needed.
+- This phase ran and reached Step 8.

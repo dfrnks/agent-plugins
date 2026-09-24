@@ -136,6 +136,17 @@ code rather than trusted on its own.
 
 <!-- pipeline:discoveries:start -->
 
+## Module boundaries and layering
+
+- `core/trackers/github.md` names `gh` in `core/` and, after TASK-19, names
+  it more (add-label, remove-label, label list, label create), but
+  `checks/core-is-neutral.sh:11`'s disallowed-tool list does not include
+  `gh`, so lint passes. This leaves CLAUDE.md:11's ban on naming a
+  third-party tool in `core/` contradicted by the tracker file's own
+  integration in practice; the rule's prose needs a carve-out for a
+  tracker file's own CLI, or the checker and the prose will keep
+  disagreeing (core/trackers/github.md:55, checks/core-is-neutral.sh:11).
+
 ## Testing
 
 - `checks/structure.sh:45` matches each required line as a whole line with
