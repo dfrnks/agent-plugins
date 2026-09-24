@@ -2,7 +2,7 @@
 
 The code-review phase checks an implementation against a checklist rather
 than re-reading every changed file against unwritten judgment. This file is
-the seed of that checklist: four sections that hold for any stack, any
+the seed of that checklist: five sections that hold for any stack, any
 language, any framework. The conventions flow extends this seed with rules
 derived from the specific codebase it runs against — this file is what it
 extends, never something a specific project's conventions replace.
@@ -58,6 +58,31 @@ project without exception.
 - [ ] Tests are independent of one another and clean up any state they
       create, so run order never changes the outcome.
 - [ ] No production code exists solely to make a test pass.
+
+## Design
+
+The project's own conventions come first: a pattern they establish is never
+a finding here, even where an item below would flag it.
+
+- [ ] The change calls logic the codebase already has instead of
+      reimplementing it.
+- [ ] Each business rule lives in one place; changing it means editing one
+      site.
+- [ ] The same non-trivial block does not appear three or more times in the
+      change.
+- [ ] No abstraction, option, or extension point exists without a second
+      implementation today — a test double counts — or a requirement that
+      names it.
+- [ ] No implementation satisfies a contract with an operation that only
+      signals "not supported" or silently does nothing.
+- [ ] Each function added or changed does one job. When the project has
+      layers: it stays inside one. A project without layers marks that half
+      not applicable.
+- [ ] Adding one case touched one site, not every place that branches on
+      the set.
+- [ ] Indirection around a dependency sits at an input/output boundary —
+      storage, network, clock, an external service — not around logic that
+      does none.
 
 ## Data and migrations
 

@@ -371,3 +371,73 @@ word containing "cursor". Prose under `core/` is hard-wrapped at 77 columns
   for a prose change).
 - No deviation from the spec's test expectations. `tests/run.sh` also
   touches no checker; `checks/manifest.txt` is left to execute.
+
+### execute (2026-09-24)
+
+### Implementation Manifest
+- DoD "`checks/structure.sh` passes `--` to grep ... and the `CLAUDE.md`
+  discovery about it is rewritten inside the discoveries span only"
+  satisfied by checks/structure.sh:45 — `grep -qxF -- "$h" "$path"`; the
+  dash asserts are tests/run.sh (test phase); CLAUDE.md:141-144 — the
+  entry is rewritten in place between the discoveries markers, the other
+  entry and the managed section untouched.
+- DoD "The `manifest-design.txt` assert fails on the pre-change repository
+  and passes after" satisfied by the prose below — red at 538a54e per the
+  test entry, green now (38 passed, 0 failed).
+- DoD "review-checklist-base.md says five sections and has `## Design`"
+  satisfied by core/contracts/review-checklist-base.md:5 and :62-85 —
+  precedence opener, no precondition, eight `- [ ] ` items;
+  checks/manifest.txt:8 requires `## Design`.
+- DoD "code-review.md says all seven and has `### 7. Design`" satisfied by
+  core/phases/code-review.md:77, :216-235 (framing sentence, pointer to the
+  checklist base section, not-applicable rule, ownership, citation rule),
+  :199 (dimension 6 exception), :241-247 (Step 4), :267-268 (Step 5).
+- DoD "execute.md and fix-bug.md carry the Reuse and Simplicity bullets ...
+  fix-bug's Step 8 carries **Design** after **Fix**" satisfied by
+  core/phases/execute.md:181-187, core/flows/fix-bug.md:208-215 and
+  :253-254. Neither restates the Design list; execute points at it.
+- DoD "conventions.md says five sections, no longer claims append-only,
+  carries the re-run paragraph; `## Drift reporting` unchanged" satisfied
+  by core/flows/conventions.md:139, :144-145, :147-154. Drift reporting
+  is not in the diff.
+- DoD "No added line names a principle acronym, a language, or a tool"
+  — `checks/core-is-neutral.sh` passes; a grep of added lines for common
+  principle acronyms and the rejected tool words found none.
+- DoD "Added prose under `core/` wraps at 77 columns" — every added line
+  under `core/` and in `CLAUDE.md` measured at 77 columns or fewer;
+  spaced em dashes and `- ` lists throughout.
+- DoD "`commands.lint` and `commands.test_all` pass" — both clean.
+- Checker behaviour change — checks/structure.sh:45 — `--` ends option
+  parsing, so a required line beginning with `-` is matched literally; no
+  other checker changed.
+
+### Conventions Applied
+- Hard-wrap Markdown prose under `core/` at 77 columns — conventions:118
+  → applied at core/phases/code-review.md:77-78 (rewrapped after "seven"
+  lengthened the line), and every added core line
+- Hard-wrap Markdown prose outside `core/` at 80 columns — conventions:120
+  → applied at CLAUDE.md:141-144
+- Space every em dash on both sides — conventions:125 → applied at
+  core/contracts/review-checklist-base.md:74,83
+- Use `- ` for an unordered list — conventions:121 → applied at
+  core/flows/fix-bug.md:210-215
+- Never name a harness ... or a third-party tool in `core/` —
+  conventions:11 → applied across all core additions (checker passes)
+- Reference a core file by its full `core/<dir>/<file>.md` path —
+  conventions:22 → applied at core/phases/code-review.md:221,
+  core/phases/execute.md:184
+- Stage named paths; never `git add .` — conventions:92 → applied at the
+  commit of this phase
+
+### Notes
+- No deviation from the spec's wording. The dimension 7 body is a framing
+  sentence plus the spec's four points as `- ` bullets; the dimension 6
+  exception is appended to sub-step 3's first sentence as
+  "— except its `## Design` items, which dimension 7 owns."
+- The fix-bug lead-in and bullets sit directly after the "Note them in
+  Step 8 instead." paragraph, before the "Do not weaken" paragraph, as the
+  spec places them.
+- No test file modified: `git diff --name-only --diff-filter=MD HEAD --
+  tests` is empty. No test appeared wrong.
+- No escalation: the one durable fact (structure.sh's whole-line match) is
+  the CLAUDE.md discovery rewrite the spec already asked for.
