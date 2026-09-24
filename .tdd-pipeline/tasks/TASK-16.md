@@ -84,10 +84,10 @@ or library, and no word containing "cursor".
    "Module boundaries and layering" also records how code reaches its
    input/output dependencies — storage, network, clock, an external
    service — and where the project places indirection around them.
-   "Testing" also records how tests replace those dependencies. Both describe what the
-   project does, not what it should do: a project that calls its storage
-   directly has that as its rule once the practice clears the bar in
-   `core/flows/conventions.md` Step 2.
+   "Testing" also records how tests replace those dependencies. Both
+   describe what the project does, not what it should do: a project that
+   calls its storage directly has that as its rule once the practice clears
+   the bar in `core/flows/conventions.md` Step 2.
    ```
 
 ## Files to Modify
