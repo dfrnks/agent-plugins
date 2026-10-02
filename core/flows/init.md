@@ -137,7 +137,9 @@ created here — Step 5 hands that to a flow whose job is populating it with
 real content, not an empty placeholder that looks satisfied while holding
 nothing.
 
-Add `paths.worktrees` to `.gitignore` if no existing entry covers it.
+Add `paths.worktrees` to `.gitignore` if `git check-ignore -q` says nothing
+ignores it yet. A project keeping its pipeline files out of version control
+may ignore it through `.git/info/exclude` instead; doctor accepts either.
 
 Then **commit the configuration**, on the branch the repository is already
 on:

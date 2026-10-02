@@ -47,11 +47,19 @@ Run one check per row of the requirements table, each reporting `pass`,
 
   `fail` only if the directory is absent. If the command prints files, that
   is a `pass` carrying a note naming them, per "Untracked scaffolding" below.
-- **`paths.worktrees` directory, git-ignored** — exists, and is covered by an
-  entry in `.gitignore`. `fail` if either half is missing; a worktree
-  directory that exists but is not ignored is a `fail`, not a partial pass,
-  since committing a worktree's contents duplicates them under version
-  control.
+- **`paths.worktrees` directory, git-ignored** — exists, and git ignores it:
+
+  ```bash
+  git check-ignore -q <paths.worktrees>
+  ```
+
+  Ask git rather than reading `.gitignore`: a project that keeps its
+  pipeline files out of version control ignores the directory through
+  `.git/info/exclude` or a global excludes file, and requiring a `.gitignore`
+  entry would force it to edit a tracked file to satisfy this check. `fail`
+  if either half is missing; a worktree directory that exists but is not
+  ignored is a `fail`, not a partial pass, since committing a worktree's
+  contents duplicates them under version control.
 - **`paths.conventions` file, non-empty, with derived stack rules** — detailed
   on its own below. It carries the same `git ls-files --error-unmatch` check,
   resolved the same way as the configuration's: untracked is a `pass` with a
