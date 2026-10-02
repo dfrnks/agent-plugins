@@ -22,10 +22,10 @@ Read `.tdd-pipeline/config.yaml`. Follow the fail-fast protocol in
 the file or a key this flow needs is absent. This flow needs `tracker.type`,
 `tracker.prefix`, `paths.specs`, `paths.worktrees`, `paths.conventions`, and
 `git.base_branch`. `tracker.type` selects which file among
-`core/trackers/none.md`, `core/trackers/linear.md`, and `core/trackers/github.md`
-governs Step 1; that file may require further keys of its own
-(`tracker.team`, `tracker.states`), and an absent one of those follows the
-same fail-fast rule.
+`core/trackers/none.md`, `core/trackers/linear.md`, `core/trackers/github.md`,
+and `core/trackers/clickup.md` governs Step 1; that file may require further
+keys of its own (`tracker.team`, `tracker.workspace`, `tracker.states`), and
+an absent one of those follows the same fail-fast rule.
 
 ## Step 1 — Resolve the item
 
@@ -41,9 +41,9 @@ and the spec filename in Step 2; do not reconstruct or reformat it.
 Then call that same tracker file's `set_status` operation with the task ID
 and the phase `start`, so the tracker reflects that work has begun before
 any spec exists yet. Report the result exactly as that file specifies. In
-`linear` mode an unmatched state name stops the flow; in `github` mode a
-missing `gh` authentication or a malformed `tracker.states` block stops it;
-in `none` mode the operation cannot fail. Whichever applies, never proceed
+`linear` and `clickup` modes an unmatched state name stops the flow; in
+`github` mode a missing `gh` authentication or a malformed `tracker.states`
+block stops it; in `none` mode the operation cannot fail. Whichever applies, never proceed
 past a stop with tracker state left stale.
 
 ## Step 2 — Write the spec

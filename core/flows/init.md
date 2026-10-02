@@ -67,7 +67,8 @@ Draft a complete `.tdd-pipeline/config.yaml` following the schema in
 repository's current default branch rather than assuming a name.
 
 Every other key needs a person's decision: `tracker.type` (and, depending on
-it, `tracker.team` or `tracker.states`), `paths.conventions` (no default
+it, `tracker.team`, `tracker.workspace`, `tracker.list` or `tracker.folder`,
+or `tracker.states`), `paths.conventions` (no default
 exists — see that contract's note on why), and whether `pr.enabled`. Ask for
 each explicitly; default none of them silently.
 

@@ -23,9 +23,10 @@ the file or a key this phase needs is absent. This phase needs
 `tracker.type`.
 
 `tracker.type` selects which file among `core/trackers/none.md`,
-`core/trackers/linear.md`, and `core/trackers/github.md` governs Step 6. That
-file may require further keys of its own (`tracker.team`, `tracker.states`),
-and an absent one follows the same fail-fast rule.
+`core/trackers/linear.md`, `core/trackers/github.md`, and
+`core/trackers/clickup.md` governs Step 6. That file may require further keys
+of its own (`tracker.team`, `tracker.workspace`, `tracker.states`), and an
+absent one follows the same fail-fast rule.
 
 Then read every file under `.tdd-pipeline/memory/end/`, per
 `core/contracts/handoff-log.md`, `## Phase memory`. Those are lessons
@@ -256,8 +257,8 @@ with the task ID and the phase `review` — shipping is the point where the
 tracker should show the work as ready for review, not merely in progress.
 
 Report the result exactly as that file specifies: `none` mode reports its
-fixed line (`tracker: none, no status update`); `linear` and `github` report
-the state or label the issue moved to. A failed call — missing connection,
+fixed line (`tracker: none, no status update`); `linear`, `github`, and
+`clickup` report the state, label, or status the item moved to. A failed call — missing connection,
 unmatched state name, missing `gh` authentication — is a stop, per that
 file's own rules. A quietly failed update leaves the board stale while the
 code has already shipped.

@@ -229,7 +229,7 @@ version: 1
 project: ledger
 
 tracker:
-  type: none                  # none | linear | github
+  type: none                  # none | linear | github | clickup
   prefix: TASK                # task IDs become TASK-1, TASK-2, … and the branch name
 
 commands:
@@ -394,7 +394,7 @@ core/          the pipeline itself — harness-neutral, the only normative conte
                project requirements, review checklist seed
   flows/       init, conventions, doctor, task, review, resume
   phases/      pipeline, test, execute, code-review, end
-  trackers/    none, github, linear
+  trackers/    none, github, linear, clickup
 agents/        Claude Code subagents — at the plugin (repository) root because
                that is the one location its plugin manifest loads agents from
 adapters/      thin per-harness pointers into core/
@@ -417,8 +417,8 @@ The same checker also flags a sample of third-party tool and framework names,
 so a concrete `pytest` or `webpack` cannot drift into a phase file. That half
 is a **sample, not a gate**: it knows the tools it lists and nothing else.
 
-Two deliberate exceptions, both under `core/trackers/`: `github.md` names
-`gh` and `linear.md` names Linear. A tracker file whose whole job is to drive
+Three deliberate exceptions, all under `core/trackers/`: `github.md` names
+`gh`, `linear.md` names Linear, and `clickup.md` names ClickUp. A tracker file whose whole job is to drive
 one specific tracker cannot describe that job without naming it — the
 alternative would be prose so indirect it stops being executable. The
 neutrality that matters is that no *phase* or *flow* depends on which tracker

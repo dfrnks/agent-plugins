@@ -27,9 +27,12 @@ version: 1
 project: my-app
 
 tracker:
-  type: none                  # none | linear | github
+  type: none                  # none | linear | github | clickup
   prefix: TASK                # ID prefix; becomes the branch name
   # team:   <string>          # linear only
+  # workspace: "<id>"         # clickup only
+  # list:   "<id>"            # clickup only; or folder:, never both
+  # folder: "<id>"            # clickup only; the current sprint list in it
   # states: { start: "In Progress", review: "In Review" }
 
 commands:
@@ -129,28 +132,30 @@ before any phase; when absent, it proceeds directly.
 
 ## Required keys by mode
 
-| Key | Always mandatory | Mandatory when `tracker.type: linear` | Mandatory when `tracker.type: github` | Optional in every mode |
-|---|---|---|---|---|
-| `version` | yes | | | |
-| `project` | yes | | | |
-| `tracker.type` | yes | | | |
-| `tracker.prefix` | yes | | | |
-| `tracker.team` | | yes | | |
-| `tracker.states` | | yes | optional | |
-| `commands.test` | yes | | | |
-| `commands.test_all` | yes | | | |
-| `commands.lint` | yes | | | |
-| `commands.typecheck` | | | | yes |
-| `paths.tests` | yes | | | |
-| `paths.specs` | yes | | | |
-| `paths.worktrees` | yes | | | |
-| `paths.conventions` | yes | | | |
-| `paths.review_checklist` | | | | yes |
-| `git.base_branch` | yes | | | |
-| `git.commit_trailer` | yes | | | |
-| `git.worktree_setup` | | | | yes |
-| `pr.enabled` | yes | | | |
-| `policy.full_suite` | | | | yes |
+| Key | Always mandatory | Mandatory when `tracker.type: linear` | Mandatory when `tracker.type: github` | Mandatory when `tracker.type: clickup` | Optional in every mode |
+|---|---|---|---|---|---|
+| `version` | yes | | | | |
+| `project` | yes | | | | |
+| `tracker.type` | yes | | | | |
+| `tracker.prefix` | yes | | | | |
+| `tracker.team` | | yes | | | |
+| `tracker.workspace` | | | | yes | |
+| `tracker.list` / `tracker.folder` | | | | exactly one | |
+| `tracker.states` | | yes | optional | yes | |
+| `commands.test` | yes | | | | |
+| `commands.test_all` | yes | | | | |
+| `commands.lint` | yes | | | | |
+| `commands.typecheck` | | | | | yes |
+| `paths.tests` | yes | | | | |
+| `paths.specs` | yes | | | | |
+| `paths.worktrees` | yes | | | | |
+| `paths.conventions` | yes | | | | |
+| `paths.review_checklist` | | | | | yes |
+| `git.base_branch` | yes | | | | |
+| `git.commit_trailer` | yes | | | | |
+| `git.worktree_setup` | | | | | yes |
+| `pr.enabled` | yes | | | | |
+| `policy.full_suite` | | | | | yes |
 
 `tracker.type: github` needs nothing beyond the always-mandatory keys to
 function: it authenticates through `gh` and can label using nothing but the
@@ -167,6 +172,17 @@ times a project regenerates its configuration or reads this contract.
 error under github mode, handled like any other malformed key: stop and
 name the missing half, rather than silently defaulting it while honoring
 the one that was provided.
+
+`tracker.type: clickup` drives ClickUp through its MCP server. It needs
+`tracker.workspace`, because an account in several workspaces cannot
+resolve a custom ID without one, and `tracker.states`, because statuses are
+named per list and have no default worth guessing. It also needs exactly
+one place to file new work: `tracker.list` for a fixed list, or
+`tracker.folder` for a sprint folder, where the list whose dates contain
+today is used. Both set, or neither, is a configuration error — stop and
+name the conflict rather than preferring one. Task IDs are ClickUp custom
+IDs, so the space must have custom task IDs turned on; see
+`core/trackers/clickup.md`.
 
 ## Fail-fast protocol
 
