@@ -24,7 +24,7 @@ this contract only names which keys and paths must exist, not their format.
 | `.tdd-pipeline/memory/` directory | no | init | doctor |
 | `paths.review_checklist`, tracked in git when set | no | conventions (writes and commits) | doctor |
 | `git.worktree_setup` script, executable, if dependencies are git-ignored | conditional | init proposes and sets the executable bit | doctor, task |
-| Tracker auth (Linear or `gh auth`) | conditional on `tracker.type` | — | doctor, task |
+| Tracker auth (Linear, `gh auth`, or ClickUp) | conditional on `tracker.type` | — | doctor, task |
 
 ## Why a populated conventions file is mandatory
 

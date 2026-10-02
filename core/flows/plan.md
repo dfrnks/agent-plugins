@@ -43,8 +43,8 @@ Read `.tdd-pipeline/config.yaml`. Follow the fail-fast protocol in
 the file or a key this flow needs is absent. This flow needs `tracker.type`,
 `tracker.prefix`, `paths.specs`, `paths.conventions`, and
 `git.commit_trailer`. `tracker.type` selects which file among
-`core/trackers/none.md`, `core/trackers/linear.md`, and
-`core/trackers/github.md` resolves the item; that file may require further
+`core/trackers/none.md`, `core/trackers/linear.md`, `core/trackers/github.md`,
+and `core/trackers/clickup.md` resolves the item; that file may require further
 keys of its own, and an absent one follows the same fail-fast rule.
 
 When the argument is a tracker identifier, resolve it now, through that

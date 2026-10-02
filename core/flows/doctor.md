@@ -47,11 +47,19 @@ Run one check per row of the requirements table, each reporting `pass`,
 
   `fail` only if the directory is absent. If the command prints files, that
   is a `pass` carrying a note naming them, per "Untracked scaffolding" below.
-- **`paths.worktrees` directory, git-ignored** — exists, and is covered by an
-  entry in `.gitignore`. `fail` if either half is missing; a worktree
-  directory that exists but is not ignored is a `fail`, not a partial pass,
-  since committing a worktree's contents duplicates them under version
-  control.
+- **`paths.worktrees` directory, git-ignored** — exists, and git ignores it:
+
+  ```bash
+  git check-ignore -q <paths.worktrees>
+  ```
+
+  Ask git rather than reading `.gitignore`: a project that keeps its
+  pipeline files out of version control ignores the directory through
+  `.git/info/exclude` or a global excludes file, and requiring a `.gitignore`
+  entry would force it to edit a tracked file to satisfy this check. `fail`
+  if either half is missing; a worktree directory that exists but is not
+  ignored is a `fail`, not a partial pass, since committing a worktree's
+  contents duplicates them under version control.
 - **`paths.conventions` file, non-empty, with derived stack rules** — detailed
   on its own below. It carries the same `git ls-files --error-unmatch` check,
   resolved the same way as the configuration's: untracked is a `pass` with a
@@ -77,11 +85,12 @@ Run one check per row of the requirements table, each reporting `pass`,
   because the orchestrator runs the script directly: without it the run stops
   before any phase, with an error that looks like a pipeline failure rather
   than a file mode.
-- **Tracker auth** — `n/a` for `tracker.type: none`. For the other two modes,
+- **Tracker auth** — `n/a` for `tracker.type: none`. For the other modes,
   perform the connection check that mode's tracker file requires before any
   of its operations run — the Linear MCP server connection in
-  `core/trackers/linear.md`, or the `gh auth status` check in
-  `core/trackers/github.md` — and report `pass` or `fail`, naming what
+  `core/trackers/linear.md`, the `gh auth status` check in
+  `core/trackers/github.md`, or the ClickUp MCP server connection in
+  `core/trackers/clickup.md` — and report `pass` or `fail`, naming what
   failed.
 
 ### Untracked scaffolding
@@ -259,7 +268,8 @@ failing row, one at a time, in table order:
   full exploration pass rediscovering that it has nothing to explore.
 - A missing tracker authentication — this flow does not authenticate on the
   user's behalf. Report the exact command the relevant tracker file names
-  (`gh auth login` for `github` mode, the equivalent for `linear`) and stop.
+  (`gh auth login` for `github` mode, the equivalent for `linear` and
+  `clickup`) and stop.
 
 State plainly, before doing anything, which delegated flow will run and what
 it will touch. Never repair without an explicit confirmation for each item.
